@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from pathlib import Path
+
+BACKEND_DIR = Path(__file__).parent.parent.parent  # tests/integration/ → backend/
 
 
 def test_alembic_upgrade_head_runs_without_error() -> None:
@@ -10,7 +13,7 @@ def test_alembic_upgrade_head_runs_without_error() -> None:
         [sys.executable, "-m", "alembic", "upgrade", "head"],
         capture_output=True,
         text=True,
-        cwd="/Users/qinyuan/cs/Vibe Coding/FlowDay/backend",
+        cwd=BACKEND_DIR,
     )
     assert result.returncode == 0, f"alembic upgrade head failed:\n{result.stderr}"
 
@@ -21,7 +24,7 @@ def test_alembic_current_returns_a_revision_after_upgrade() -> None:
         [sys.executable, "-m", "alembic", "current"],
         capture_output=True,
         text=True,
-        cwd="/Users/qinyuan/cs/Vibe Coding/FlowDay/backend",
+        cwd=BACKEND_DIR,
     )
     assert result.returncode == 0, f"alembic current failed:\n{result.stderr}"
     assert "(head)" in result.stdout, (
