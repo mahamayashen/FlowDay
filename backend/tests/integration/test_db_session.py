@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from hypothesis import given
-from hypothesis import settings as h_settings
-from hypothesis import strategies as st
+from hypothesis import given, settings as h_settings, strategies as st
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
