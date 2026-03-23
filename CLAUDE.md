@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # FlowDay — Claude Code Project Context
 
 @import claude-project-instructions.md
@@ -17,15 +21,23 @@
 
 ## Build & Run Commands
 
+### Environment setup
+```
+conda activate vibing   # Python 3.12 — must be active before any backend commands
+```
+
 ### Backend (from `backend/`)
 ```
-uvicorn app.main:app --reload    # Start dev server
-pytest                           # Run all tests
-pytest -x -q                     # Stop on first failure
-ruff check . && ruff format .    # Lint + format
-mypy .                           # Type check
-alembic upgrade head             # Apply migrations
+uvicorn app.main:app --reload --port 5060    # Start dev server (port 5060)
+pytest                                        # Run all tests
+pytest -x -q                                  # Stop on first failure
+pytest tests/path/to/test_file.py::test_name  # Run a single test
+ruff check . && ruff format .                 # Lint + format
+mypy .                                        # Type check
+alembic upgrade head                          # Apply migrations
 alembic revision --autogenerate -m "description"  # New migration
+mutmut run                                    # Mutation testing (target ≥ 80% score)
+mutmut results                                # View mutation results
 ```
 
 ### Frontend (from `frontend/`)
@@ -50,6 +62,23 @@ docker compose down     # Stop services
 - Agent deps injected via Pydantic AI `RunContext` — never import directly
 - Judge agent must use a different LLM provider than Narrative Writer
 - Frontend: functional components + hooks only, React Query + Zustand, dark theme (`#111113`)
+
+## Development Workflow (required for every issue)
+
+**4-phase per issue — never skip phases:**
+1. **Explore** — read existing code, understand impact, no changes yet
+2. **Plan** — write/confirm implementation plan before touching code
+3. **Implement** — strict AI-TDD cycles (see below)
+4. **Commit** — feature branch only; never commit directly to `main`
+
+**Branch naming:** `feature/<issue-number>-short-description` (e.g. `feature/2-db-setup`)
+
+**AI-TDD cycle (one cycle per acceptance criterion):**
+- **RED** — write failing test first, commit: `[#N][RED] add failing test: <description>`
+- **GREEN** — minimum code to pass, commit: `[#N][GREEN] implement: <description>`
+- **REFACTOR** — clean up without breaking tests, commit: `[#N][REFACTOR] refactor: <description>`
+
+**Property-based testing** (`hypothesis`) — use `@given` strategies to generate hundreds of random inputs for core logic. **Mutation testing** (`mutmut`) — run after all cycles pass; target ≥ 80% mutation score.
 
 ## Do's
 
