@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Lint & Test (Python 3.12 + PostgreSQL 16)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flowday
+          POSTGRES_PASSWORD: flowday
+          POSTGRES_DB: flowday
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U flowday"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      DATABASE_URL: "postgresql+asyncpg://flowday:flowday@localhost:5432/flowday"
+      REDIS_URL: "redis://localhost:6379/0"
+      SECRET_KEY: "ci-not-a-secret"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Apply migrations
+        run: alembic upgrade head
+
+      - name: Run tests
+        run: pytest -v --tb=short

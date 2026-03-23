@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import pytest
+from app.main import app
 from httpx import ASGITransport, AsyncClient
 
 from app.core.database import dispose_engine, init_engine
-from app.main import app
 
 
 @pytest.fixture(scope="session", autouse=True)

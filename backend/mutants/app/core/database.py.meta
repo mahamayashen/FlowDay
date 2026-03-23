@@ -1,0 +1,27 @@
+{
+    "exit_code_by_key": {
+        "app.core.database.x_init_engine__mutmut_1": null,
+        "app.core.database.x_init_engine__mutmut_2": null,
+        "app.core.database.x_init_engine__mutmut_3": null,
+        "app.core.database.x_init_engine__mutmut_4": null,
+        "app.core.database.x_init_engine__mutmut_5": null,
+        "app.core.database.x_init_engine__mutmut_6": null,
+        "app.core.database.x_init_engine__mutmut_7": null,
+        "app.core.database.x_init_engine__mutmut_8": null,
+        "app.core.database.x_init_engine__mutmut_9": null,
+        "app.core.database.x_init_engine__mutmut_10": null,
+        "app.core.database.x_init_engine__mutmut_11": null,
+        "app.core.database.x_init_engine__mutmut_12": null,
+        "app.core.database.x_dispose_engine__mutmut_1": null,
+        "app.core.database.x_dispose_engine__mutmut_2": null,
+        "app.core.database.x_dispose_engine__mutmut_3": null,
+        "app.core.database.x_get_db__mutmut_1": null,
+        "app.core.database.x_get_db__mutmut_2": null,
+        "app.core.database.x_get_db__mutmut_3": null,
+        "app.core.database.x_get_db__mutmut_4": null,
+        "app.core.database.x_get_db__mutmut_5": null
+    },
+    "durations_by_key": {},
+    "type_check_error_by_key": {},
+    "estimated_durations_by_key": {}
+}
