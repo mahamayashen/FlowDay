@@ -27,13 +27,14 @@ def test_user_response_from_orm() -> None:
     """UserResponse can be constructed from an ORM-like object via model_validate."""
 
     class FakeUser:
-        id = uuid.uuid4()
-        email = "test@example.com"
-        name = "Test User"
-        settings_json = {}
-        created_at = datetime.now(timezone.utc)
+        def __init__(self) -> None:
+            self.id = uuid.uuid4()
+            self.email = "test@example.com"
+            self.name = "Test User"
+            self.settings_json = {}
+            self.created_at = datetime.now(timezone.utc)
 
-    response = UserResponse.model_validate(FakeUser, from_attributes=True)
+    response = UserResponse.model_validate(FakeUser(), from_attributes=True)
     assert response.email == "test@example.com"
     assert response.name == "Test User"
 
