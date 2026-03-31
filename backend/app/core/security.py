@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 
 from cryptography.fernet import Fernet
 from jose import JWTError, jwt
@@ -12,8 +13,9 @@ from app.core.config import settings
 ALGORITHM = "HS256"
 
 
+@lru_cache(maxsize=1)
 def _get_fernet() -> Fernet:
-    """Derive a Fernet key from SECRET_KEY."""
+    """Derive a Fernet key from SECRET_KEY (cached after first call)."""
     key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
     fernet_key = base64.urlsafe_b64encode(key)
     return Fernet(fernet_key)
@@ -57,8 +59,5 @@ def create_refresh_token(subject: str) -> str:
 
 def decode_token(token: str) -> dict:
     """Decode and validate a JWT token. Raises JWTError on failure."""
-    try:
-        payload: dict = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
-        raise
+    payload: dict = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     return payload
