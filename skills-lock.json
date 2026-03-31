@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "tdd-strict": {
+      "source": "svenja-dev/claude-code-skills",
+      "sourceType": "github",
+      "computedHash": "675cc57f812e6e4bb59f73be9c89637dbd9e2a7f1372a6fcac390f3160810335"
+    }
+  }
+}
