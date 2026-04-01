@@ -1,4 +1,0 @@
-# file: /Users/jinyuchen/Desktop/NEU/26sp/7180/P3/FlowDay-main/backend/app/core/deps.py
-# hypothesis_version: 6.151.10
-
-['/auth/token', 'Bearer', 'WWW-Authenticate']

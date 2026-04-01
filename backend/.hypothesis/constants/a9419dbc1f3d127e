@@ -1,4 +1,0 @@
-# file: /Users/jinyuchen/Desktop/NEU/26sp/7180/P3/FlowDay-main/backend/app/core/security.py
-# hypothesis_version: 6.151.10
-
-['HS256', 'XXexpXX', 'exp', 'refresh', 'sub', 'type']
