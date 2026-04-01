@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+
+from app.schemas.health import HealthResponse
 
 router = APIRouter()
-
-
-class HealthResponse(BaseModel):
-    """Response schema for the health check endpoint."""
-
-    status: str
 
 
 @router.get("/health", response_model=HealthResponse, tags=["health"])
