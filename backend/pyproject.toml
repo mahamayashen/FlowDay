@@ -50,7 +50,7 @@ ignore_missing_imports = true
 
 [tool.mutmut]
 paths_to_mutate = "app/core/database.py"
-runner = "python -m pytest tests/ -x -q --tb=no"
+runner = "python3.12 -m pytest tests/unit/ tests/test_health.py -x -q --tb=no"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -15,7 +15,9 @@
       "Bash(python3.12 -m pytest tests/unit/test_deps.py tests/unit/test_auth_routes.py -x -v)",
       "Bash(python3.12 -m ruff check .)",
       "Bash(python3.12 -m ruff format .)",
-      "Bash(python3.12 -m ruff check . --fix)"
+      "Bash(python3.12 -m ruff check . --fix)",
+      "Bash(python3.12 -m mutmut run --paths-to-mutate=app/core/security.py)",
+      "Bash(python3.12 -m mutmut run --paths-to-mutate=app/core/deps.py)"
     ]
   }
 }
