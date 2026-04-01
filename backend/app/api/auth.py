@@ -1,14 +1,201 @@
 from __future__ import annotations
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from jose import JWTError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.core.security import create_access_token, decode_token
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    encrypt_oauth_token,
+)
 from app.models.user import User
 from app.schemas.user import RefreshRequest, TokenResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+# ---------------------------------------------------------------------------
+# OAuth helpers
+# ---------------------------------------------------------------------------
+
+
+async def _handle_oauth_callback(
+    *,
+    provider: str,
+    oauth_token: str,
+    email: str,
+    name: str,
+    db: AsyncSession,
+) -> TokenResponse:
+    """Create or update a user from an OAuth callback, return JWT pair.
+
+    Shared by both Google and GitHub callback routes to DRY the flow.
+    """
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    encrypted_token = encrypt_oauth_token(oauth_token)
+
+    if user is None:
+        user = User(email=email, name=name)
+        if provider == "google":
+            user.google_oauth_token = encrypted_token
+        else:
+            user.github_oauth_token = encrypted_token
+        db.add(user)
+    else:
+        if provider == "google":
+            user.google_oauth_token = encrypted_token
+        else:
+            user.github_oauth_token = encrypted_token
+
+    await db.commit()
+    await db.refresh(user)
+
+    access = create_access_token(subject=user.email)
+    refresh = create_refresh_token(subject=user.email)
+    return TokenResponse(access_token=access, refresh_token=refresh)
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+
+@router.get("/google/callback", response_model=TokenResponse)
+async def google_callback(
+    code: str, db: AsyncSession = Depends(get_db)
+) -> TokenResponse:
+    """Exchange Google OAuth authorization code for JWT token pair."""
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Google OAuth is not configured",
+        )
+
+    async with httpx.AsyncClient() as client:
+        # Exchange code for access token
+        token_resp = await client.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code": code,
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+                "grant_type": "authorization_code",
+            },
+        )
+        if token_resp.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Failed to exchange Google authorization code",
+            )
+        token_data = token_resp.json()
+        google_access_token: str = token_data["access_token"]
+
+        # Fetch user info
+        userinfo_resp = await client.get(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            headers={"Authorization": f"Bearer {google_access_token}"},
+        )
+        if userinfo_resp.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Failed to fetch Google user info",
+            )
+        userinfo = userinfo_resp.json()
+
+    return await _handle_oauth_callback(
+        provider="google",
+        oauth_token=google_access_token,
+        email=userinfo["email"],
+        name=userinfo.get("name", userinfo["email"]),
+        db=db,
+    )
+
+
+@router.get("/github/callback", response_model=TokenResponse)
+async def github_callback(
+    code: str, db: AsyncSession = Depends(get_db)
+) -> TokenResponse:
+    """Exchange GitHub OAuth authorization code for JWT token pair."""
+    if not settings.GITHUB_CLIENT_ID or not settings.GITHUB_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="GitHub OAuth is not configured",
+        )
+
+    async with httpx.AsyncClient() as client:
+        # Exchange code for access token
+        token_resp = await client.post(
+            "https://github.com/login/oauth/access_token",
+            data={
+                "code": code,
+                "client_id": settings.GITHUB_CLIENT_ID,
+                "client_secret": settings.GITHUB_CLIENT_SECRET,
+                "redirect_uri": settings.GITHUB_REDIRECT_URI,
+            },
+            headers={"Accept": "application/json"},
+        )
+        if token_resp.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Failed to exchange GitHub authorization code",
+            )
+        token_data = token_resp.json()
+        github_access_token: str = token_data["access_token"]
+
+        # Fetch user info
+        user_resp = await client.get(
+            "https://api.github.com/user",
+            headers={
+                "Authorization": f"Bearer {github_access_token}",
+                "Accept": "application/vnd.github+json",
+            },
+        )
+        if user_resp.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Failed to fetch GitHub user info",
+            )
+        gh_user = user_resp.json()
+
+        # GitHub email may be private — fetch from /user/emails
+        email = gh_user.get("email")
+        if not email:
+            emails_resp = await client.get(
+                "https://api.github.com/user/emails",
+                headers={
+                    "Authorization": f"Bearer {github_access_token}",
+                    "Accept": "application/vnd.github+json",
+                },
+            )
+            if emails_resp.status_code == 200:
+                for entry in emails_resp.json():
+                    if entry.get("primary") and entry.get("verified"):
+                        email = entry["email"]
+                        break
+
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not retrieve email from GitHub",
+            )
+
+    return await _handle_oauth_callback(
+        provider="github",
+        oauth_token=github_access_token,
+        email=email,
+        name=gh_user.get("name") or gh_user.get("login", email),
+        db=db,
+    )
 
 
 @router.get("/me", response_model=UserResponse)

@@ -22,6 +22,16 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # OAuth — Google
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+    GOOGLE_REDIRECT_URI: str = "http://localhost:5060/auth/google/callback"
+
+    # OAuth — GitHub
+    GITHUB_CLIENT_ID: str | None = None
+    GITHUB_CLIENT_SECRET: str | None = None
+    GITHUB_REDIRECT_URI: str = "http://localhost:5060/auth/github/callback"
+
     # Monitoring (optional — silently disabled when absent)
     SENTRY_DSN: str | None = None
 
