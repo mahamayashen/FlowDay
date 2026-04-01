@@ -2,20 +2,13 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from jose import JWTError
-from pydantic import BaseModel
 
 from app.core.deps import get_current_user
 from app.core.security import create_access_token, decode_token
 from app.models.user import User
-from app.schemas.user import TokenResponse, UserResponse
+from app.schemas.user import RefreshRequest, TokenResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-class RefreshRequest(BaseModel):
-    """Request body for token refresh."""
-
-    refresh_token: str
 
 
 @router.get("/me", response_model=UserResponse)
