@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import HTTPException
@@ -18,7 +18,7 @@ def _make_fake_user(email: str = "test@example.com") -> MagicMock:
     user.email = email
     user.name = "Test User"
     user.settings_json = {}
-    user.created_at = datetime.now(timezone.utc)
+    user.created_at = datetime.now(UTC)
     return user
 
 

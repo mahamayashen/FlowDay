@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -18,7 +18,7 @@ def _make_fake_user(email: str = "test@example.com") -> MagicMock:
     fake.email = email
     fake.name = "Test User"
     fake.settings_json = {}
-    fake.created_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    fake.created_at = datetime(2026, 1, 1, tzinfo=UTC)
     return fake
 
 
@@ -67,9 +67,7 @@ async def test_refresh_token_returns_new_access_token(
     """POST /auth/refresh with valid refresh token must return new access token."""
     refresh = create_refresh_token(subject="test@example.com")
 
-    response = await auth_client.post(
-        "/auth/refresh", json={"refresh_token": refresh}
-    )
+    response = await auth_client.post("/auth/refresh", json={"refresh_token": refresh})
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data

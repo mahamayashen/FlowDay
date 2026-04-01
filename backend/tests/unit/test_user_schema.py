@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -32,7 +32,7 @@ def test_user_response_from_orm() -> None:
             self.email = "test@example.com"
             self.name = "Test User"
             self.settings_json = {}
-            self.created_at = datetime.now(timezone.utc)
+            self.created_at = datetime.now(UTC)
 
     response = UserResponse.model_validate(FakeUser(), from_attributes=True)
     assert response.email == "test@example.com"
@@ -53,8 +53,6 @@ def test_user_create_accepts_valid_email() -> None:
 
 def test_token_response_has_required_fields() -> None:
     """TokenResponse must have access_token, refresh_token, token_type."""
-    token = TokenResponse(
-        access_token="abc", refresh_token="def", token_type="bearer"
-    )
+    token = TokenResponse(access_token="abc", refresh_token="def", token_type="bearer")
     assert token.access_token == "abc"
     assert token.token_type == "bearer"

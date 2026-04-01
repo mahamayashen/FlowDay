@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import base64
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 
 from cryptography.fernet import Fernet
-from jose import JWTError, jwt
+from jose import jwt
 
 from app.core.config import settings
 
@@ -41,7 +41,7 @@ def create_access_token(
     """Create a JWT access token."""
     if expires_minutes is None:
         expires_minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
+    expire = datetime.now(UTC) + timedelta(minutes=expires_minutes)
     to_encode: dict = {"sub": subject, "exp": expire}
     if extra:
         to_encode.update(extra)
@@ -50,9 +50,7 @@ def create_access_token(
 
 def create_refresh_token(subject: str) -> str:
     """Create a JWT refresh token with longer expiry."""
-    expire = datetime.now(timezone.utc) + timedelta(
-        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-    )
+    expire = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode: dict = {"sub": subject, "exp": expire, "type": "refresh"}
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
 

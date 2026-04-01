@@ -15,7 +15,6 @@ from app.core.security import (
     encrypt_oauth_token,
 )
 
-
 # --- Fernet encryption tests ---
 
 
