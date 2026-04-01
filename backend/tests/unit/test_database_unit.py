@@ -4,6 +4,7 @@ These tests do not require a running PostgreSQL instance — they verify
 the structural configuration of the engine and session factory, and the
 control flow of init/dispose/get_db.
 """
+
 from __future__ import annotations
 
 from app.core import database
@@ -11,12 +12,14 @@ from app.core.database import dispose_engine, get_db, init_engine
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 async def _reset() -> None:
     """Dispose and reset module-level state between tests."""
     await dispose_engine()
 
 
 # ── init_engine configuration (kills mutants 5, 7) ───────────────────────────
+
 
 async def test_init_engine_enables_pool_pre_ping() -> None:
     """Engine must be created with pool_pre_ping=True (kills mutant 5).
@@ -47,6 +50,7 @@ async def test_init_engine_disables_expire_on_commit() -> None:
 
 # ── dispose_engine control flow (kills mutants 9, 10, 11) ────────────────────
 
+
 async def test_dispose_engine_sets_engine_to_none() -> None:
     """After dispose, _engine must be exactly None, not falsy (kills mutants 9, 10)."""
     init_engine()
@@ -70,6 +74,7 @@ async def test_dispose_engine_when_not_initialized_does_not_raise() -> None:
 
 # ── Initial state (kills mutants 2, 4) ───────────────────────────────────────
 
+
 async def test_after_dispose_engine_initial_state_is_none() -> None:
     """_engine and _session_factory must be None after dispose (kills mutants 2, 4)."""
     init_engine()
@@ -79,6 +84,7 @@ async def test_after_dispose_engine_initial_state_is_none() -> None:
 
 
 # ── get_db error message (kills mutant 13) ────────────────────────────────────
+
 
 async def test_get_db_raises_runtime_error_with_correct_message() -> None:
     """get_db must raise RuntimeError with the exact message (kills mutant 13)."""

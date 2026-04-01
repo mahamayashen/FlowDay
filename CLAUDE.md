@@ -65,20 +65,45 @@ docker compose down     # Stop services
 
 ## Development Workflow (required for every issue)
 
-**4-phase per issue — never skip phases:**
-1. **Explore** — read existing code, understand impact, no changes yet
-2. **Plan** — write/confirm implementation plan before touching code
-3. **Implement** — strict AI-TDD cycles (see below)
-4. **Commit** — feature branch only; never commit directly to `main`
+### 4-Phase Workflow — never skip phases
 
-**Branch naming:** `feature/<issue-number>-short-description` (e.g. `feature/2-db-setup`)
+Every issue MUST follow these 4 phases in order. Use the custom slash commands to enforce each phase:
 
-**AI-TDD cycle (one cycle per acceptance criterion):**
-- **RED** — write failing test first, commit: `[#N][RED] add failing test: <description>`
-- **GREEN** — minimum code to pass, commit: `[#N][GREEN] implement: <description>`
-- **REFACTOR** — clean up without breaking tests, commit: `[#N][REFACTOR] refactor: <description>`
+#### Phase 1: Explore (`/explore-issue`)
+- Read existing code and understand impact — **no file changes allowed**
+- Identify affected files, dependencies, missing dev dependencies
+- Document what exists vs. what's needed
+- Use plan mode (`EnterPlanMode`) to explore without accidental edits
+- Output: understanding of scope and impact
 
-**Property-based testing** (`hypothesis`) — use `@given` strategies to generate hundreds of random inputs for core logic. **Mutation testing** (`mutmut`) — run after all cycles pass; target ≥ 80% mutation score.
+#### Phase 2: Plan (`/plan-issue`)
+- Write implementation plan to `docs/plans/issue-<N>-<name>.md`
+- Define acceptance criteria (one per TDD cycle)
+- Specify RED tests, GREEN implementation, REFACTOR cleanup for each cycle
+- Get user confirmation before proceeding to implement
+- Output: approved plan document
+
+#### Phase 3: Implement (`/tdd`)
+- Strict AI-TDD cycles — one cycle per acceptance criterion
+- **RED** — write failing test first, run it to confirm failure, commit: `[#N][RED] add failing test: <description>`
+- **GREEN** — write minimum code to pass, run tests, commit: `[#N][GREEN] implement: <description>`
+- **REFACTOR** — clean up without breaking tests, run tests, commit: `[#N][REFACTOR] refactor: <description>`
+- After all cycles: run `ruff check . && ruff format .`, then `mutmut run` (target ≥ 80%)
+- Property-based testing (`hypothesis`) — use `@given` for core logic
+
+#### Phase 4: Commit
+- Feature branch only — never commit directly to `main`
+- Branch naming: `feature/<issue-number>-short-description`
+- Open PR: `feature/<N>-<name> → main`, link Issue #N
+- All commits use `[#N][RED|GREEN|REFACTOR]` prefix format
+
+### Context Management
+
+- `/compact` — compress context mid-task when token usage is high
+- `/context` — check token consumption breakdown
+- `claude --continue` — resume previous session after terminal close
+- `/clear` — reset between unrelated tasks or features
+- One feature per session — `/clear` between different features
 
 ## Do's
 
@@ -87,6 +112,9 @@ docker compose down     # Stop services
 - Use Alembic for all schema changes
 - Encrypt OAuth tokens at rest (Fernet); anonymize PII before LLM calls
 - Add Sentry breadcrumbs and Grafana metrics for new endpoints/agent runs
+- Always run tests before committing — the pre-commit hook enforces commit message format
+- Use `/explore-issue` before touching any code for a new issue
+- Use `/tdd` to enforce strict RED/GREEN/REFACTOR discipline
 
 ## Don'ts
 
@@ -95,3 +123,6 @@ docker compose down     # Stop services
 - Don't hardcode LLM provider — use Pydantic AI's provider-agnostic config
 - Don't store secrets in code or commit `.env`
 - Don't write raw SQL in route handlers — use service layer
+- Don't skip TDD phases — no writing implementation before a failing test exists
+- Don't commit without the `[#N][RED|GREEN|REFACTOR]` prefix
+- Don't skip the Explore phase — understand before you build

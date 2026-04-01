@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pdftotext docs/Claude_Code_Workflow_TDD.pdf -)",
+      "Bash(python3 -c \":*)",
+      "Bash(pip3 install:*)",
+      "Bash(python3.12 -m pytest tests/unit/test_security.py -x -v)",
+      "Bash(python3.12 -m pytest -x -q)",
+      "Bash(python3.12 -m pytest tests/unit/ tests/test_health.py -x -q)",
+      "Bash(git remote:*)",
+      "Bash(python3.12 -m pytest tests/unit/test_user_schema.py -x -v)",
+      "Bash(python3.12 -m pytest tests/unit/test_deps.py tests/integration/test_auth.py -x -v)",
+      "Bash(python3.12 -m pytest tests/unit/test_deps.py -x -v)",
+      "Bash(python3.12 -m pytest tests/integration/test_auth.py -x -v)",
+      "Bash(python3.12 -m pytest tests/unit/test_deps.py tests/unit/test_auth_routes.py -x -v)",
+      "Bash(python3.12 -m ruff check .)",
+      "Bash(python3.12 -m ruff format .)",
+      "Bash(python3.12 -m ruff check . --fix)",
+      "Bash(python3.12 -m mutmut run --paths-to-mutate=app/core/security.py)",
+      "Bash(python3.12 -m mutmut run --paths-to-mutate=app/core/deps.py)"
+    ]
+  }
+}

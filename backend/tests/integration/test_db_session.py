@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 # ── Standard integration tests (require running PostgreSQL) ───────────────────
 
+
 async def test_get_db_yields_async_session() -> None:
     """get_db must yield an AsyncSession — RED until database.py exists."""
     from app.core.database import get_db
@@ -28,6 +29,7 @@ async def test_session_can_execute_select_1() -> None:
 
 
 # ── Property-based test (no DB connection needed) ─────────────────────────────
+
 
 @given(
     host=st.text(

@@ -4,10 +4,17 @@
       "Read",
       "Glob",
       "Grep",
+      "Write",
+      "Edit",
       "Bash(git status)",
       "Bash(git log *)",
       "Bash(git diff *)",
       "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push -u *)",
+      "Bash(git merge *)",
       "Bash(ls *)",
       "Bash(cat *)",
       "Bash(head *)",
@@ -16,9 +23,19 @@
       "Bash(find *)",
       "Bash(grep *)",
       "Bash(ruff check *)",
+      "Bash(ruff format *)",
+      "Bash(ruff check . && ruff format .)",
       "Bash(mypy *)",
       "Bash(pytest *)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(cd backend *)",
+      "Bash(alembic *)",
+      "Bash(mutmut *)",
+      "Bash(docker compose *)",
+      "Bash(uvicorn *)",
+      "Bash(npm run *)",
+      "Bash(gh pr *)",
+      "Bash(gh issue *)"
     ],
     "deny": [
       "Bash(rm -rf *)",
@@ -28,6 +45,9 @@
       "Bash(chmod 777 *)",
       "Bash(git push --force *)",
       "Bash(git reset --hard *)",
+      "Bash(git push * --force *)",
+      "Bash(DROP DATABASE *)",
+      "Bash(DROP TABLE *)",
       "Edit(.env)",
       "Edit(.env.local)",
       "Edit(.env.production)",
@@ -36,6 +56,30 @@
       "Write(.env.local)",
       "Write(.env.production)",
       "Write(.env.staging)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | jq -r '.command' 2>/dev/null | grep -q 'git commit'; then MSG=$(echo \"$TOOL_INPUT\" | jq -r '.command' 2>/dev/null); if ! echo \"$MSG\" | grep -qE '\\[#[0-9]+\\]\\[(RED|GREEN|REFACTOR)\\]'; then echo 'BLOCKED: Commit message must use [#N][RED|GREEN|REFACTOR] format.'; echo 'Examples:'; echo '  [#3][RED] add failing test: user model validation'; echo '  [#3][GREEN] implement: user model with UUID primary key'; echo '  [#3][REFACTOR] refactor: extract password hashing to utility'; exit 2; fi; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | jq -r '.command' 2>/dev/null | grep -q 'pytest' && [ \"$TOOL_EXIT_CODE\" = \"0\" ]; then echo 'Tests passed. Run ruff check . && ruff format . before committing.'; fi"
+          }
+        ]
+      }
     ]
   }
 }
