@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from jose import JWTError
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -36,28 +39,33 @@ async def _handle_oauth_callback(
 ) -> TokenResponse:
     """Create or update a user from an OAuth callback, return JWT pair.
 
-    Shared by both Google and GitHub callback routes to DRY the flow.
+    Uses PostgreSQL ON CONFLICT (upsert) to atomically handle concurrent
+    requests for the same email without race conditions.
     """
-    result = await db.execute(select(User).where(User.email == email))
-    user = result.scalar_one_or_none()
-
     encrypted_token = encrypt_oauth_token(oauth_token)
+    token_field = (
+        {"google_oauth_token": encrypted_token}
+        if provider == "google"
+        else {"github_oauth_token": encrypted_token}
+    )
 
-    if user is None:
-        user = User(email=email, name=name)
-        if provider == "google":
-            user.google_oauth_token = encrypted_token
-        else:
-            user.github_oauth_token = encrypted_token
-        db.add(user)
-    else:
-        if provider == "google":
-            user.google_oauth_token = encrypted_token
-        else:
-            user.github_oauth_token = encrypted_token
-
+    now = datetime.now(UTC)
+    stmt = insert(User).values(
+        email=email,
+        name=name,
+        created_at=now,
+        updated_at=now,
+        **token_field,
+    )
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["email"],
+        set_=token_field,
+    )
+    await db.execute(stmt)
     await db.commit()
-    await db.refresh(user)
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one()
 
     access = create_access_token(subject=user.email)
     refresh = create_refresh_token(subject=user.email)
@@ -74,7 +82,7 @@ async def google_callback(
     code: str, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
     """Exchange Google OAuth authorization code for JWT token pair."""
-    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+    if settings.GOOGLE_CLIENT_ID is None or settings.GOOGLE_CLIENT_SECRET is None:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail="Google OAuth is not configured",
@@ -98,6 +106,13 @@ async def google_callback(
                 detail="Failed to exchange Google authorization code",
             )
         token_data = token_resp.json()
+
+        # Google can return 200 with an error field
+        if "error" in token_data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Google OAuth error: {token_data['error']}",
+            )
         google_access_token: str = token_data["access_token"]
 
         # Fetch user info
@@ -126,7 +141,7 @@ async def github_callback(
     code: str, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
     """Exchange GitHub OAuth authorization code for JWT token pair."""
-    if not settings.GITHUB_CLIENT_ID or not settings.GITHUB_CLIENT_SECRET:
+    if settings.GITHUB_CLIENT_ID is None or settings.GITHUB_CLIENT_SECRET is None:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail="GitHub OAuth is not configured",
@@ -150,6 +165,13 @@ async def github_callback(
                 detail="Failed to exchange GitHub authorization code",
             )
         token_data = token_resp.json()
+
+        # GitHub can return 200 with an error field (e.g. bad_verification_code)
+        if "error" in token_data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"GitHub OAuth error: {token_data['error']}",
+            )
         github_access_token: str = token_data["access_token"]
 
         # Fetch user info
@@ -213,6 +235,13 @@ async def refresh_token(body: RefreshRequest) -> TokenResponse:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
+        )
+
+    # Reject access tokens used on the refresh endpoint
+    if payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token is not a refresh token",
         )
 
     email: str | None = payload.get("sub")

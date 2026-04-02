@@ -47,6 +47,7 @@ select = ["E", "F", "I", "UP"]
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+exclude = ["mutants/"]
 
 [tool.mutmut]
 paths_to_mutate = "app/core/database.py"
