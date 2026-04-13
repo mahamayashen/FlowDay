@@ -99,6 +99,24 @@ async def test_get_project_returns_project_for_owner() -> None:
 
 
 @pytest.mark.asyncio
+async def test_get_project_queries_by_project_id() -> None:
+    """get_project must query WHERE id == project_id (not !=)."""
+    fake = _make_fake_project()
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = fake
+    db.execute.return_value = mock_result
+
+    await get_project(db=db, project_id=PROJECT_ID, user_id=USER_ID)
+
+    # Verify the WHERE clause uses == (not !=)
+    executed_stmt = db.execute.call_args[0][0]
+    where_clause = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "projects.id =" in where_clause
+    assert "projects.id !=" not in where_clause
+
+
+@pytest.mark.asyncio
 async def test_get_project_raises_404_when_not_found() -> None:
     """get_project must raise 404 when project does not exist."""
     db = AsyncMock()
@@ -110,6 +128,7 @@ async def test_get_project_raises_404_when_not_found() -> None:
         await get_project(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
     assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Project not found"
 
 
 @pytest.mark.asyncio
@@ -125,6 +144,7 @@ async def test_get_project_raises_403_for_wrong_user() -> None:
         await get_project(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
     assert exc_info.value.status_code == 403
+    assert exc_info.value.detail == "Not authorized to access this project"
 
 
 # ---------------------------------------------------------------------------
@@ -145,6 +165,22 @@ async def test_list_projects_returns_user_projects() -> None:
     result = await list_projects(db=db, user_id=USER_ID)
 
     assert len(result) == 2
+
+
+@pytest.mark.asyncio
+async def test_list_projects_queries_by_user_id() -> None:
+    """list_projects must query WHERE user_id == user_id (not !=)."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    db.execute.return_value = mock_result
+
+    await list_projects(db=db, user_id=USER_ID)
+
+    executed_stmt = db.execute.call_args[0][0]
+    where_clause = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "projects.user_id =" in where_clause
+    assert "projects.user_id !=" not in where_clause
 
 
 @pytest.mark.asyncio
@@ -181,6 +217,30 @@ async def test_update_project_applies_changes() -> None:
 
     assert result.name == "Updated Name"
     db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_update_project_only_sets_provided_fields() -> None:
+    """update_project must use exclude_unset=True to skip unset fields."""
+    fake = _make_fake_project()
+    fake.name = "Original"
+    fake.color = "#FF0000"
+    fake.client_name = "OldClient"
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = fake
+    db.execute.return_value = mock_result
+
+    # Only update name — color, client_name, etc. should NOT be touched
+    data = ProjectUpdate(name="NewName")
+    await update_project(
+        db=db, project_id=PROJECT_ID, user_id=USER_ID, data=data
+    )
+
+    # name was set, but color and client_name should remain unchanged
+    assert fake.name == "NewName"
+    assert fake.color == "#FF0000"
+    assert fake.client_name == "OldClient"
 
 
 @pytest.mark.asyncio
