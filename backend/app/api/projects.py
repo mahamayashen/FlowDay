@@ -48,9 +48,7 @@ async def get_project_route(
     db: AsyncSession = Depends(get_db),
 ) -> ProjectResponse:
     """Get a single project by ID."""
-    project = await get_project(
-        db=db, project_id=project_id, user_id=current_user.id
-    )
+    project = await get_project(db=db, project_id=project_id, user_id=current_user.id)
     return ProjectResponse.model_validate(project)
 
 

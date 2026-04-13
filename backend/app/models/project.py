@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base
 
 
-class ProjectStatus(str, enum.Enum):
+class ProjectStatus(enum.StrEnum):
     """Project lifecycle status."""
 
     ACTIVE = "active"
@@ -33,9 +33,7 @@ class Project(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     color: Mapped[str] = mapped_column(String(7), nullable=False)
     client_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    hourly_rate: Mapped[Decimal | None] = mapped_column(
-        Numeric(10, 2), nullable=True
-    )
+    hourly_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     status: Mapped[ProjectStatus] = mapped_column(
         Enum(ProjectStatus, name="projectstatus"),
         nullable=False,

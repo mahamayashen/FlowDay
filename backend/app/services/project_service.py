@@ -27,13 +27,9 @@ async def create_project(
     return project
 
 
-async def _get_project_or_404(
-    db: AsyncSession, project_id: uuid.UUID
-) -> Project:
+async def _get_project_or_404(db: AsyncSession, project_id: uuid.UUID) -> Project:
     """Fetch a project by ID or raise 404."""
-    result = await db.execute(
-        select(Project).where(Project.id == project_id)
-    )
+    result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
     if project is None:
         raise HTTPException(
@@ -61,13 +57,9 @@ async def get_project(
     return project
 
 
-async def list_projects(
-    db: AsyncSession, user_id: uuid.UUID
-) -> list[Project]:
+async def list_projects(db: AsyncSession, user_id: uuid.UUID) -> list[Project]:
     """List all projects for a given user."""
-    result = await db.execute(
-        select(Project).where(Project.user_id == user_id)
-    )
+    result = await db.execute(select(Project).where(Project.user_id == user_id))
     return list(result.scalars().all())
 
 

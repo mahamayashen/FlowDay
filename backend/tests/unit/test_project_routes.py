@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -52,15 +51,14 @@ async def client() -> AsyncClient:
         yield ac
 
 
-def _override_auth() -> None:
+def _setup_overrides() -> None:
+    """Override auth and DB dependencies for route tests."""
     app.dependency_overrides[get_current_user] = _make_fake_user
 
+    async def override_db() -> AsyncMock:  # type: ignore[misc]
+        yield AsyncMock()
 
-def _override_db(mock_db: AsyncMock) -> None:
-    async def override() -> AsyncMock:  # type: ignore[misc]
-        yield mock_db
-
-    app.dependency_overrides[get_db] = override
+    app.dependency_overrides[get_db] = override_db
 
 
 def _clear_overrides() -> None:
@@ -76,7 +74,7 @@ def _clear_overrides() -> None:
 async def test_create_project_returns_201(client: AsyncClient) -> None:
     """POST /projects with valid data must return 201."""
     fake = _make_fake_project()
-    _override_auth()
+    _setup_overrides()
     try:
         with patch(
             "app.api.projects.create_project", new_callable=AsyncMock
@@ -100,9 +98,17 @@ async def test_create_project_returns_401_without_auth(
     client: AsyncClient,
 ) -> None:
     """POST /projects without auth must return 401."""
-    response = await client.post(
-        "/projects", json={"name": "Work", "color": "#FF0000"}
-    )
+
+    async def override_db() -> AsyncMock:  # type: ignore[misc]
+        yield AsyncMock()
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        response = await client.post(
+            "/projects", json={"name": "Work", "color": "#FF0000"}
+        )
+    finally:
+        _clear_overrides()
     assert response.status_code == 401
 
 
@@ -116,7 +122,7 @@ async def test_list_projects_returns_200(client: AsyncClient) -> None:
     """GET /projects must return 200 with list of projects."""
     fake1 = _make_fake_project(name="P1")
     fake2 = _make_fake_project(name="P2")
-    _override_auth()
+    _setup_overrides()
     try:
         with patch(
             "app.api.projects.list_projects", new_callable=AsyncMock
@@ -140,11 +146,9 @@ async def test_list_projects_returns_200(client: AsyncClient) -> None:
 async def test_get_project_returns_200(client: AsyncClient) -> None:
     """GET /projects/{id} must return 200 for existing project."""
     fake = _make_fake_project()
-    _override_auth()
+    _setup_overrides()
     try:
-        with patch(
-            "app.api.projects.get_project", new_callable=AsyncMock
-        ) as mock_get:
+        with patch("app.api.projects.get_project", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = fake
             response = await client.get(f"/projects/{PROJECT_ID}")
     finally:
@@ -163,7 +167,7 @@ async def test_get_project_returns_200(client: AsyncClient) -> None:
 async def test_update_project_returns_200(client: AsyncClient) -> None:
     """PATCH /projects/{id} with valid data must return 200."""
     fake = _make_fake_project(name="Updated")
-    _override_auth()
+    _setup_overrides()
     try:
         with patch(
             "app.api.projects.update_project", new_callable=AsyncMock
@@ -188,7 +192,7 @@ async def test_update_project_returns_200(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_delete_project_returns_204(client: AsyncClient) -> None:
     """DELETE /projects/{id} must return 204 No Content."""
-    _override_auth()
+    _setup_overrides()
     try:
         with patch(
             "app.api.projects.delete_project", new_callable=AsyncMock
@@ -206,5 +210,13 @@ async def test_delete_project_returns_401_without_auth(
     client: AsyncClient,
 ) -> None:
     """DELETE /projects/{id} without auth must return 401."""
-    response = await client.delete(f"/projects/{PROJECT_ID}")
+
+    async def override_db() -> AsyncMock:  # type: ignore[misc]
+        yield AsyncMock()
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        response = await client.delete(f"/projects/{PROJECT_ID}")
+    finally:
+        _clear_overrides()
     assert response.status_code == 401
