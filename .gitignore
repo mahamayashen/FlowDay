@@ -32,6 +32,8 @@ docker-compose.override.yml
 htmlcov/
 .coverage
 .pytest_cache/
+.hypothesis/
+.mutmut-cache/
 
 # Temp
 .git_backup/

@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.core.security import decode_token
 from app.models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/refresh", auto_error=False)
 
 
 async def get_current_user(
@@ -35,6 +35,11 @@ async def get_current_user(
         payload = decode_token(token)
     except JWTError:
         raise credentials_exception
+
+    # Reject refresh tokens used as access tokens
+    if payload.get("type") == "refresh":
+        raise credentials_exception
+
 
     email: str | None = payload.get("sub")
     if email is None:

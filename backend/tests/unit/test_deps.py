@@ -8,7 +8,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.core.deps import get_current_user
-from app.core.security import create_access_token
+from app.core.security import create_access_token, create_refresh_token
 
 
 def _make_fake_user(email: str = "test@example.com") -> MagicMock:
@@ -84,6 +84,17 @@ async def test_get_current_user_raises_401_for_nonexistent_user() -> None:
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = None
     mock_db.execute.return_value = mock_result
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_current_user(token=token, db=mock_db)
+    assert exc_info.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_rejects_refresh_token() -> None:
+    """Refresh token used as bearer must raise HTTPException with status 401."""
+    token = create_refresh_token(subject="test@example.com")
+    mock_db = AsyncMock()
 
     with pytest.raises(HTTPException) as exc_info:
         await get_current_user(token=token, db=mock_db)
