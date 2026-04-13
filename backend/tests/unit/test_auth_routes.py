@@ -68,8 +68,19 @@ async def test_refresh_token_returns_new_access_token(
 ) -> None:
     """POST /auth/refresh with valid refresh token must return new access token."""
     refresh = create_refresh_token(subject="test@example.com")
+    mock_db = _mock_db_session()
 
-    response = await auth_client.post("/auth/refresh", json={"refresh_token": refresh})
+    async def override_get_db():  # type: ignore[no-untyped-def]
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        response = await auth_client.post(
+            "/auth/refresh", json={"refresh_token": refresh}
+        )
+    finally:
+        app.dependency_overrides.clear()
+
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
@@ -126,11 +137,12 @@ def _mock_httpx_client(
 
 
 def _mock_db_session() -> AsyncMock:
-    """Create a mock async DB session for OAuth callback tests."""
+    """Create a mock async DB session for OAuth callback and refresh tests."""
     mock_db = AsyncMock()
     mock_result = MagicMock()
     fake_user = _make_fake_user()
     mock_result.scalar_one.return_value = fake_user
+    mock_result.scalar_one_or_none.return_value = fake_user
     mock_db.execute.return_value = mock_result
     return mock_db
 
