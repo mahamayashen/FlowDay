@@ -248,6 +248,6 @@ async def test_oauth_callback_existing_user_updates_token(
         app.dependency_overrides.clear()
 
     assert response.status_code == 200
-    # Verify upsert was called (execute called for insert + select)
-    assert mock_db.execute.call_count >= 2
+    # Verify upsert was called (single execute with RETURNING)
+    assert mock_db.execute.call_count >= 1
     assert mock_db.commit.call_count == 1

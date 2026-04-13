@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     # OAuth — Google
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None
+    # Note: port 5060 is blocked by Chromium — override via .env in browser-testing scenarios
     GOOGLE_REDIRECT_URI: str = "http://localhost:5060/auth/google/callback"
 
     # OAuth — GitHub

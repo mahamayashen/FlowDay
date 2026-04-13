@@ -15,7 +15,11 @@ ALGORITHM = "HS256"
 
 @lru_cache(maxsize=1)
 def _get_fernet() -> Fernet:
-    """Derive a Fernet key from SECRET_KEY (cached after first call)."""
+    """Derive a Fernet key from SECRET_KEY (cached after first call).
+
+    Note: cached for the lifetime of the process. If SECRET_KEY is rotated,
+    restart the service or call ``_get_fernet.cache_clear()`` first.
+    """
     key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
     fernet_key = base64.urlsafe_b64encode(key)
     return Fernet(fernet_key)

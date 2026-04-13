@@ -59,13 +59,11 @@ async def _handle_oauth_callback(
     )
     stmt = stmt.on_conflict_do_update(
         index_elements=["email"],
-        set_=token_field,
-    )
-    await db.execute(stmt)
-    await db.commit()
-
-    result = await db.execute(select(User).where(User.email == email))
+        set_={**token_field, "updated_at": now},
+    ).returning(User)
+    result = await db.execute(stmt)
     user = result.scalar_one()
+    await db.commit()
 
     access = create_access_token(subject=user.email)
     refresh = create_refresh_token(subject=user.email)
@@ -227,7 +225,9 @@ async def get_me(current_user: User = Depends(get_current_user)) -> User:
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(body: RefreshRequest) -> TokenResponse:
+async def refresh_token(
+    body: RefreshRequest, db: AsyncSession = Depends(get_db)
+) -> TokenResponse:
     """Exchange a valid refresh token for a new access token."""
     try:
         payload = decode_token(body.refresh_token)
@@ -249,6 +249,14 @@ async def refresh_token(body: RefreshRequest) -> TokenResponse:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
+        )
+
+    # Verify user still exists (e.g. not deleted/deactivated)
+    result = await db.execute(select(User).where(User.email == email))
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User no longer exists",
         )
 
     new_access = create_access_token(subject=email)
