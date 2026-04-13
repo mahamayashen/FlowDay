@@ -40,6 +40,7 @@ async def get_current_user(
     if payload.get("type") == "refresh":
         raise credentials_exception
 
+
     email: str | None = payload.get("sub")
     if email is None:
         raise credentials_exception
