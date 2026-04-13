@@ -5,7 +5,7 @@ import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String
+from sqlalchemy import DateTime, ForeignKey, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,8 +34,8 @@ class Project(Base):
     color: Mapped[str] = mapped_column(String(7), nullable=False)
     client_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     hourly_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
-    status: Mapped[ProjectStatus] = mapped_column(
-        Enum(ProjectStatus, name="projectstatus"),
+    status: Mapped[str] = mapped_column(
+        String(20),
         nullable=False,
         default=ProjectStatus.ACTIVE,
     )
