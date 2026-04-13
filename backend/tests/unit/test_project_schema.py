@@ -94,6 +94,26 @@ def test_update_rejects_invalid_hex_color() -> None:
         ProjectUpdate(color="not-hex")
 
 
+def test_update_accepts_valid_status() -> None:
+    """ProjectUpdate must accept valid status values."""
+    p = ProjectUpdate(status="active")
+    assert p.status == "active"
+    p2 = ProjectUpdate(status="archived")
+    assert p2.status == "archived"
+
+
+def test_update_rejects_invalid_status() -> None:
+    """ProjectUpdate must reject invalid status values."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(status="deleted")
+
+
+def test_update_rejects_empty_string_status() -> None:
+    """ProjectUpdate must reject empty string as status."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(status="")
+
+
 # ---------------------------------------------------------------------------
 # ProjectResponse
 # ---------------------------------------------------------------------------

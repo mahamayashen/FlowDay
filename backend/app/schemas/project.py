@@ -7,7 +7,10 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from app.models.project import ProjectStatus
+
 _HEX_COLOR_RE = re.compile(r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+_VALID_STATUSES = {s.value for s in ProjectStatus}
 
 
 class ProjectCreate(BaseModel):
@@ -43,6 +46,15 @@ class ProjectUpdate(BaseModel):
         """Color must be a valid hex color code if provided."""
         if v is not None and not _HEX_COLOR_RE.match(v):
             msg = "color must be a hex color code (e.g. #FF0000 or #FFF)"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str | None) -> str | None:
+        """Status must be a valid ProjectStatus value if provided."""
+        if v is not None and v not in _VALID_STATUSES:
+            msg = f"status must be one of: {', '.join(sorted(_VALID_STATUSES))}"
             raise ValueError(msg)
         return v
 

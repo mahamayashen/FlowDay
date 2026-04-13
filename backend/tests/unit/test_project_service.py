@@ -233,9 +233,7 @@ async def test_update_project_only_sets_provided_fields() -> None:
 
     # Only update name — color, client_name, etc. should NOT be touched
     data = ProjectUpdate(name="NewName")
-    await update_project(
-        db=db, project_id=PROJECT_ID, user_id=USER_ID, data=data
-    )
+    await update_project(db=db, project_id=PROJECT_ID, user_id=USER_ID, data=data)
 
     # name was set, but color and client_name should remain unchanged
     assert fake.name == "NewName"

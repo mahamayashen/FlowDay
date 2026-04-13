@@ -34,9 +34,12 @@ def upgrade() -> None:
             "status",
             sa.String(20),
             nullable=False,
-            server_default="ACTIVE",
+            server_default="active",
         ),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.CheckConstraint(
+            "status IN ('active', 'archived')", name="ck_projects_status"
+        ),
     )
 
 

@@ -84,6 +84,12 @@ def test_project_status_enum_values() -> None:
     assert ProjectStatus.ARCHIVED.value == "archived"
 
 
+def test_project_has_status_check_constraint() -> None:
+    """Project must have a CHECK constraint on status column."""
+    constraints = {c.name for c in Project.__table__.constraints}
+    assert "ck_projects_status" in constraints
+
+
 def test_project_repr_contains_name() -> None:
     """Project.__repr__ should include the project name for debugging."""
     p = Project(
