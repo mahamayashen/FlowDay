@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import HTTPException
 
-from app.models.task import Task, TaskStatus
+from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate
 from app.services.task_service import (
     create_task,
@@ -56,9 +56,7 @@ async def test_create_task_returns_task(mock_get_project: AsyncMock) -> None:
     db = AsyncMock()
     data = TaskCreate(title="Write tests")
 
-    result = await create_task(
-        db=db, project_id=PROJECT_ID, user_id=USER_ID, data=data
-    )
+    result = await create_task(db=db, project_id=PROJECT_ID, user_id=USER_ID, data=data)
 
     assert isinstance(result, Task)
     assert result.title == "Write tests"
@@ -80,9 +78,7 @@ async def test_create_task_with_optional_fields(mock_get_project: AsyncMock) -> 
         priority="high",
     )
 
-    result = await create_task(
-        db=db, project_id=PROJECT_ID, user_id=USER_ID, data=data
-    )
+    result = await create_task(db=db, project_id=PROJECT_ID, user_id=USER_ID, data=data)
 
     assert result.description == "Some description"
     assert result.estimate_minutes == 60
@@ -109,7 +105,9 @@ async def test_create_task_raises_404_for_wrong_project_owner(
     mock_get_project: AsyncMock,
 ) -> None:
     """create_task must propagate 404 when project ownership fails."""
-    mock_get_project.side_effect = HTTPException(status_code=404, detail="Project not found")
+    mock_get_project.side_effect = HTTPException(
+        status_code=404, detail="Project not found"
+    )
     db = AsyncMock()
     data = TaskCreate(title="Work")
 
@@ -151,9 +149,7 @@ async def test_get_task_raises_404_when_not_found(mock_get_project: AsyncMock) -
     db.execute.return_value = mock_result
 
     with pytest.raises(HTTPException) as exc_info:
-        await get_task(
-            db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID
-        )
+        await get_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
 
     assert exc_info.value.status_code == 404
     assert exc_info.value.detail == "Task not found"
@@ -208,9 +204,7 @@ async def test_get_task_verifies_task_belongs_to_project(
     db.execute.return_value = mock_result
 
     with pytest.raises(HTTPException) as exc_info:
-        await get_task(
-            db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID
-        )
+        await get_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
 
     assert exc_info.value.status_code == 404
 
@@ -231,9 +225,7 @@ async def test_list_tasks_returns_project_tasks(mock_get_project: AsyncMock) -> 
     mock_result.scalars.return_value.all.return_value = [fake1, fake2]
     db.execute.return_value = mock_result
 
-    result = await list_tasks(
-        db=db, project_id=PROJECT_ID, user_id=USER_ID
-    )
+    result = await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
     assert len(result) == 2
 
@@ -264,9 +256,7 @@ async def test_list_tasks_returns_empty_list(mock_get_project: AsyncMock) -> Non
     mock_result.scalars.return_value.all.return_value = []
     db.execute.return_value = mock_result
 
-    result = await list_tasks(
-        db=db, project_id=PROJECT_ID, user_id=USER_ID
-    )
+    result = await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
     assert result == []
 
@@ -478,9 +468,7 @@ async def test_delete_task_removes_task(mock_get_project: AsyncMock) -> None:
     mock_result.scalar_one_or_none.return_value = fake
     db.execute.return_value = mock_result
 
-    await delete_task(
-        db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID
-    )
+    await delete_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
 
     db.delete.assert_awaited_once_with(fake)
     db.commit.assert_awaited_once()
@@ -517,9 +505,7 @@ async def test_delete_task_verifies_project_ownership(
     mock_result.scalar_one_or_none.return_value = fake
     db.execute.return_value = mock_result
 
-    await delete_task(
-        db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID
-    )
+    await delete_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
 
     mock_get_project.assert_awaited_once_with(db, PROJECT_ID, USER_ID)
 

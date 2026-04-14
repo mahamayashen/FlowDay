@@ -10,7 +10,7 @@ from httpx import ASGITransport, AsyncClient
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.main import app
-from app.models.task import Task, TaskStatus
+from app.models.task import Task
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 PROJECT_ID = uuid.UUID("00000000-0000-0000-0000-aaaaaaaaaaaa")
@@ -80,9 +80,7 @@ async def test_create_task_returns_201(client: AsyncClient) -> None:
     fake = _make_fake_task()
     _setup_overrides()
     try:
-        with patch(
-            "app.api.tasks.create_task", new_callable=AsyncMock
-        ) as mock_create:
+        with patch("app.api.tasks.create_task", new_callable=AsyncMock) as mock_create:
             mock_create.return_value = fake
             response = await client.post(
                 BASE_URL,
@@ -108,9 +106,7 @@ async def test_create_task_returns_401_without_auth(
 
     app.dependency_overrides[get_db] = override_db
     try:
-        response = await client.post(
-            BASE_URL, json={"title": "Work"}
-        )
+        response = await client.post(BASE_URL, json={"title": "Work"})
     finally:
         _clear_overrides()
     assert response.status_code == 401
@@ -128,9 +124,7 @@ async def test_list_tasks_returns_200(client: AsyncClient) -> None:
     fake2 = _make_fake_task(title="T2")
     _setup_overrides()
     try:
-        with patch(
-            "app.api.tasks.list_tasks", new_callable=AsyncMock
-        ) as mock_list:
+        with patch("app.api.tasks.list_tasks", new_callable=AsyncMock) as mock_list:
             mock_list.return_value = [fake1, fake2]
             response = await client.get(BASE_URL)
     finally:
@@ -152,9 +146,7 @@ async def test_get_task_returns_200(client: AsyncClient) -> None:
     fake = _make_fake_task()
     _setup_overrides()
     try:
-        with patch(
-            "app.api.tasks.get_task", new_callable=AsyncMock
-        ) as mock_get:
+        with patch("app.api.tasks.get_task", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = fake
             response = await client.get(f"{BASE_URL}/{TASK_ID}")
     finally:
@@ -175,9 +167,7 @@ async def test_update_task_returns_200(client: AsyncClient) -> None:
     fake = _make_fake_task(title="Updated")
     _setup_overrides()
     try:
-        with patch(
-            "app.api.tasks.update_task", new_callable=AsyncMock
-        ) as mock_update:
+        with patch("app.api.tasks.update_task", new_callable=AsyncMock) as mock_update:
             mock_update.return_value = fake
             response = await client.patch(
                 f"{BASE_URL}/{TASK_ID}",
@@ -200,9 +190,7 @@ async def test_delete_task_returns_204(client: AsyncClient) -> None:
     """DELETE /projects/{pid}/tasks/{tid} must return 204 No Content."""
     _setup_overrides()
     try:
-        with patch(
-            "app.api.tasks.delete_task", new_callable=AsyncMock
-        ) as mock_delete:
+        with patch("app.api.tasks.delete_task", new_callable=AsyncMock) as mock_delete:
             mock_delete.return_value = None
             response = await client.delete(f"{BASE_URL}/{TASK_ID}")
     finally:
