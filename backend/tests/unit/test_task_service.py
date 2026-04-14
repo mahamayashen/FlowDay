@@ -350,6 +350,22 @@ async def test_update_task_clears_completed_at_on_status_change() -> None:
 
 
 @pytest.mark.asyncio
+async def test_update_task_completed_at_wins_over_setattr_loop() -> None:
+    """completed_at must be set AFTER the setattr loop so the service value wins."""
+    fake = _make_fake_task(status="todo")
+    fake.completed_at = None
+    db = _mock_db_returning(fake)
+
+    data = TaskUpdate(status="done")
+    await update_task(
+        db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID, data=data
+    )
+
+    # completed_at must be a real datetime, not None — proving service logic runs last
+    assert isinstance(fake.completed_at, datetime)
+
+
+@pytest.mark.asyncio
 async def test_update_task_raises_404_when_not_found() -> None:
     """update_task must raise 404 when task does not exist."""
     db = _mock_db_returning(None)

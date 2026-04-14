@@ -105,14 +105,14 @@ async def update_task(
 
     updates = data.model_dump(exclude_unset=True)
 
+    for field, value in updates.items():
+        setattr(task, field, value)
+
     if "status" in updates:
         if TaskStatus(updates["status"]) == TaskStatus.DONE:
             task.completed_at = datetime.now(UTC)
         else:
             task.completed_at = None
-
-    for field, value in updates.items():
-        setattr(task, field, value)
 
     await db.commit()
     await db.refresh(task)

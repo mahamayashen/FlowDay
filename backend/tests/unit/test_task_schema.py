@@ -185,6 +185,21 @@ def test_update_rejects_empty_string_status() -> None:
         TaskUpdate(status="")
 
 
+def test_update_explicit_null_description_is_included_in_unset_dump() -> None:
+    """Explicit null description must appear in exclude_unset dump."""
+    t = TaskUpdate.model_validate({"description": None})
+    dump = t.model_dump(exclude_unset=True)
+    assert "description" in dump
+    assert dump["description"] is None
+
+
+def test_update_omitted_description_excluded_from_unset_dump() -> None:
+    """Omitting description must NOT appear in exclude_unset dump."""
+    t = TaskUpdate.model_validate({"title": "X"})
+    dump = t.model_dump(exclude_unset=True)
+    assert "description" not in dump
+
+
 # ---------------------------------------------------------------------------
 # TaskResponse
 # ---------------------------------------------------------------------------
