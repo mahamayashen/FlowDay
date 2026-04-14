@@ -86,11 +86,40 @@ async def list_tasks(
     skip: int = 0,
     limit: int = 50,
 ) -> list[Task]:
-    """List tasks for a given project with pagination."""
-    await get_project(db, project_id, user_id)
-    stmt = select(Task).where(Task.project_id == project_id).offset(skip).limit(limit)
+    """List tasks for a given project with pagination.
+
+    Uses a single query with an EXISTS subquery to verify project ownership
+    and fetch tasks in one round-trip.
+    """
+    ownership = (
+        select(Project.id)
+        .where(Project.id == project_id, Project.user_id == user_id)
+        .exists()
+    )
+    stmt = (
+        select(Task)
+        .where(Task.project_id == project_id, ownership)
+        .offset(skip)
+        .limit(limit)
+    )
     result = await db.execute(stmt)
-    return list(result.scalars().all())
+    rows = list(result.scalars().all())
+    if not rows:
+        # Distinguish empty project from missing/unauthorized project.
+        # If the EXISTS subquery matched, the project is valid — just has no tasks.
+        check = await db.execute(
+            select(
+                select(Project.id)
+                .where(Project.id == project_id, Project.user_id == user_id)
+                .exists()
+            )
+        )
+        if not check.scalar():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
+    return rows
 
 
 async def update_task(

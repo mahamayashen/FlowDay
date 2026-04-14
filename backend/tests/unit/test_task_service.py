@@ -199,20 +199,30 @@ async def test_get_task_raises_404_for_wrong_project() -> None:
 
 
 # ---------------------------------------------------------------------------
-# list_tasks  (still uses get_project for ownership before SELECT)
+# list_tasks  (single query with EXISTS ownership subquery)
 # ---------------------------------------------------------------------------
 
 
+def _mock_db_for_list(
+    tasks: list[object],
+    ownership_exists: bool = True,
+) -> AsyncMock:
+    """Mock db for list_tasks: first execute returns tasks, second checks ownership."""
+    db = AsyncMock()
+    task_result = MagicMock()
+    task_result.scalars.return_value.all.return_value = tasks
+    ownership_result = MagicMock()
+    ownership_result.scalar.return_value = ownership_exists
+    db.execute.side_effect = [task_result, ownership_result]
+    return db
+
+
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_list_tasks_returns_project_tasks(mock_get_project: AsyncMock) -> None:
+async def test_list_tasks_returns_project_tasks() -> None:
     """list_tasks must return tasks for the given project."""
     fake1 = _make_fake_task(title="T1")
     fake2 = _make_fake_task(title="T2")
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.all.return_value = [fake1, fake2]
-    db.execute.return_value = mock_result
+    db = _mock_db_for_list([fake1, fake2])
 
     result = await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
@@ -220,30 +230,26 @@ async def test_list_tasks_returns_project_tasks(mock_get_project: AsyncMock) -> 
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_list_tasks_queries_by_project_id(mock_get_project: AsyncMock) -> None:
-    """list_tasks must query WHERE project_id == project_id (not !=)."""
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.all.return_value = []
-    db.execute.return_value = mock_result
+async def test_list_tasks_queries_by_project_id() -> None:
+    """list_tasks must include project_id and EXISTS in query."""
+    fake = _make_fake_task()
+    db = _mock_db_for_list([fake])
 
     await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
-    executed_stmt = db.execute.call_args[0][0]
-    where_clause = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
-    assert "tasks.project_id =" in where_clause
-    assert "tasks.project_id !=" not in where_clause
+    executed_stmt = db.execute.call_args_list[0][0][0]
+    compiled = str(
+        executed_stmt.compile(compile_kwargs={"literal_binds": True})
+    )
+    assert "tasks.project_id =" in compiled
+    assert "tasks.project_id !=" not in compiled
+    assert "EXISTS" in compiled.upper()
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_list_tasks_returns_empty_list(mock_get_project: AsyncMock) -> None:
+async def test_list_tasks_returns_empty_for_valid_project() -> None:
     """list_tasks must return empty list when project has no tasks."""
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.all.return_value = []
-    db.execute.return_value = mock_result
+    db = _mock_db_for_list([], ownership_exists=True)
 
     result = await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
@@ -251,36 +257,48 @@ async def test_list_tasks_returns_empty_list(mock_get_project: AsyncMock) -> Non
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_list_tasks_applies_pagination(mock_get_project: AsyncMock) -> None:
+async def test_list_tasks_raises_404_for_invalid_project() -> None:
+    """list_tasks must raise 404 when project not found or not owned."""
+    db = _mock_db_for_list([], ownership_exists=False)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Project not found"
+
+
+@pytest.mark.asyncio
+async def test_list_tasks_applies_pagination() -> None:
     """list_tasks must apply offset and limit to the query."""
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.all.return_value = []
-    db.execute.return_value = mock_result
+    db = _mock_db_for_list([], ownership_exists=True)
 
-    await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID, skip=10, limit=5)
+    await list_tasks(
+        db=db, project_id=PROJECT_ID, user_id=USER_ID, skip=10, limit=5
+    )
 
-    executed_stmt = db.execute.call_args[0][0]
-    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    executed_stmt = db.execute.call_args_list[0][0][0]
+    compiled = str(
+        executed_stmt.compile(compile_kwargs={"literal_binds": True})
+    )
     assert "LIMIT" in compiled.upper()
     assert "OFFSET" in compiled.upper()
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_list_tasks_verifies_project_ownership(
-    mock_get_project: AsyncMock,
-) -> None:
-    """list_tasks must call get_project to verify project ownership."""
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.all.return_value = []
-    db.execute.return_value = mock_result
+async def test_list_tasks_ownership_via_exists_subquery() -> None:
+    """list_tasks must check user_id via EXISTS subquery."""
+    fake = _make_fake_task()
+    db = _mock_db_for_list([fake])
 
     await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
-    mock_get_project.assert_awaited_once_with(db, PROJECT_ID, USER_ID)
+    executed_stmt = db.execute.call_args_list[0][0][0]
+    compiled = str(
+        executed_stmt.compile(compile_kwargs={"literal_binds": True})
+    )
+    assert "projects.user_id" in compiled
+    assert "EXISTS" in compiled.upper()
 
 
 # ---------------------------------------------------------------------------
@@ -483,36 +501,28 @@ async def test_delete_task_raises_404_for_wrong_project() -> None:
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_list_tasks_default_skip_is_zero(
-    mock_get_project: AsyncMock,
-) -> None:
+async def test_list_tasks_default_skip_is_zero() -> None:
     """list_tasks default skip must be 0 (not 1)."""
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.all.return_value = []
-    db.execute.return_value = mock_result
+    db = _mock_db_for_list([], ownership_exists=True)
 
     await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
-    executed_stmt = db.execute.call_args[0][0]
-    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    executed_stmt = db.execute.call_args_list[0][0][0]
+    compiled = str(
+        executed_stmt.compile(compile_kwargs={"literal_binds": True})
+    )
     assert "OFFSET 0" in compiled
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_list_tasks_default_limit_is_50(
-    mock_get_project: AsyncMock,
-) -> None:
+async def test_list_tasks_default_limit_is_50() -> None:
     """list_tasks default limit must be 50 (not 51)."""
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.all.return_value = []
-    db.execute.return_value = mock_result
+    db = _mock_db_for_list([], ownership_exists=True)
 
     await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
-    executed_stmt = db.execute.call_args[0][0]
-    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    executed_stmt = db.execute.call_args_list[0][0][0]
+    compiled = str(
+        executed_stmt.compile(compile_kwargs={"literal_binds": True})
+    )
     assert "LIMIT 50" in compiled
