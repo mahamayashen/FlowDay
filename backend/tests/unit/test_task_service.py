@@ -44,8 +44,17 @@ def _make_fake_task(
     return fake
 
 
+def _mock_db_returning(obj: object) -> AsyncMock:
+    """Create a mocked AsyncSession whose execute returns obj via scalar_one_or_none."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = obj
+    db.execute.return_value = mock_result
+    return db
+
+
 # ---------------------------------------------------------------------------
-# create_task
+# create_task  (still uses get_project for ownership before INSERT)
 # ---------------------------------------------------------------------------
 
 
@@ -118,19 +127,15 @@ async def test_create_task_raises_404_for_wrong_project_owner(
 
 
 # ---------------------------------------------------------------------------
-# get_task
+# get_task  (uses _get_task_with_ownership — single joined query)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_get_task_returns_task_for_owner(mock_get_project: AsyncMock) -> None:
-    """get_task must return the task when project ownership passes."""
+async def test_get_task_returns_task_for_owner() -> None:
+    """get_task must return the task when joined ownership query succeeds."""
     fake = _make_fake_task()
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(fake)
 
     result = await get_task(
         db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID
@@ -140,13 +145,9 @@ async def test_get_task_returns_task_for_owner(mock_get_project: AsyncMock) -> N
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_get_task_raises_404_when_not_found(mock_get_project: AsyncMock) -> None:
+async def test_get_task_raises_404_when_not_found() -> None:
     """get_task must raise 404 when task does not exist."""
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(None)
 
     with pytest.raises(HTTPException) as exc_info:
         await get_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
@@ -156,52 +157,39 @@ async def test_get_task_raises_404_when_not_found(mock_get_project: AsyncMock) -
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_get_task_verifies_project_ownership(
-    mock_get_project: AsyncMock,
-) -> None:
-    """get_task must call get_project to verify project ownership."""
-    fake = _make_fake_task()
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+async def test_get_task_raises_404_for_wrong_project_owner() -> None:
+    """get_task must raise 404 when user doesn't own the project (joined query)."""
+    db = _mock_db_returning(None)  # join fails → no result
 
-    await get_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
+    with pytest.raises(HTTPException) as exc_info:
+        await get_task(
+            db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=OTHER_USER_ID
+        )
 
-    mock_get_project.assert_awaited_once_with(db, PROJECT_ID, USER_ID)
+    assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_get_task_queries_by_task_id(mock_get_project: AsyncMock) -> None:
-    """get_task must query WHERE id == task_id (not !=)."""
+async def test_get_task_query_joins_project_for_ownership() -> None:
+    """get_task must use a joined query that checks task_id, project_id, and user_id."""
     fake = _make_fake_task()
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(fake)
 
     await get_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
 
     executed_stmt = db.execute.call_args[0][0]
-    where_clause = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
-    assert "tasks.id =" in where_clause
-    assert "tasks.id !=" not in where_clause
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "tasks.id =" in compiled
+    assert "tasks.id !=" not in compiled
+    assert "tasks.project_id =" in compiled
+    assert "projects.user_id =" in compiled
+    assert "JOIN" in compiled.upper()
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_get_task_verifies_task_belongs_to_project(
-    mock_get_project: AsyncMock,
-) -> None:
-    """get_task must raise 404 if task.project_id doesn't match project_id."""
-    other_project_id = uuid.UUID("00000000-0000-0000-0000-cccccccccccc")
-    fake = _make_fake_task(project_id=other_project_id)
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+async def test_get_task_raises_404_for_wrong_project() -> None:
+    """get_task must raise 404 if task belongs to a different project."""
+    db = _mock_db_returning(None)  # project_id mismatch → no result
 
     with pytest.raises(HTTPException) as exc_info:
         await get_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
@@ -211,7 +199,7 @@ async def test_get_task_verifies_task_belongs_to_project(
 
 
 # ---------------------------------------------------------------------------
-# list_tasks
+# list_tasks  (still uses get_project for ownership before SELECT)
 # ---------------------------------------------------------------------------
 
 
@@ -296,19 +284,15 @@ async def test_list_tasks_verifies_project_ownership(
 
 
 # ---------------------------------------------------------------------------
-# update_task
+# update_task  (uses _get_task_with_ownership — single joined query)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_update_task_applies_changes(mock_get_project: AsyncMock) -> None:
+async def test_update_task_applies_changes() -> None:
     """update_task must apply only the provided fields."""
     fake = _make_fake_task()
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(fake)
 
     data = TaskUpdate(title="Updated Title")
     result = await update_task(
@@ -320,18 +304,12 @@ async def test_update_task_applies_changes(mock_get_project: AsyncMock) -> None:
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_update_task_only_sets_provided_fields(
-    mock_get_project: AsyncMock,
-) -> None:
+async def test_update_task_only_sets_provided_fields() -> None:
     """update_task must use exclude_unset=True to skip unset fields."""
     fake = _make_fake_task()
     fake.title = "Original"
     fake.description = "Old desc"
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(fake)
 
     data = TaskUpdate(title="NewTitle")
     await update_task(
@@ -343,17 +321,11 @@ async def test_update_task_only_sets_provided_fields(
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_update_task_sets_completed_at_on_done(
-    mock_get_project: AsyncMock,
-) -> None:
+async def test_update_task_sets_completed_at_on_done() -> None:
     """update_task must set completed_at when status changes to done."""
     fake = _make_fake_task(status="todo")
     fake.completed_at = None
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(fake)
 
     data = TaskUpdate(status="done")
     await update_task(
@@ -364,16 +336,10 @@ async def test_update_task_sets_completed_at_on_done(
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_update_task_clears_completed_at_on_status_change(
-    mock_get_project: AsyncMock,
-) -> None:
+async def test_update_task_clears_completed_at_on_status_change() -> None:
     """update_task must clear completed_at when status changes away from done."""
     fake = _make_fake_task(status="done", completed_at=datetime.now(UTC))
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(fake)
 
     data = TaskUpdate(status="todo")
     await update_task(
@@ -384,15 +350,9 @@ async def test_update_task_clears_completed_at_on_status_change(
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_update_task_raises_404_when_not_found(
-    mock_get_project: AsyncMock,
-) -> None:
+async def test_update_task_raises_404_when_not_found() -> None:
     """update_task must raise 404 when task does not exist."""
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(None)
 
     with pytest.raises(HTTPException) as exc_info:
         await update_task(
@@ -407,16 +367,10 @@ async def test_update_task_raises_404_when_not_found(
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_update_task_verifies_project_ownership(
-    mock_get_project: AsyncMock,
-) -> None:
-    """update_task must call get_project to verify project ownership."""
+async def test_update_task_query_joins_for_ownership() -> None:
+    """update_task must verify ownership via joined query."""
     fake = _make_fake_task()
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(fake)
 
     await update_task(
         db=db,
@@ -426,21 +380,16 @@ async def test_update_task_verifies_project_ownership(
         data=TaskUpdate(title="X"),
     )
 
-    mock_get_project.assert_awaited_once_with(db, PROJECT_ID, USER_ID)
+    executed_stmt = db.execute.call_args[0][0]
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "projects.user_id =" in compiled
+    assert "JOIN" in compiled.upper()
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_update_task_verifies_task_belongs_to_project(
-    mock_get_project: AsyncMock,
-) -> None:
-    """update_task must raise 404 if task.project_id doesn't match."""
-    other_project_id = uuid.UUID("00000000-0000-0000-0000-cccccccccccc")
-    fake = _make_fake_task(project_id=other_project_id)
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+async def test_update_task_raises_404_for_wrong_project() -> None:
+    """update_task must raise 404 if task doesn't belong to project."""
+    db = _mock_db_returning(None)
 
     with pytest.raises(HTTPException) as exc_info:
         await update_task(
@@ -455,19 +404,15 @@ async def test_update_task_verifies_task_belongs_to_project(
 
 
 # ---------------------------------------------------------------------------
-# delete_task
+# delete_task  (uses _get_task_with_ownership — single joined query)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_delete_task_removes_task(mock_get_project: AsyncMock) -> None:
+async def test_delete_task_removes_task() -> None:
     """delete_task must delete the task from the database."""
     fake = _make_fake_task()
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(fake)
 
     await delete_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
 
@@ -476,15 +421,9 @@ async def test_delete_task_removes_task(mock_get_project: AsyncMock) -> None:
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_delete_task_raises_404_when_not_found(
-    mock_get_project: AsyncMock,
-) -> None:
+async def test_delete_task_raises_404_when_not_found() -> None:
     """delete_task must raise 404 when task does not exist."""
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(None)
 
     with pytest.raises(HTTPException) as exc_info:
         await delete_task(
@@ -495,34 +434,23 @@ async def test_delete_task_raises_404_when_not_found(
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_delete_task_verifies_project_ownership(
-    mock_get_project: AsyncMock,
-) -> None:
-    """delete_task must call get_project to verify project ownership."""
+async def test_delete_task_query_joins_for_ownership() -> None:
+    """delete_task must verify ownership via joined query."""
     fake = _make_fake_task()
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+    db = _mock_db_returning(fake)
 
     await delete_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
 
-    mock_get_project.assert_awaited_once_with(db, PROJECT_ID, USER_ID)
+    executed_stmt = db.execute.call_args[0][0]
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "projects.user_id =" in compiled
+    assert "JOIN" in compiled.upper()
 
 
 @pytest.mark.asyncio
-@patch("app.services.task_service.get_project", new_callable=AsyncMock)
-async def test_delete_task_verifies_task_belongs_to_project(
-    mock_get_project: AsyncMock,
-) -> None:
-    """delete_task must raise 404 if task.project_id doesn't match."""
-    other_project_id = uuid.UUID("00000000-0000-0000-0000-cccccccccccc")
-    fake = _make_fake_task(project_id=other_project_id)
-    db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = fake
-    db.execute.return_value = mock_result
+async def test_delete_task_raises_404_for_wrong_project() -> None:
+    """delete_task must raise 404 if task doesn't belong to project."""
+    db = _mock_db_returning(None)
 
     with pytest.raises(HTTPException) as exc_info:
         await delete_task(
@@ -534,7 +462,7 @@ async def test_delete_task_verifies_task_belongs_to_project(
 
 
 # ---------------------------------------------------------------------------
-# Mutation-killing tests for default parameters and detail messages
+# Mutation-killing tests for default parameters
 # ---------------------------------------------------------------------------
 
 

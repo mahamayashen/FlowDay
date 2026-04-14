@@ -26,7 +26,10 @@ def upgrade() -> None:
         "tasks",
         sa.Column("id", sa.UUID(), primary_key=True),
         sa.Column(
-            "project_id", sa.UUID(), sa.ForeignKey("projects.id"), nullable=False
+            "project_id",
+            sa.UUID(),
+            sa.ForeignKey("projects.id", ondelete="CASCADE"),
+            nullable=False,
         ),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),

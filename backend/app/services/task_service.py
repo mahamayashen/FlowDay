@@ -7,9 +7,41 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.project import Project
 from app.models.task import Task, TaskStatus
 from app.schemas.task import TaskCreate, TaskUpdate
 from app.services.project_service import get_project
+
+
+async def _get_task_with_ownership(
+    db: AsyncSession,
+    task_id: uuid.UUID,
+    project_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> Task:
+    """Fetch a task verifying it belongs to the project and the user owns it.
+
+    Uses a single joined query instead of separate project + task lookups.
+    Returns 404 for missing task, missing project, or ownership mismatch
+    (prevents ID enumeration).
+    """
+    stmt = (
+        select(Task)
+        .join(Project, Task.project_id == Project.id)
+        .where(
+            Task.id == task_id,
+            Task.project_id == project_id,
+            Project.user_id == user_id,
+        )
+    )
+    result = await db.execute(stmt)
+    task = result.scalar_one_or_none()
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
+    return task
 
 
 async def create_task(
@@ -36,27 +68,6 @@ async def create_task(
     return task
 
 
-async def _get_task_or_404(db: AsyncSession, task_id: uuid.UUID) -> Task:
-    """Fetch a task by ID or raise 404."""
-    result = await db.execute(select(Task).where(Task.id == task_id))
-    task = result.scalar_one_or_none()
-    if task is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found",
-        )
-    return task
-
-
-def _check_task_project(task: Task, project_id: uuid.UUID) -> None:
-    """Raise 404 if the task does not belong to the given project."""
-    if task.project_id != project_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found",
-        )
-
-
 async def get_task(
     db: AsyncSession,
     task_id: uuid.UUID,
@@ -64,10 +75,7 @@ async def get_task(
     user_id: uuid.UUID,
 ) -> Task:
     """Get a single task, enforcing project ownership."""
-    await get_project(db, project_id, user_id)
-    task = await _get_task_or_404(db, task_id)
-    _check_task_project(task, project_id)
-    return task
+    return await _get_task_with_ownership(db, task_id, project_id, user_id)
 
 
 async def list_tasks(
@@ -93,14 +101,12 @@ async def update_task(
     data: TaskUpdate,
 ) -> Task:
     """Update a task, enforcing project ownership. Only set provided fields."""
-    await get_project(db, project_id, user_id)
-    task = await _get_task_or_404(db, task_id)
-    _check_task_project(task, project_id)
+    task = await _get_task_with_ownership(db, task_id, project_id, user_id)
 
     updates = data.model_dump(exclude_unset=True)
 
     if "status" in updates:
-        if updates["status"] == TaskStatus.DONE:
+        if TaskStatus(updates["status"]) == TaskStatus.DONE:
             task.completed_at = datetime.now(UTC)
         else:
             task.completed_at = None
@@ -120,8 +126,6 @@ async def delete_task(
     user_id: uuid.UUID,
 ) -> None:
     """Delete a task, enforcing project ownership."""
-    await get_project(db, project_id, user_id)
-    task = await _get_task_or_404(db, task_id)
-    _check_task_project(task, project_id)
+    task = await _get_task_with_ownership(db, task_id, project_id, user_id)
     await db.delete(task)
     await db.commit()
