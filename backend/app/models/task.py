@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import UTC, datetime, date
+from datetime import UTC, date, datetime
 
 from sqlalchemy import (
     CheckConstraint,
