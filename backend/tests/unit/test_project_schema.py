@@ -59,11 +59,17 @@ def test_create_rejects_invalid_hex_color() -> None:
 
 
 def test_create_accepts_valid_hex_colors() -> None:
-    """ProjectCreate must accept 4-char and 7-char hex colors."""
+    """ProjectCreate must accept and normalize hex colors."""
     p3 = ProjectCreate(name="A", color="#FFF")
-    assert p3.color == "#FFF"
+    assert p3.color == "#FFFFFF"  # 3-char normalized to 6-char
     p6 = ProjectCreate(name="B", color="#FF00FF")
     assert p6.color == "#FF00FF"
+
+
+def test_update_normalizes_short_hex_color() -> None:
+    """ProjectUpdate must normalize 3-char hex to 6-char."""
+    p = ProjectUpdate(color="#ABC")
+    assert p.color == "#AABBCC"
 
 
 # ---------------------------------------------------------------------------

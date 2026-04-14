@@ -24,10 +24,16 @@ class ProjectCreate(BaseModel):
     @field_validator("color")
     @classmethod
     def validate_hex_color(cls, v: str) -> str:
-        """Color must be a valid hex color code (#RGB or #RRGGBB)."""
+        """Color must be a valid hex color code (#RGB or #RRGGBB).
+
+        Normalizes 3-char hex (#FFF) to 6-char (#FFFFFF) for consistency
+        with the String(7) DB column.
+        """
         if not _HEX_COLOR_RE.match(v):
             msg = "color must be a hex color code (e.g. #FF0000 or #FFF)"
             raise ValueError(msg)
+        if len(v) == 4:
+            v = "#" + "".join(c * 2 for c in v[1:])
         return v
 
 
@@ -43,10 +49,15 @@ class ProjectUpdate(BaseModel):
     @field_validator("color")
     @classmethod
     def validate_hex_color(cls, v: str | None) -> str | None:
-        """Color must be a valid hex color code if provided."""
+        """Color must be a valid hex color code if provided.
+
+        Normalizes 3-char hex (#FFF) to 6-char (#FFFFFF).
+        """
         if v is not None and not _HEX_COLOR_RE.match(v):
             msg = "color must be a hex color code (e.g. #FF0000 or #FFF)"
             raise ValueError(msg)
+        if v is not None and len(v) == 4:
+            v = "#" + "".join(c * 2 for c in v[1:])
         return v
 
     @field_validator("status")

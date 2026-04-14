@@ -132,8 +132,8 @@ async def test_get_project_raises_404_when_not_found() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_project_raises_403_for_wrong_user() -> None:
-    """get_project must raise 403 when user_id does not match."""
+async def test_get_project_raises_404_for_wrong_user() -> None:
+    """get_project must raise 404 (not 403) to prevent ID enumeration."""
     fake = _make_fake_project(user_id=OTHER_USER_ID)
     db = AsyncMock()
     mock_result = MagicMock()
@@ -143,8 +143,8 @@ async def test_get_project_raises_403_for_wrong_user() -> None:
     with pytest.raises(HTTPException) as exc_info:
         await get_project(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
-    assert exc_info.value.status_code == 403
-    assert exc_info.value.detail == "Not authorized to access this project"
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Project not found"
 
 
 # ---------------------------------------------------------------------------
@@ -242,8 +242,8 @@ async def test_update_project_only_sets_provided_fields() -> None:
 
 
 @pytest.mark.asyncio
-async def test_update_project_raises_403_for_wrong_user() -> None:
-    """update_project must raise 403 when user_id does not match."""
+async def test_update_project_raises_404_for_wrong_user() -> None:
+    """update_project must raise 404 (not 403) to prevent ID enumeration."""
     fake = _make_fake_project(user_id=OTHER_USER_ID)
     db = AsyncMock()
     mock_result = MagicMock()
@@ -258,7 +258,8 @@ async def test_update_project_raises_403_for_wrong_user() -> None:
             data=ProjectUpdate(name="X"),
         )
 
-    assert exc_info.value.status_code == 403
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Project not found"
 
 
 @pytest.mark.asyncio
@@ -301,8 +302,8 @@ async def test_delete_project_removes_project() -> None:
 
 
 @pytest.mark.asyncio
-async def test_delete_project_raises_403_for_wrong_user() -> None:
-    """delete_project must raise 403 when user_id does not match."""
+async def test_delete_project_raises_404_for_wrong_user() -> None:
+    """delete_project must raise 404 (not 403) to prevent ID enumeration."""
     fake = _make_fake_project(user_id=OTHER_USER_ID)
     db = AsyncMock()
     mock_result = MagicMock()
@@ -312,7 +313,8 @@ async def test_delete_project_raises_403_for_wrong_user() -> None:
     with pytest.raises(HTTPException) as exc_info:
         await delete_project(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
-    assert exc_info.value.status_code == 403
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Project not found"
 
 
 @pytest.mark.asyncio

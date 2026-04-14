@@ -40,11 +40,15 @@ async def _get_project_or_404(db: AsyncSession, project_id: uuid.UUID) -> Projec
 
 
 def _check_ownership(project: Project, user_id: uuid.UUID) -> None:
-    """Raise 403 if the project does not belong to user_id."""
+    """Raise 404 if the project does not belong to user_id.
+
+    Returns 404 (not 403) to avoid revealing that a project with this
+    ID exists but belongs to another user (prevents ID enumeration).
+    """
     if project.user_id != user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this project",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
         )
 
 
