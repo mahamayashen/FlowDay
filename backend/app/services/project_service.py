@@ -61,9 +61,16 @@ async def get_project(
     return project
 
 
-async def list_projects(db: AsyncSession, user_id: uuid.UUID) -> list[Project]:
-    """List all projects for a given user."""
-    result = await db.execute(select(Project).where(Project.user_id == user_id))
+async def list_projects(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    skip: int = 0,
+    limit: int = 50,
+) -> list[Project]:
+    """List projects for a given user with pagination."""
+    stmt = select(Project).where(Project.user_id == user_id).offset(skip).limit(limit)
+    result = await db.execute(stmt)
     return list(result.scalars().all())
 
 

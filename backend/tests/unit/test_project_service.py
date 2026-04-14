@@ -196,6 +196,22 @@ async def test_list_projects_returns_empty_list() -> None:
     assert result == []
 
 
+@pytest.mark.asyncio
+async def test_list_projects_applies_pagination() -> None:
+    """list_projects must apply offset and limit to the query."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    db.execute.return_value = mock_result
+
+    await list_projects(db=db, user_id=USER_ID, skip=10, limit=5)
+
+    executed_stmt = db.execute.call_args[0][0]
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "LIMIT" in compiled.upper()
+    assert "OFFSET" in compiled.upper()
+
+
 # ---------------------------------------------------------------------------
 # update_project
 # ---------------------------------------------------------------------------

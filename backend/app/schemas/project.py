@@ -18,7 +18,7 @@ class ProjectCreate(BaseModel):
 
     name: str = Field(min_length=1, max_length=100)
     color: str
-    client_name: str | None = None
+    client_name: str | None = Field(default=None, max_length=100)
     hourly_rate: Decimal | None = Field(default=None, ge=0)
 
     @field_validator("name")
@@ -52,7 +52,7 @@ class ProjectUpdate(BaseModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=100)
     color: str | None = None
-    client_name: str | None = None
+    client_name: str | None = Field(default=None, max_length=100)
     hourly_rate: Decimal | None = Field(default=None, ge=0)
     status: str | None = None
 

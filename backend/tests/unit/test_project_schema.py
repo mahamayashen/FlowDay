@@ -40,6 +40,18 @@ def test_create_with_all_fields() -> None:
     assert p.hourly_rate == Decimal("150.00")
 
 
+def test_create_rejects_client_name_too_long() -> None:
+    """ProjectCreate must reject client_name longer than 100 characters."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="Work", color="#FF0000", client_name="A" * 101)
+
+
+def test_update_rejects_client_name_too_long() -> None:
+    """ProjectUpdate must reject client_name longer than 100 characters."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(client_name="A" * 101)
+
+
 def test_create_rejects_empty_name() -> None:
     """ProjectCreate must reject empty string name."""
     with pytest.raises(ValidationError):

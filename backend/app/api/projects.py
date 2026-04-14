@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -33,11 +33,15 @@ async def create_project_route(
 
 @router.get("", response_model=list[ProjectResponse])
 async def list_projects_route(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[ProjectResponse]:
-    """List all projects for the authenticated user."""
-    projects = await list_projects(db=db, user_id=current_user.id)
+    """List projects for the authenticated user with pagination."""
+    projects = await list_projects(
+        db=db, user_id=current_user.id, skip=skip, limit=limit
+    )
     return [ProjectResponse.model_validate(p) for p in projects]
 
 
