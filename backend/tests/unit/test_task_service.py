@@ -207,6 +207,7 @@ async def test_get_task_verifies_task_belongs_to_project(
         await get_task(db=db, task_id=TASK_ID, project_id=PROJECT_ID, user_id=USER_ID)
 
     assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Task not found"
 
 
 # ---------------------------------------------------------------------------
@@ -529,3 +530,45 @@ async def test_delete_task_verifies_task_belongs_to_project(
         )
 
     assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Task not found"
+
+
+# ---------------------------------------------------------------------------
+# Mutation-killing tests for default parameters and detail messages
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+@patch("app.services.task_service.get_project", new_callable=AsyncMock)
+async def test_list_tasks_default_skip_is_zero(
+    mock_get_project: AsyncMock,
+) -> None:
+    """list_tasks default skip must be 0 (not 1)."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    db.execute.return_value = mock_result
+
+    await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
+
+    executed_stmt = db.execute.call_args[0][0]
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "OFFSET 0" in compiled
+
+
+@pytest.mark.asyncio
+@patch("app.services.task_service.get_project", new_callable=AsyncMock)
+async def test_list_tasks_default_limit_is_50(
+    mock_get_project: AsyncMock,
+) -> None:
+    """list_tasks default limit must be 50 (not 51)."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    db.execute.return_value = mock_result
+
+    await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
+
+    executed_stmt = db.execute.call_args[0][0]
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "LIMIT 50" in compiled
