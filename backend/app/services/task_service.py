@@ -80,12 +80,7 @@ async def list_tasks(
 ) -> list[Task]:
     """List tasks for a given project with pagination."""
     await get_project(db, project_id, user_id)
-    stmt = (
-        select(Task)
-        .where(Task.project_id == project_id)
-        .offset(skip)
-        .limit(limit)
-    )
+    stmt = select(Task).where(Task.project_id == project_id).offset(skip).limit(limit)
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
