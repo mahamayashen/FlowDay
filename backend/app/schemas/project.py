@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.project import ProjectStatus
 
@@ -16,10 +16,20 @@ _VALID_STATUSES = {s.value for s in ProjectStatus}
 class ProjectCreate(BaseModel):
     """Schema for creating a new project."""
 
-    name: str
+    name: str = Field(min_length=1, max_length=100)
     color: str
     client_name: str | None = None
-    hourly_rate: Decimal | None = None
+    hourly_rate: Decimal | None = Field(default=None, ge=0)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name_not_blank(cls, v: str) -> str:
+        """Name must not be blank after stripping whitespace."""
+        v = v.strip()
+        if not v:
+            msg = "name must not be blank"
+            raise ValueError(msg)
+        return v
 
     @field_validator("color")
     @classmethod
@@ -40,11 +50,22 @@ class ProjectCreate(BaseModel):
 class ProjectUpdate(BaseModel):
     """Schema for partially updating a project."""
 
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=100)
     color: str | None = None
     client_name: str | None = None
-    hourly_rate: Decimal | None = None
+    hourly_rate: Decimal | None = Field(default=None, ge=0)
     status: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name_not_blank(cls, v: str | None) -> str | None:
+        """Name must not be blank after stripping whitespace if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                msg = "name must not be blank"
+                raise ValueError(msg)
+        return v
 
     @field_validator("color")
     @classmethod

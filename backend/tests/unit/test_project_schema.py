@@ -40,6 +40,42 @@ def test_create_with_all_fields() -> None:
     assert p.hourly_rate == Decimal("150.00")
 
 
+def test_create_rejects_empty_name() -> None:
+    """ProjectCreate must reject empty string name."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="", color="#FF0000")
+
+
+def test_create_rejects_blank_name() -> None:
+    """ProjectCreate must reject whitespace-only name."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="   ", color="#FF0000")
+
+
+def test_create_rejects_name_too_long() -> None:
+    """ProjectCreate must reject name longer than 100 characters."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="A" * 101, color="#FF0000")
+
+
+def test_create_strips_name_whitespace() -> None:
+    """ProjectCreate must strip leading/trailing whitespace from name."""
+    p = ProjectCreate(name="  Work  ", color="#FF0000")
+    assert p.name == "Work"
+
+
+def test_create_rejects_negative_hourly_rate() -> None:
+    """ProjectCreate must reject negative hourly_rate."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="Work", color="#FF0000", hourly_rate=Decimal("-10.00"))
+
+
+def test_create_accepts_zero_hourly_rate() -> None:
+    """ProjectCreate must accept zero hourly_rate."""
+    p = ProjectCreate(name="Work", color="#FF0000", hourly_rate=Decimal("0"))
+    assert p.hourly_rate == Decimal("0")
+
+
 def test_create_rejects_missing_name() -> None:
     """ProjectCreate without name must raise ValidationError."""
     with pytest.raises(ValidationError):
@@ -92,6 +128,30 @@ def test_update_partial_fields() -> None:
     p = ProjectUpdate(name="New Name")
     assert p.name == "New Name"
     assert p.color is None
+
+
+def test_update_rejects_empty_name() -> None:
+    """ProjectUpdate must reject empty string name."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(name="")
+
+
+def test_update_rejects_blank_name() -> None:
+    """ProjectUpdate must reject whitespace-only name."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(name="   ")
+
+
+def test_update_rejects_name_too_long() -> None:
+    """ProjectUpdate must reject name longer than 100 characters."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(name="A" * 101)
+
+
+def test_update_rejects_negative_hourly_rate() -> None:
+    """ProjectUpdate must reject negative hourly_rate."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(hourly_rate=Decimal("-5.00"))
 
 
 def test_update_rejects_invalid_hex_color() -> None:
