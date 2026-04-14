@@ -1,0 +1,223 @@
+from __future__ import annotations
+
+import uuid
+from datetime import UTC, datetime
+from decimal import Decimal
+
+import pytest
+from pydantic import ValidationError
+
+from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
+
+# ---------------------------------------------------------------------------
+# ProjectCreate
+# ---------------------------------------------------------------------------
+
+
+def test_create_requires_name_and_color() -> None:
+    """ProjectCreate must require name and color."""
+    p = ProjectCreate(name="Work", color="#FF0000")
+    assert p.name == "Work"
+    assert p.color == "#FF0000"
+
+
+def test_create_optional_fields_default_to_none() -> None:
+    """client_name and hourly_rate must default to None."""
+    p = ProjectCreate(name="Work", color="#FF0000")
+    assert p.client_name is None
+    assert p.hourly_rate is None
+
+
+def test_create_with_all_fields() -> None:
+    """ProjectCreate must accept all optional fields."""
+    p = ProjectCreate(
+        name="Work",
+        color="#00FF00",
+        client_name="Acme Corp",
+        hourly_rate=Decimal("150.00"),
+    )
+    assert p.client_name == "Acme Corp"
+    assert p.hourly_rate == Decimal("150.00")
+
+
+def test_create_rejects_client_name_too_long() -> None:
+    """ProjectCreate must reject client_name longer than 100 characters."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="Work", color="#FF0000", client_name="A" * 101)
+
+
+def test_update_rejects_client_name_too_long() -> None:
+    """ProjectUpdate must reject client_name longer than 100 characters."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(client_name="A" * 101)
+
+
+def test_create_rejects_empty_name() -> None:
+    """ProjectCreate must reject empty string name."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="", color="#FF0000")
+
+
+def test_create_rejects_blank_name() -> None:
+    """ProjectCreate must reject whitespace-only name."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="   ", color="#FF0000")
+
+
+def test_create_rejects_name_too_long() -> None:
+    """ProjectCreate must reject name longer than 100 characters."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="A" * 101, color="#FF0000")
+
+
+def test_create_strips_name_whitespace() -> None:
+    """ProjectCreate must strip leading/trailing whitespace from name."""
+    p = ProjectCreate(name="  Work  ", color="#FF0000")
+    assert p.name == "Work"
+
+
+def test_create_rejects_negative_hourly_rate() -> None:
+    """ProjectCreate must reject negative hourly_rate."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="Work", color="#FF0000", hourly_rate=Decimal("-10.00"))
+
+
+def test_create_accepts_zero_hourly_rate() -> None:
+    """ProjectCreate must accept zero hourly_rate."""
+    p = ProjectCreate(name="Work", color="#FF0000", hourly_rate=Decimal("0"))
+    assert p.hourly_rate == Decimal("0")
+
+
+def test_create_rejects_missing_name() -> None:
+    """ProjectCreate without name must raise ValidationError."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(color="#FF0000")  # type: ignore[call-arg]
+
+
+def test_create_rejects_missing_color() -> None:
+    """ProjectCreate without color must raise ValidationError."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="Work")  # type: ignore[call-arg]
+
+
+def test_create_rejects_invalid_hex_color() -> None:
+    """ProjectCreate must reject non-hex color strings."""
+    with pytest.raises(ValidationError):
+        ProjectCreate(name="Work", color="red")
+
+
+def test_create_accepts_valid_hex_colors() -> None:
+    """ProjectCreate must accept and normalize hex colors."""
+    p3 = ProjectCreate(name="A", color="#FFF")
+    assert p3.color == "#FFFFFF"  # 3-char normalized to 6-char
+    p6 = ProjectCreate(name="B", color="#FF00FF")
+    assert p6.color == "#FF00FF"
+
+
+def test_update_normalizes_short_hex_color() -> None:
+    """ProjectUpdate must normalize 3-char hex to 6-char."""
+    p = ProjectUpdate(color="#ABC")
+    assert p.color == "#AABBCC"
+
+
+# ---------------------------------------------------------------------------
+# ProjectUpdate
+# ---------------------------------------------------------------------------
+
+
+def test_update_all_fields_optional() -> None:
+    """ProjectUpdate must allow empty (no fields set)."""
+    p = ProjectUpdate()
+    assert p.name is None
+    assert p.color is None
+    assert p.client_name is None
+    assert p.hourly_rate is None
+    assert p.status is None
+
+
+def test_update_partial_fields() -> None:
+    """ProjectUpdate must accept partial updates."""
+    p = ProjectUpdate(name="New Name")
+    assert p.name == "New Name"
+    assert p.color is None
+
+
+def test_update_rejects_empty_name() -> None:
+    """ProjectUpdate must reject empty string name."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(name="")
+
+
+def test_update_rejects_blank_name() -> None:
+    """ProjectUpdate must reject whitespace-only name."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(name="   ")
+
+
+def test_update_rejects_name_too_long() -> None:
+    """ProjectUpdate must reject name longer than 100 characters."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(name="A" * 101)
+
+
+def test_update_rejects_negative_hourly_rate() -> None:
+    """ProjectUpdate must reject negative hourly_rate."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(hourly_rate=Decimal("-5.00"))
+
+
+def test_update_rejects_invalid_hex_color() -> None:
+    """ProjectUpdate must reject non-hex color if provided."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(color="not-hex")
+
+
+def test_update_accepts_valid_status() -> None:
+    """ProjectUpdate must accept valid status values."""
+    p = ProjectUpdate(status="active")
+    assert p.status == "active"
+    p2 = ProjectUpdate(status="archived")
+    assert p2.status == "archived"
+
+
+def test_update_rejects_invalid_status() -> None:
+    """ProjectUpdate must reject invalid status values."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(status="deleted")
+
+
+def test_update_rejects_empty_string_status() -> None:
+    """ProjectUpdate must reject empty string as status."""
+    with pytest.raises(ValidationError):
+        ProjectUpdate(status="")
+
+
+# ---------------------------------------------------------------------------
+# ProjectResponse
+# ---------------------------------------------------------------------------
+
+
+def test_response_from_attributes() -> None:
+    """ProjectResponse must support from_attributes (ORM mode)."""
+    assert ProjectResponse.model_config.get("from_attributes") is True
+
+
+def test_response_round_trip() -> None:
+    """ProjectResponse must serialize all project fields."""
+    now = datetime.now(UTC)
+    uid = uuid.uuid4()
+    pid = uuid.uuid4()
+    resp = ProjectResponse(
+        id=pid,
+        user_id=uid,
+        name="Test",
+        color="#ABCDEF",
+        client_name="Client",
+        hourly_rate=Decimal("99.50"),
+        status="active",
+        created_at=now,
+    )
+    assert resp.id == pid
+    assert resp.user_id == uid
+    assert resp.status == "active"
+    assert resp.hourly_rate == Decimal("99.50")
