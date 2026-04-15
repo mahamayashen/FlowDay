@@ -238,9 +238,7 @@ async def test_list_tasks_queries_by_project_id() -> None:
     await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
     executed_stmt = db.execute.call_args_list[0][0][0]
-    compiled = str(
-        executed_stmt.compile(compile_kwargs={"literal_binds": True})
-    )
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
     assert "tasks.project_id =" in compiled
     assert "tasks.project_id !=" not in compiled
     assert "EXISTS" in compiled.upper()
@@ -273,14 +271,10 @@ async def test_list_tasks_applies_pagination() -> None:
     """list_tasks must apply offset and limit to the query."""
     db = _mock_db_for_list([], ownership_exists=True)
 
-    await list_tasks(
-        db=db, project_id=PROJECT_ID, user_id=USER_ID, skip=10, limit=5
-    )
+    await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID, skip=10, limit=5)
 
     executed_stmt = db.execute.call_args_list[0][0][0]
-    compiled = str(
-        executed_stmt.compile(compile_kwargs={"literal_binds": True})
-    )
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
     assert "LIMIT" in compiled.upper()
     assert "OFFSET" in compiled.upper()
 
@@ -294,9 +288,7 @@ async def test_list_tasks_ownership_via_exists_subquery() -> None:
     await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
     executed_stmt = db.execute.call_args_list[0][0][0]
-    compiled = str(
-        executed_stmt.compile(compile_kwargs={"literal_binds": True})
-    )
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
     assert "projects.user_id" in compiled
     assert "EXISTS" in compiled.upper()
 
@@ -508,9 +500,7 @@ async def test_list_tasks_default_skip_is_zero() -> None:
     await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
     executed_stmt = db.execute.call_args_list[0][0][0]
-    compiled = str(
-        executed_stmt.compile(compile_kwargs={"literal_binds": True})
-    )
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
     assert "OFFSET 0" in compiled
 
 
@@ -522,7 +512,5 @@ async def test_list_tasks_default_limit_is_50() -> None:
     await list_tasks(db=db, project_id=PROJECT_ID, user_id=USER_ID)
 
     executed_stmt = db.execute.call_args_list[0][0][0]
-    compiled = str(
-        executed_stmt.compile(compile_kwargs={"literal_binds": True})
-    )
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
     assert "LIMIT 50" in compiled

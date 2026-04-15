@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
@@ -14,7 +15,7 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
     name: str
-    settings_json: dict
+    settings_json: dict[str, Any]
     created_at: datetime
 
 

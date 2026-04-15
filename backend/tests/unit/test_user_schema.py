@@ -31,7 +31,7 @@ def test_user_response_from_orm() -> None:
             self.id = uuid.uuid4()
             self.email = "test@example.com"
             self.name = "Test User"
-            self.settings_json = {}
+            self.settings_json: dict[str, object] = {}
             self.created_at = datetime.now(UTC)
 
     response = UserResponse.model_validate(FakeUser(), from_attributes=True)

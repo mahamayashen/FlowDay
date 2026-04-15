@@ -40,7 +40,7 @@ def test_user_settings_json_defaults_to_empty() -> None:
     """User.settings_json must have a server default of '{}'."""
     col = inspect(User).columns["settings_json"]
     assert col.server_default is not None
-    assert "'{}'" in str(col.server_default.arg) or "{}" in str(col.server_default.arg)
+    assert "'{}'" in str(col.server_default.arg) or "{}" in str(col.server_default.arg)  # type: ignore[attr-defined]
 
 
 def test_user_table_name_is_users() -> None:
