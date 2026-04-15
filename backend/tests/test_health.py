@@ -131,7 +131,7 @@ async def test_health_detailed_returns_dependency_info(client: AsyncClient) -> N
     assert data["redis"]["status"] == "healthy"
     assert data["redis"]["latency_ms"] >= 0
     assert data["sentry_enabled"] is False
-    assert data["version"] == "0.1.0"
+    assert data["version"]  # non-empty version string
 
 
 async def test_health_detailed_returns_503_when_db_down(client: AsyncClient) -> None:

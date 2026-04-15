@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 import time
+from importlib.metadata import version
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
@@ -18,7 +20,11 @@ from app.schemas.health import (
     HealthResponse,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
+
+_HEALTH_CHECK_ERRORS = (OSError, ConnectionError, TimeoutError, RuntimeError)
 
 
 async def _check_db(db: AsyncSession) -> tuple[str, float]:
@@ -27,7 +33,8 @@ async def _check_db(db: AsyncSession) -> tuple[str, float]:
     try:
         await db.execute(text("SELECT 1"))
         status = "healthy"
-    except Exception:
+    except _HEALTH_CHECK_ERRORS:
+        logger.warning("Database health check failed", exc_info=True)
         status = "unhealthy"
     latency = round((time.monotonic() - start) * 1000, 2)
     return status, latency
@@ -38,11 +45,10 @@ async def _check_redis() -> tuple[str, float]:
     start = time.monotonic()
     try:
         redis = get_redis()
-        result = redis.ping()
-        if hasattr(result, "__await__"):
-            await result
+        await redis.ping()  # type: ignore[misc]
         status = "healthy"
-    except Exception:
+    except _HEALTH_CHECK_ERRORS:
+        logger.warning("Redis health check failed", exc_info=True)
         status = "unhealthy"
     latency = round((time.monotonic() - start) * 1000, 2)
     return status, latency
@@ -86,7 +92,7 @@ async def health_detailed(
         database=DependencyDetail(status=db_status, latency_ms=db_latency),
         redis=DependencyDetail(status=redis_status, latency_ms=redis_latency),
         sentry_enabled=bool(settings.SENTRY_DSN),
-        version="0.1.0",
+        version=version("flowday-backend"),
     )
     return JSONResponse(
         content=body.model_dump(), status_code=200 if all_healthy else 503

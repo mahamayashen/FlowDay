@@ -19,7 +19,11 @@ from app.core.sentry import SentryBreadcrumbMiddleware, configure_sentry
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Manage startup and shutdown of shared resources."""
     init_engine()
-    await init_redis(settings.REDIS_URL)
+    try:
+        await init_redis(settings.REDIS_URL)
+    except Exception:
+        await dispose_engine()
+        raise
     yield
     await close_redis()
     await dispose_engine()
