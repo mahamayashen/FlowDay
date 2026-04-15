@@ -83,7 +83,7 @@ def test_task_priority_has_default() -> None:
     """Task.priority column must have a default of TaskPriority.MEDIUM."""
     col = inspect(Task).columns["priority"]
     assert col.default is not None
-    assert col.default.arg == TaskPriority.MEDIUM
+    assert col.default.arg == TaskPriority.MEDIUM  # type: ignore[attr-defined]
 
 
 def test_task_priority_enum_values() -> None:
@@ -98,7 +98,7 @@ def test_task_status_has_default() -> None:
     """Task.status column must have a default of TaskStatus.TODO."""
     col = inspect(Task).columns["status"]
     assert col.default is not None
-    assert col.default.arg == TaskStatus.TODO
+    assert col.default.arg == TaskStatus.TODO  # type: ignore[attr-defined]
 
 
 def test_task_status_enum_values() -> None:
@@ -110,19 +110,19 @@ def test_task_status_enum_values() -> None:
 
 def test_task_has_priority_check_constraint() -> None:
     """Task must have a CHECK constraint on priority column."""
-    constraints = {c.name for c in Task.__table__.constraints}
+    constraints = {c.name for c in Task.__table__.constraints}  # type: ignore[attr-defined]
     assert "ck_tasks_priority" in constraints
 
 
 def test_task_has_status_check_constraint() -> None:
     """Task must have a CHECK constraint on status column."""
-    constraints = {c.name for c in Task.__table__.constraints}
+    constraints = {c.name for c in Task.__table__.constraints}  # type: ignore[attr-defined]
     assert "ck_tasks_status" in constraints
 
 
 def test_task_has_project_status_index() -> None:
     """Task must have a composite index on (project_id, status)."""
-    index_names = {idx.name for idx in Task.__table__.indexes}
+    index_names = {idx.name for idx in Task.__table__.indexes}  # type: ignore[attr-defined]
     assert "idx_task_project_status" in index_names
 
 

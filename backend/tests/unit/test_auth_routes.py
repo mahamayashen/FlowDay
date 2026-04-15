@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -25,7 +26,7 @@ def _make_fake_user(email: str = "test@example.com") -> MagicMock:
 
 
 @pytest.fixture
-async def auth_client() -> AsyncClient:
+async def auth_client() -> AsyncGenerator[AsyncClient, None]:
     """HTTP client that does NOT depend on a running database."""
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import DateTime, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -23,7 +24,7 @@ class User(Base):
     hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     google_oauth_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     github_oauth_token: Mapped[str | None] = mapped_column(Text, nullable=True)
-    settings_json: Mapped[dict] = mapped_column(
+    settings_json: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'")
     )
     created_at: Mapped[datetime] = mapped_column(

@@ -50,17 +50,21 @@ async def _handle_oauth_callback(
     )
 
     now = datetime.now(UTC)
-    stmt = insert(User).values(
-        email=email,
-        name=name,
-        created_at=now,
-        updated_at=now,
-        **token_field,
+    stmt = (
+        insert(User)
+        .values(
+            email=email,
+            name=name,
+            created_at=now,
+            updated_at=now,
+            **token_field,
+        )
+        .on_conflict_do_update(
+            index_elements=["email"],
+            set_={**token_field, "updated_at": now},
+        )
+        .returning(User)
     )
-    stmt = stmt.on_conflict_do_update(
-        index_elements=["email"],
-        set_={**token_field, "updated_at": now},
-    ).returning(User)
     result = await db.execute(stmt)
     user = result.scalar_one()
     await db.commit()

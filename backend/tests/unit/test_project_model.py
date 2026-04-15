@@ -75,7 +75,7 @@ def test_project_status_has_default() -> None:
     """Project.status column must have a default of ProjectStatus.ACTIVE."""
     col = inspect(Project).columns["status"]
     assert col.default is not None
-    assert col.default.arg == ProjectStatus.ACTIVE
+    assert col.default.arg == ProjectStatus.ACTIVE  # type: ignore[attr-defined]
 
 
 def test_project_status_enum_values() -> None:
@@ -86,7 +86,7 @@ def test_project_status_enum_values() -> None:
 
 def test_project_has_status_check_constraint() -> None:
     """Project must have a CHECK constraint on status column."""
-    constraints = {c.name for c in Project.__table__.constraints}
+    constraints = {c.name for c in Project.__table__.constraints}  # type: ignore[attr-defined]
     assert "ck_projects_status" in constraints
 
 
