@@ -11,6 +11,7 @@ from app.api.projects import router as projects_router
 from app.api.tasks import router as tasks_router
 from app.core.config import settings
 from app.core.database import dispose_engine, init_engine
+from app.core.redis import close_redis, init_redis
 from app.core.sentry import SentryBreadcrumbMiddleware, configure_sentry
 
 
@@ -18,7 +19,9 @@ from app.core.sentry import SentryBreadcrumbMiddleware, configure_sentry
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Manage startup and shutdown of shared resources."""
     init_engine()
+    await init_redis(settings.REDIS_URL)
     yield
+    await close_redis()
     await dispose_engine()
 
 
