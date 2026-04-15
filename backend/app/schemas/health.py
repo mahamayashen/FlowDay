@@ -7,3 +7,5 @@ class HealthResponse(BaseModel):
     """Response schema for the health check endpoint."""
 
     status: str
+    database: str
+    redis: str
