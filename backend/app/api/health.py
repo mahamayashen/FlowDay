@@ -38,7 +38,9 @@ async def _check_redis() -> tuple[str, float]:
     start = time.monotonic()
     try:
         redis = get_redis()
-        await redis.ping()
+        result = redis.ping()
+        if hasattr(result, "__await__"):
+            await result
         status = "healthy"
     except Exception:
         status = "unhealthy"
