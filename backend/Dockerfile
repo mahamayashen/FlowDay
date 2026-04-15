@@ -3,12 +3,16 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
+RUN python -m venv /opt/venv
+
+# Install dependencies first (cached until pyproject.toml changes)
 COPY pyproject.toml ./
-RUN python -m venv /opt/venv \
+RUN mkdir -p app && touch app/__init__.py \
     && /opt/venv/bin/pip install --no-cache-dir .
 
+# Copy source and reinstall package only (deps already cached)
 COPY . .
-RUN /opt/venv/bin/pip install --no-cache-dir .
+RUN /opt/venv/bin/pip install --no-cache-dir --no-deps .
 
 ## -----------  runtime  -----------
 FROM python:3.12-slim AS runtime
