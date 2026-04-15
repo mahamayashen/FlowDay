@@ -43,7 +43,7 @@ async def test_breadcrumb_middleware_adds_crumb() -> None:
     async def ping() -> dict[str, str]:
         return {"pong": "ok"}
 
-    test_app.add_middleware(SentryBreadcrumbMiddleware)
+    test_app.add_middleware(SentryBreadcrumbMiddleware)  # type: ignore[arg-type]
 
     with patch("app.core.sentry.sentry_sdk") as mock_sdk:
         async with AsyncClient(

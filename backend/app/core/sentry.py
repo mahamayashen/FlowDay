@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
+
 import sentry_sdk
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.requests import Request
-from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 
 def configure_sentry(dsn: str | None) -> None:
@@ -13,16 +13,19 @@ def configure_sentry(dsn: str | None) -> None:
     sentry_sdk.init(dsn=dsn, traces_sample_rate=1.0)
 
 
-class SentryBreadcrumbMiddleware(BaseHTTPMiddleware):
-    """Add a Sentry breadcrumb for every incoming HTTP request."""
+class SentryBreadcrumbMiddleware:
+    """Raw ASGI middleware that adds a Sentry breadcrumb for every HTTP request."""
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
-        sentry_sdk.add_breadcrumb(
-            category="http",
-            message=f"{request.method} {request.url.path}",
-            level="info",
-        )
-        response = await call_next(request)
-        return response
+    def __init__(self, app: ASGIApp, **_kwargs: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            method = scope.get("method", "")
+            path = scope.get("path", "")
+            sentry_sdk.add_breadcrumb(
+                category="http",
+                message=f"{method} {path}",
+                level="info",
+            )
+        await self.app(scope, receive, send)

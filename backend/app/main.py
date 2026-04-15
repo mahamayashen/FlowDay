@@ -40,7 +40,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    app.add_middleware(SentryBreadcrumbMiddleware)
+    app.add_middleware(SentryBreadcrumbMiddleware)  # type: ignore[arg-type]
 
     app.include_router(health_router)
     app.include_router(auth_router)
