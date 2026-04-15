@@ -50,8 +50,10 @@ npx vitest        # Run tests
 
 ### Infrastructure
 ```
-docker compose up -d    # Start PostgreSQL + Redis
-docker compose down     # Stop services
+docker compose -f docker/docker-compose.yml up -d     # Start PostgreSQL + Redis
+docker compose -f docker/docker-compose.yml down       # Stop services
+docker compose -f docker/docker-compose.test.yml up -d # Start isolated test DB (port 5433)
+docker build -t flowday-backend backend/               # Build production image
 ```
 
 ## Architecture — Key Decisions

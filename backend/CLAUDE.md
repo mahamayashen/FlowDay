@@ -36,6 +36,15 @@ Rules:
 - Judge agent must use a **different** LLM provider than Narrative Writer
 - Judge score < 80 triggers `ModelRetry`; max 2 retries
 
+## Docker (run from repo root)
+
+```bash
+docker compose -f docker/docker-compose.yml up -d     # Start PostgreSQL + Redis
+docker compose -f docker/docker-compose.yml down       # Stop services
+docker compose -f docker/docker-compose.test.yml up -d # Start isolated test DB (port 5433)
+docker build -t flowday-backend backend/               # Build production image
+```
+
 ## Key Commands (run from `backend/`)
 
 ```bash
