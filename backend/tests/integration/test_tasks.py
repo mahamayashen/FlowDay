@@ -11,7 +11,8 @@ async def _create_project(client: AsyncClient) -> str:
         "/projects", json={"name": "Task Host", "color": "#ABCDEF"}
     )
     assert resp.status_code == 201
-    return resp.json()["id"]
+    project_id: str = resp.json()["id"]
+    return project_id
 
 
 # ── Create ────────────────────────────────────────────────────────────────────
