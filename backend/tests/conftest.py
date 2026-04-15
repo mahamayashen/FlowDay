@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -16,9 +16,13 @@ from app.models.user import User
 
 
 @pytest.fixture(scope="session", autouse=True)
-def db_engine_sync() -> None:
-    """Initialise the global engine once (sync fixture avoids event-loop issues)."""
+def db_engine_sync() -> Generator[None, None, None]:
+    """Initialise the global engine once for unit tests that use the client fixture."""
     init_engine()
+    yield
+    # dispose_engine() is async; the sync finalizer cannot await it.
+    # Per-test engines created in db_session handle their own disposal.
+    # The global engine is cleaned up by process exit.
 
 
 @pytest.fixture
@@ -61,6 +65,8 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
         yield session
 
+        # Teardown: remove event listener, rollback, clean up
+        event.remove(session.sync_session, "after_transaction_end", _restart_savepoint)
         await session.close()
         await conn.rollback()
         app.dependency_overrides.pop(get_db, None)

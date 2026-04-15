@@ -15,9 +15,11 @@ async def test_valid_jwt_returns_200(auth_client: AsyncClient, test_user: User) 
     assert resp.json()["email"] == test_user.email
 
 
-async def test_expired_jwt_returns_401(db_session: AsyncSession) -> None:
+async def test_expired_jwt_returns_401(
+    db_session: AsyncSession, test_user: User
+) -> None:
     """An expired JWT must be rejected with 401."""
-    token = create_access_token(subject="expired@example.com", expires_minutes=-1)
+    token = create_access_token(subject=test_user.email, expires_minutes=-1)
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test",

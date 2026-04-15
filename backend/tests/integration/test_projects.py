@@ -79,6 +79,19 @@ async def test_get_nonexistent_project_returns_404(auth_client: AsyncClient) -> 
 # ── Update ────────────────────────────────────────────────────────────────────
 
 
+async def test_update_other_users_project_returns_404(
+    auth_client: AsyncClient, other_auth_client: AsyncClient
+) -> None:
+    """Updating another user's project must return 404."""
+    create_resp = await other_auth_client.post(
+        "/projects", json={"name": "Not Yours", "color": "#999999"}
+    )
+    project_id = create_resp.json()["id"]
+
+    resp = await auth_client.patch(f"/projects/{project_id}", json={"name": "Hijacked"})
+    assert resp.status_code == 404
+
+
 async def test_update_project_name(auth_client: AsyncClient) -> None:
     create_resp = await auth_client.post(
         "/projects", json={"name": "Old Name", "color": "#123456"}
