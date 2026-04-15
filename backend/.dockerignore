@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+.env
+.env.local
+.env.*.local
+.pytest_cache
+.mypy_cache
+.hypothesis
+.mutmut-cache
+.ruff_cache
+tests
+.git
+*.egg-info
