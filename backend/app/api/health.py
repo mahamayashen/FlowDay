@@ -21,37 +21,48 @@ from app.schemas.health import (
 router = APIRouter()
 
 
+async def _check_db(db: AsyncSession) -> tuple[str, float]:
+    """Check database connectivity. Returns (status, latency_ms)."""
+    start = time.monotonic()
+    try:
+        await db.execute(text("SELECT 1"))
+        status = "healthy"
+    except Exception:
+        status = "unhealthy"
+    latency = round((time.monotonic() - start) * 1000, 2)
+    return status, latency
+
+
+async def _check_redis() -> tuple[str, float]:
+    """Check Redis connectivity. Returns (status, latency_ms)."""
+    start = time.monotonic()
+    try:
+        redis = get_redis()
+        await redis.ping()
+        status = "healthy"
+    except Exception:
+        status = "unhealthy"
+    latency = round((time.monotonic() - start) * 1000, 2)
+    return status, latency
+
+
 @router.get("/health", response_model=HealthResponse, tags=["health"])
 async def health_check(
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """Return application health status including DB and Redis connectivity."""
-    db_status = "healthy"
-    redis_status = "healthy"
-    all_healthy = True
+    db_status, _ = await _check_db(db)
+    redis_status, _ = await _check_redis()
 
-    # Check database
-    try:
-        await db.execute(text("SELECT 1"))
-    except Exception:
-        db_status = "unhealthy"
-        all_healthy = False
-
-    # Check Redis
-    try:
-        redis = get_redis()
-        await redis.ping()
-    except Exception:
-        redis_status = "unhealthy"
-        all_healthy = False
-
-    status_code = 200 if all_healthy else 503
+    all_healthy = db_status == "healthy" and redis_status == "healthy"
     body = HealthResponse(
         status="ok" if all_healthy else "degraded",
         database=db_status,
         redis=redis_status,
     )
-    return JSONResponse(content=body.model_dump(), status_code=status_code)
+    return JSONResponse(
+        content=body.model_dump(), status_code=200 if all_healthy else 503
+    )
 
 
 @router.get(
@@ -64,29 +75,10 @@ async def health_detailed(
     _user: User = Depends(get_current_user),
 ) -> JSONResponse:
     """Return detailed health with latency measurements. Requires authentication."""
-    all_healthy = True
+    db_status, db_latency = await _check_db(db)
+    redis_status, redis_latency = await _check_redis()
 
-    # Check database with latency
-    db_status = "healthy"
-    start = time.monotonic()
-    try:
-        await db.execute(text("SELECT 1"))
-    except Exception:
-        db_status = "unhealthy"
-        all_healthy = False
-    db_latency = round((time.monotonic() - start) * 1000, 2)
-
-    # Check Redis with latency
-    redis_status = "healthy"
-    start = time.monotonic()
-    try:
-        redis = get_redis()
-        await redis.ping()
-    except Exception:
-        redis_status = "unhealthy"
-        all_healthy = False
-    redis_latency = round((time.monotonic() - start) * 1000, 2)
-
+    all_healthy = db_status == "healthy" and redis_status == "healthy"
     body = DetailedHealthResponse(
         status="ok" if all_healthy else "degraded",
         database=DependencyDetail(status=db_status, latency_ms=db_latency),
@@ -94,4 +86,6 @@ async def health_detailed(
         sentry_enabled=bool(settings.SENTRY_DSN),
         version="0.1.0",
     )
-    return JSONResponse(content=body.model_dump(), status_code=200 if all_healthy else 503)
+    return JSONResponse(
+        content=body.model_dump(), status_code=200 if all_healthy else 503
+    )
