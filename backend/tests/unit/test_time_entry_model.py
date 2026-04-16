@@ -62,7 +62,7 @@ def test_time_entry_started_at_not_nullable() -> None:
 def test_time_entry_started_at_is_datetime_tz() -> None:
     """TimeEntry.started_at must be DateTime with timezone."""
     col = inspect(TimeEntry).columns["started_at"]
-    assert col.type.timezone is True
+    assert col.type.timezone is True  # type: ignore[attr-defined]
 
 
 def test_time_entry_ended_at_is_nullable() -> None:
@@ -74,7 +74,7 @@ def test_time_entry_ended_at_is_nullable() -> None:
 def test_time_entry_ended_at_is_datetime_tz() -> None:
     """TimeEntry.ended_at must be DateTime with timezone."""
     col = inspect(TimeEntry).columns["ended_at"]
-    assert col.type.timezone is True
+    assert col.type.timezone is True  # type: ignore[attr-defined]
 
 
 def test_time_entry_duration_seconds_is_nullable() -> None:
