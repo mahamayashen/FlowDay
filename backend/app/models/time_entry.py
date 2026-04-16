@@ -14,9 +14,7 @@ class TimeEntry(Base):
     """Time entry entity — see docs/DATA_MODEL.md for full specification."""
 
     __tablename__ = "time_entries"
-    __table_args__ = (
-        Index("idx_time_entry_task_started", "task_id", "started_at"),
-    )
+    __table_args__ = (Index("idx_time_entry_task_started", "task_id", "started_at"),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

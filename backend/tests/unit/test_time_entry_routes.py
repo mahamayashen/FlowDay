@@ -151,9 +151,7 @@ async def test_list_entries_returns_200(client: AsyncClient) -> None:
             new_callable=AsyncMock,
         ) as mock_list:
             mock_list.return_value = [fake]
-            response = await client.get(
-                f"/time-entries?task_id={TASK_ID}"
-            )
+            response = await client.get(f"/time-entries?task_id={TASK_ID}")
     finally:
         _clear_overrides()
 
