@@ -176,10 +176,8 @@ async def test_start_timer_detail_on_active_timer() -> None:
 @pytest.mark.asyncio
 async def test_stop_timer_sets_ended_at_and_duration() -> None:
     """stop_timer must set ended_at and compute duration_seconds."""
-    fake = _make_fake_entry(
-        started_at=datetime(2026, 5, 1, 9, 0, tzinfo=UTC),
-        ended_at=None,
-    )
+    started = datetime.now(UTC) - timedelta(hours=1)
+    fake = _make_fake_entry(started_at=started, ended_at=None)
     db = AsyncMock()
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = fake
@@ -248,7 +246,7 @@ async def test_stop_timer_query_joins_for_ownership() -> None:
 @pytest.mark.asyncio
 async def test_stop_timer_computes_duration_correctly() -> None:
     """stop_timer must compute duration as (ended_at - started_at) seconds."""
-    started = datetime(2026, 5, 1, 9, 0, tzinfo=UTC)
+    started = datetime.now(UTC) - timedelta(seconds=120)
     fake = _make_fake_entry(started_at=started, ended_at=None)
     db = AsyncMock()
     mock_result = MagicMock()
@@ -257,9 +255,9 @@ async def test_stop_timer_computes_duration_correctly() -> None:
 
     result = await stop_timer(db=db, entry_id=ENTRY_ID, user_id=USER_ID)
 
-    # Duration should be the difference between now and started_at
     assert isinstance(result.duration_seconds, int)
-    assert result.duration_seconds >= 0
+    # Should be approximately 120 seconds (within 5s tolerance)
+    assert 115 <= result.duration_seconds <= 125
 
 
 # ---------------------------------------------------------------------------
