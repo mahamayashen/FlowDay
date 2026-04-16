@@ -86,7 +86,7 @@ async def _check_overlap(
     if exclude_id is not None:
         stmt = stmt.where(ScheduleBlock.id != exclude_id)
     result = await db.execute(stmt)
-    if result.scalar_one_or_none() is not None:
+    if result.scalars().first() is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Schedule block overlaps with an existing block",
@@ -158,6 +158,12 @@ async def update_schedule_block(
     effective_date = updates.get("date", block.date)
     effective_start = updates.get("start_hour", block.start_hour)
     effective_end = updates.get("end_hour", block.end_hour)
+
+    if effective_end <= effective_start:
+        raise HTTPException(
+            status_code=422,
+            detail="end_hour must be greater than start_hour",
+        )
 
     if "date" in updates or "start_hour" in updates or "end_hour" in updates:
         await _check_overlap(

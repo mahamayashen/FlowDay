@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
@@ -51,7 +51,7 @@ class ScheduleBlock(Base):
         ForeignKey("tasks.id", ondelete="CASCADE"),
         nullable=False,
     )
-    date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
     start_hour: Mapped[Decimal] = mapped_column(Numeric(4, 2), nullable=False)
     end_hour: Mapped[Decimal] = mapped_column(Numeric(4, 2), nullable=False)
     source: Mapped[str] = mapped_column(

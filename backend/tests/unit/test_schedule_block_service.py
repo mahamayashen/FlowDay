@@ -108,7 +108,7 @@ async def test_create_block_returns_block() -> None:
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     # Mock for overlap check
     mock_overlap_result = MagicMock()
-    mock_overlap_result.scalar_one_or_none.return_value = None
+    mock_overlap_result.scalars.return_value.first.return_value = None
     db.execute.side_effect = [mock_task_result, mock_overlap_result]
 
     data = ScheduleBlockCreate(
@@ -154,7 +154,7 @@ async def test_create_block_raises_409_on_overlap() -> None:
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     # Overlap found
     mock_overlap_result = MagicMock()
-    mock_overlap_result.scalar_one_or_none.return_value = _make_fake_block()
+    mock_overlap_result.scalars.return_value.first.return_value = _make_fake_block()
     db.execute.side_effect = [mock_task_result, mock_overlap_result]
 
     data = ScheduleBlockCreate(
@@ -246,7 +246,7 @@ async def test_update_block_applies_changes() -> None:
     mock_own_result.scalar_one_or_none.return_value = fake
     # Overlap check
     mock_overlap_result = MagicMock()
-    mock_overlap_result.scalar_one_or_none.return_value = None
+    mock_overlap_result.scalars.return_value.first.return_value = None
     db.execute.side_effect = [mock_own_result, mock_overlap_result]
 
     data = ScheduleBlockUpdate(start_hour=Decimal("8"), end_hour=Decimal("11"))
@@ -292,7 +292,7 @@ async def test_update_block_raises_409_on_overlap() -> None:
     # Overlap found (different block)
     other_block = _make_fake_block(id=uuid.uuid4())
     mock_overlap_result = MagicMock()
-    mock_overlap_result.scalar_one_or_none.return_value = other_block
+    mock_overlap_result.scalars.return_value.first.return_value = other_block
     db.execute.side_effect = [mock_own_result, mock_overlap_result]
 
     data = ScheduleBlockUpdate(start_hour=Decimal("9"), end_hour=Decimal("10"))
@@ -305,6 +305,31 @@ async def test_update_block_raises_409_on_overlap() -> None:
         )
 
     assert exc_info.value.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_update_block_rejects_partial_hour_inversion() -> None:
+    """update with only start_hour > existing end_hour must return 422."""
+    fake = _make_fake_block(
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
+    )
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = fake
+    db.execute.return_value = mock_result
+
+    data = ScheduleBlockUpdate(start_hour=Decimal("15"))
+    with pytest.raises(HTTPException) as exc_info:
+        await update_schedule_block(
+            db=db,
+            block_id=BLOCK_ID,
+            user_id=USER_ID,
+            data=data,
+        )
+
+    assert exc_info.value.status_code == 422
+    assert "end_hour must be greater than start_hour" in exc_info.value.detail
 
 
 # ---------------------------------------------------------------------------
@@ -393,7 +418,7 @@ async def test_overlap_check_query_filters() -> None:
     mock_task_result = MagicMock()
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     mock_overlap_result = MagicMock()
-    mock_overlap_result.scalar_one_or_none.return_value = None
+    mock_overlap_result.scalars.return_value.first.return_value = None
     db.execute.side_effect = [mock_task_result, mock_overlap_result]
 
     data = ScheduleBlockCreate(
@@ -508,7 +533,7 @@ async def test_update_overlap_excludes_self() -> None:
     mock_own = MagicMock()
     mock_own.scalar_one_or_none.return_value = fake
     mock_overlap = MagicMock()
-    mock_overlap.scalar_one_or_none.return_value = None
+    mock_overlap.scalars.return_value.first.return_value = None
     db.execute.side_effect = [mock_own, mock_overlap]
 
     data = ScheduleBlockUpdate(
