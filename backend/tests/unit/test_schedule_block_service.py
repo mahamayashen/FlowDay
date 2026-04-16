@@ -1,0 +1,555 @@
+from __future__ import annotations
+
+import uuid
+from datetime import UTC, date, datetime
+from decimal import Decimal
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+from fastapi import HTTPException
+
+from app.models.schedule_block import ScheduleBlock, ScheduleBlockSource
+from app.schemas.schedule_block import ScheduleBlockCreate, ScheduleBlockUpdate
+from app.services.schedule_block_service import (
+    create_schedule_block,
+    delete_schedule_block,
+    get_schedule_block,
+    list_schedule_blocks,
+    update_schedule_block,
+)
+
+USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+OTHER_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000002")
+PROJECT_ID = uuid.UUID("00000000-0000-0000-0000-aaaaaaaaaaaa")
+TASK_ID = uuid.UUID("00000000-0000-0000-0000-bbbbbbbbbbbb")
+BLOCK_ID = uuid.UUID("00000000-0000-0000-0000-cccccccccccc")
+
+
+def _make_fake_block(**overrides: object) -> MagicMock:
+    defaults = {
+        "id": BLOCK_ID,
+        "task_id": TASK_ID,
+        "date": date(2026, 5, 1),
+        "start_hour": Decimal("9.00"),
+        "end_hour": Decimal("10.00"),
+        "source": ScheduleBlockSource.MANUAL,
+        "created_at": datetime(2026, 1, 1, tzinfo=UTC),
+    }
+    defaults.update(overrides)
+    fake = MagicMock(spec=ScheduleBlock)
+    for k, v in defaults.items():
+        setattr(fake, k, v)
+    return fake
+
+
+# ---------------------------------------------------------------------------
+# _get_block_with_ownership
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_block_returns_block_for_owner() -> None:
+    """get_schedule_block must return block when user owns it."""
+    fake = _make_fake_block()
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = fake
+    db.execute.return_value = mock_result
+
+    result = await get_schedule_block(db=db, block_id=BLOCK_ID, user_id=USER_ID)
+
+    assert result == fake
+
+
+@pytest.mark.asyncio
+async def test_get_block_raises_404_when_not_found() -> None:
+    """get_schedule_block must raise 404 when not found."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    db.execute.return_value = mock_result
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_schedule_block(db=db, block_id=BLOCK_ID, user_id=USER_ID)
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Schedule block not found"
+
+
+@pytest.mark.asyncio
+async def test_get_block_query_joins_task_and_project() -> None:
+    """get_schedule_block query must JOIN tasks and projects for ownership."""
+    fake = _make_fake_block()
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = fake
+    db.execute.return_value = mock_result
+
+    await get_schedule_block(db=db, block_id=BLOCK_ID, user_id=USER_ID)
+
+    executed_stmt = db.execute.call_args[0][0]
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "tasks" in compiled.lower()
+    assert "projects" in compiled.lower()
+    assert "JOIN" in compiled.upper()
+
+
+# ---------------------------------------------------------------------------
+# create_schedule_block
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_block_returns_block() -> None:
+    """create_schedule_block must add, commit, refresh and return block."""
+    db = AsyncMock()
+    # Mock for task ownership check
+    mock_task_result = MagicMock()
+    mock_task_result.scalar_one_or_none.return_value = MagicMock()
+    # Mock for overlap check
+    mock_overlap_result = MagicMock()
+    mock_overlap_result.scalars.return_value.first.return_value = None
+    db.execute.side_effect = [mock_task_result, mock_overlap_result]
+
+    data = ScheduleBlockCreate(
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
+    )
+    result = await create_schedule_block(db=db, user_id=USER_ID, data=data)
+
+    db.add.assert_called_once()
+    db.commit.assert_awaited_once()
+    db.refresh.assert_awaited_once()
+    assert isinstance(result, ScheduleBlock)
+
+
+@pytest.mark.asyncio
+async def test_create_block_raises_404_for_wrong_task_owner() -> None:
+    """create_schedule_block must raise 404 if task doesn't belong to user."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    db.execute.return_value = mock_result
+
+    data = ScheduleBlockCreate(
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        await create_schedule_block(db=db, user_id=USER_ID, data=data)
+
+    assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_create_block_raises_409_on_overlap() -> None:
+    """create_schedule_block must raise 409 when overlapping block exists."""
+    db = AsyncMock()
+    # Task ownership OK
+    mock_task_result = MagicMock()
+    mock_task_result.scalar_one_or_none.return_value = MagicMock()
+    # Overlap found
+    mock_overlap_result = MagicMock()
+    mock_overlap_result.scalars.return_value.first.return_value = _make_fake_block()
+    db.execute.side_effect = [mock_task_result, mock_overlap_result]
+
+    data = ScheduleBlockCreate(
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        await create_schedule_block(db=db, user_id=USER_ID, data=data)
+
+    assert exc_info.value.status_code == 409
+    assert "overlap" in exc_info.value.detail.lower()
+
+
+# ---------------------------------------------------------------------------
+# list_schedule_blocks
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_list_blocks_returns_blocks_for_date() -> None:
+    """list_schedule_blocks must return blocks for the given date."""
+    fake1 = _make_fake_block()
+    fake2 = _make_fake_block()
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = [fake1, fake2]
+    db.execute.return_value = mock_result
+
+    result = await list_schedule_blocks(
+        db=db,
+        user_id=USER_ID,
+        query_date=date(2026, 5, 1),
+    )
+
+    assert len(result) == 2
+
+
+@pytest.mark.asyncio
+async def test_list_blocks_returns_empty_for_no_blocks() -> None:
+    """list_schedule_blocks must return empty list, not 404."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    db.execute.return_value = mock_result
+
+    result = await list_schedule_blocks(
+        db=db,
+        user_id=USER_ID,
+        query_date=date(2026, 5, 1),
+    )
+
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_list_blocks_scopes_to_user() -> None:
+    """list_schedule_blocks query must filter by user ownership."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    db.execute.return_value = mock_result
+
+    await list_schedule_blocks(
+        db=db,
+        user_id=USER_ID,
+        query_date=date(2026, 5, 1),
+    )
+
+    executed_stmt = db.execute.call_args[0][0]
+    compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
+    assert "projects" in compiled.lower()
+    assert "JOIN" in compiled.upper()
+
+
+# ---------------------------------------------------------------------------
+# update_schedule_block
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_update_block_applies_changes() -> None:
+    """update_schedule_block must apply provided fields."""
+    fake = _make_fake_block()
+    db = AsyncMock()
+    # Ownership query
+    mock_own_result = MagicMock()
+    mock_own_result.scalar_one_or_none.return_value = fake
+    # Overlap check
+    mock_overlap_result = MagicMock()
+    mock_overlap_result.scalars.return_value.first.return_value = None
+    db.execute.side_effect = [mock_own_result, mock_overlap_result]
+
+    data = ScheduleBlockUpdate(start_hour=Decimal("8"), end_hour=Decimal("11"))
+    result = await update_schedule_block(
+        db=db,
+        block_id=BLOCK_ID,
+        user_id=USER_ID,
+        data=data,
+    )
+
+    assert result == fake
+    db.commit.assert_awaited_once()
+    db.refresh.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_update_block_raises_404_when_not_found() -> None:
+    """update_schedule_block must raise 404 for missing/unauthorized block."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    db.execute.return_value = mock_result
+
+    data = ScheduleBlockUpdate(start_hour=Decimal("8"))
+    with pytest.raises(HTTPException) as exc_info:
+        await update_schedule_block(
+            db=db,
+            block_id=BLOCK_ID,
+            user_id=USER_ID,
+            data=data,
+        )
+
+    assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_block_raises_409_on_overlap() -> None:
+    """update_schedule_block must raise 409 when update causes overlap."""
+    fake = _make_fake_block()
+    db = AsyncMock()
+    mock_own_result = MagicMock()
+    mock_own_result.scalar_one_or_none.return_value = fake
+    # Overlap found (different block)
+    other_block = _make_fake_block(id=uuid.uuid4())
+    mock_overlap_result = MagicMock()
+    mock_overlap_result.scalars.return_value.first.return_value = other_block
+    db.execute.side_effect = [mock_own_result, mock_overlap_result]
+
+    data = ScheduleBlockUpdate(start_hour=Decimal("9"), end_hour=Decimal("10"))
+    with pytest.raises(HTTPException) as exc_info:
+        await update_schedule_block(
+            db=db,
+            block_id=BLOCK_ID,
+            user_id=USER_ID,
+            data=data,
+        )
+
+    assert exc_info.value.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_update_block_rejects_partial_hour_inversion() -> None:
+    """update with only start_hour > existing end_hour must return 422."""
+    fake = _make_fake_block(
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
+    )
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = fake
+    db.execute.return_value = mock_result
+
+    data = ScheduleBlockUpdate(start_hour=Decimal("15"))
+    with pytest.raises(HTTPException) as exc_info:
+        await update_schedule_block(
+            db=db,
+            block_id=BLOCK_ID,
+            user_id=USER_ID,
+            data=data,
+        )
+
+    assert exc_info.value.status_code == 422
+    assert "end_hour must be greater than start_hour" in exc_info.value.detail
+
+
+# ---------------------------------------------------------------------------
+# delete_schedule_block
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_delete_block_removes_block() -> None:
+    """delete_schedule_block must delete and commit."""
+    fake = _make_fake_block()
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = fake
+    db.execute.return_value = mock_result
+
+    await delete_schedule_block(db=db, block_id=BLOCK_ID, user_id=USER_ID)
+
+    db.delete.assert_awaited_once_with(fake)
+    db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_block_raises_404_when_not_found() -> None:
+    """delete_schedule_block must raise 404 for missing/unauthorized block."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    db.execute.return_value = mock_result
+
+    with pytest.raises(HTTPException) as exc_info:
+        await delete_schedule_block(db=db, block_id=BLOCK_ID, user_id=USER_ID)
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Schedule block not found"
+
+
+# ---------------------------------------------------------------------------
+# SQL WHERE clause verification (mutation killing)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_block_query_where_clauses() -> None:
+    """Ownership query must filter by block_id AND user_id."""
+    fake = _make_fake_block()
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = fake
+    db.execute.return_value = mock_result
+
+    await get_schedule_block(db=db, block_id=BLOCK_ID, user_id=USER_ID)
+
+    compiled = str(
+        db.execute.call_args[0][0].compile(compile_kwargs={"literal_binds": True})
+    )
+    assert BLOCK_ID.hex in compiled
+    assert USER_ID.hex in compiled
+
+
+@pytest.mark.asyncio
+async def test_list_blocks_query_where_clauses() -> None:
+    """List query must filter by user_id AND date."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    db.execute.return_value = mock_result
+
+    await list_schedule_blocks(
+        db=db,
+        user_id=USER_ID,
+        query_date=date(2026, 5, 1),
+    )
+
+    compiled = str(
+        db.execute.call_args[0][0].compile(compile_kwargs={"literal_binds": True})
+    )
+    assert USER_ID.hex in compiled
+    assert "2026-05-01" in compiled
+
+
+@pytest.mark.asyncio
+async def test_overlap_check_query_filters() -> None:
+    """Overlap check must filter by user, date, and time range."""
+    db = AsyncMock()
+    mock_task_result = MagicMock()
+    mock_task_result.scalar_one_or_none.return_value = MagicMock()
+    mock_overlap_result = MagicMock()
+    mock_overlap_result.scalars.return_value.first.return_value = None
+    db.execute.side_effect = [mock_task_result, mock_overlap_result]
+
+    data = ScheduleBlockCreate(
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
+    )
+    await create_schedule_block(db=db, user_id=USER_ID, data=data)
+
+    overlap_compiled = str(
+        db.execute.call_args_list[1][0][0].compile(
+            compile_kwargs={"literal_binds": True}
+        )
+    )
+    assert "2026-05-01" in overlap_compiled
+    assert USER_ID.hex in overlap_compiled
+
+
+@pytest.mark.asyncio
+async def test_create_block_verify_task_query_checks_user() -> None:
+    """Task ownership query must check user_id."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    db.execute.return_value = mock_result
+
+    data = ScheduleBlockCreate(
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
+    )
+    with pytest.raises(HTTPException):
+        await create_schedule_block(db=db, user_id=USER_ID, data=data)
+
+    compiled = str(
+        db.execute.call_args[0][0].compile(compile_kwargs={"literal_binds": True})
+    )
+    assert TASK_ID.hex in compiled
+    assert USER_ID.hex in compiled
+
+
+@pytest.mark.asyncio
+async def test_create_block_detail_on_task_not_found() -> None:
+    """create_schedule_block must say 'Task not found'."""
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    db.execute.return_value = mock_result
+
+    data = ScheduleBlockCreate(
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        await create_schedule_block(db=db, user_id=USER_ID, data=data)
+
+    assert exc_info.value.detail == "Task not found"
+
+
+@pytest.mark.asyncio
+async def test_create_block_overlap_detail() -> None:
+    """create_schedule_block overlap detail message."""
+    db = AsyncMock()
+    mock_task = MagicMock()
+    mock_task.scalar_one_or_none.return_value = MagicMock()
+    mock_overlap = MagicMock()
+    mock_overlap.scalar_one_or_none.return_value = _make_fake_block()
+    db.execute.side_effect = [mock_task, mock_overlap]
+
+    data = ScheduleBlockCreate(
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        await create_schedule_block(db=db, user_id=USER_ID, data=data)
+
+    assert exc_info.value.detail == ("Schedule block overlaps with an existing block")
+
+
+@pytest.mark.asyncio
+async def test_update_skips_overlap_for_non_time_changes() -> None:
+    """update should skip overlap check for non-time fields."""
+    fake = _make_fake_block()
+    db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = fake
+    db.execute.return_value = mock_result
+
+    data = ScheduleBlockUpdate(source="google_calendar")
+    await update_schedule_block(
+        db=db,
+        block_id=BLOCK_ID,
+        user_id=USER_ID,
+        data=data,
+    )
+
+    # Only 1 DB call (ownership), no overlap check
+    assert db.execute.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_update_overlap_excludes_self() -> None:
+    """update overlap check must exclude the block being updated."""
+    fake = _make_fake_block()
+    db = AsyncMock()
+    mock_own = MagicMock()
+    mock_own.scalar_one_or_none.return_value = fake
+    mock_overlap = MagicMock()
+    mock_overlap.scalars.return_value.first.return_value = None
+    db.execute.side_effect = [mock_own, mock_overlap]
+
+    data = ScheduleBlockUpdate(
+        start_hour=Decimal("8"),
+        end_hour=Decimal("11"),
+    )
+    await update_schedule_block(
+        db=db,
+        block_id=BLOCK_ID,
+        user_id=USER_ID,
+        data=data,
+    )
+
+    overlap_compiled = str(
+        db.execute.call_args_list[1][0][0].compile(
+            compile_kwargs={"literal_binds": True}
+        )
+    )
+    assert BLOCK_ID.hex in overlap_compiled
