@@ -37,7 +37,10 @@ def test_create_with_required_fields() -> None:
 def test_create_defaults_source_to_manual() -> None:
     """ScheduleBlockCreate.source must default to 'manual'."""
     b = ScheduleBlockCreate(
-        task_id=TASK_ID, date=date(2026, 5, 1), start_hour=Decimal("9"), end_hour=Decimal("10"),
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
     )
     assert b.source == "manual"
 
@@ -45,33 +48,51 @@ def test_create_defaults_source_to_manual() -> None:
 def test_create_rejects_missing_task_id() -> None:
     """ScheduleBlockCreate without task_id must raise ValidationError."""
     with pytest.raises(ValidationError):
-        ScheduleBlockCreate(date=date(2026, 5, 1), start_hour=Decimal("9"), end_hour=Decimal("10"))  # type: ignore[call-arg]
+        ScheduleBlockCreate(  # type: ignore[call-arg]
+            date=date(2026, 5, 1),
+            start_hour=Decimal("9"),
+            end_hour=Decimal("10"),
+        )
 
 
 def test_create_rejects_missing_date() -> None:
     """ScheduleBlockCreate without date must raise ValidationError."""
     with pytest.raises(ValidationError):
-        ScheduleBlockCreate(task_id=TASK_ID, start_hour=Decimal("9"), end_hour=Decimal("10"))  # type: ignore[call-arg]
+        ScheduleBlockCreate(  # type: ignore[call-arg]
+            task_id=TASK_ID,
+            start_hour=Decimal("9"),
+            end_hour=Decimal("10"),
+        )
 
 
 def test_create_rejects_missing_start_hour() -> None:
     """ScheduleBlockCreate without start_hour must raise ValidationError."""
     with pytest.raises(ValidationError):
-        ScheduleBlockCreate(task_id=TASK_ID, date=date(2026, 5, 1), end_hour=Decimal("10"))  # type: ignore[call-arg]
+        ScheduleBlockCreate(  # type: ignore[call-arg]
+            task_id=TASK_ID,
+            date=date(2026, 5, 1),
+            end_hour=Decimal("10"),
+        )
 
 
 def test_create_rejects_missing_end_hour() -> None:
     """ScheduleBlockCreate without end_hour must raise ValidationError."""
     with pytest.raises(ValidationError):
-        ScheduleBlockCreate(task_id=TASK_ID, date=date(2026, 5, 1), start_hour=Decimal("9"))  # type: ignore[call-arg]
+        ScheduleBlockCreate(  # type: ignore[call-arg]
+            task_id=TASK_ID,
+            date=date(2026, 5, 1),
+            start_hour=Decimal("9"),
+        )
 
 
 def test_create_rejects_start_equal_end() -> None:
     """ScheduleBlockCreate must reject start_hour == end_hour."""
     with pytest.raises(ValidationError):
         ScheduleBlockCreate(
-            task_id=TASK_ID, date=date(2026, 5, 1),
-            start_hour=Decimal("10"), end_hour=Decimal("10"),
+            task_id=TASK_ID,
+            date=date(2026, 5, 1),
+            start_hour=Decimal("10"),
+            end_hour=Decimal("10"),
         )
 
 
@@ -79,8 +100,10 @@ def test_create_rejects_start_gt_end() -> None:
     """ScheduleBlockCreate must reject start_hour > end_hour."""
     with pytest.raises(ValidationError):
         ScheduleBlockCreate(
-            task_id=TASK_ID, date=date(2026, 5, 1),
-            start_hour=Decimal("15"), end_hour=Decimal("10"),
+            task_id=TASK_ID,
+            date=date(2026, 5, 1),
+            start_hour=Decimal("15"),
+            end_hour=Decimal("10"),
         )
 
 
@@ -88,8 +111,10 @@ def test_create_rejects_negative_start_hour() -> None:
     """ScheduleBlockCreate must reject negative start_hour."""
     with pytest.raises(ValidationError):
         ScheduleBlockCreate(
-            task_id=TASK_ID, date=date(2026, 5, 1),
-            start_hour=Decimal("-1"), end_hour=Decimal("10"),
+            task_id=TASK_ID,
+            date=date(2026, 5, 1),
+            start_hour=Decimal("-1"),
+            end_hour=Decimal("10"),
         )
 
 
@@ -97,8 +122,10 @@ def test_create_rejects_start_hour_above_24() -> None:
     """ScheduleBlockCreate must reject start_hour > 24."""
     with pytest.raises(ValidationError):
         ScheduleBlockCreate(
-            task_id=TASK_ID, date=date(2026, 5, 1),
-            start_hour=Decimal("24.01"), end_hour=Decimal("25"),
+            task_id=TASK_ID,
+            date=date(2026, 5, 1),
+            start_hour=Decimal("24.01"),
+            end_hour=Decimal("25"),
         )
 
 
@@ -106,16 +133,20 @@ def test_create_rejects_end_hour_above_24() -> None:
     """ScheduleBlockCreate must reject end_hour > 24."""
     with pytest.raises(ValidationError):
         ScheduleBlockCreate(
-            task_id=TASK_ID, date=date(2026, 5, 1),
-            start_hour=Decimal("9"), end_hour=Decimal("24.01"),
+            task_id=TASK_ID,
+            date=date(2026, 5, 1),
+            start_hour=Decimal("9"),
+            end_hour=Decimal("24.01"),
         )
 
 
 def test_create_accepts_boundary_hours() -> None:
     """ScheduleBlockCreate must accept start_hour=0, end_hour=24."""
     b = ScheduleBlockCreate(
-        task_id=TASK_ID, date=date(2026, 5, 1),
-        start_hour=Decimal("0"), end_hour=Decimal("24"),
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("0"),
+        end_hour=Decimal("24"),
     )
     assert b.start_hour == Decimal("0")
     assert b.end_hour == Decimal("24")
@@ -125,8 +156,10 @@ def test_create_rejects_invalid_source() -> None:
     """ScheduleBlockCreate must reject invalid source values."""
     with pytest.raises(ValidationError):
         ScheduleBlockCreate(
-            task_id=TASK_ID, date=date(2026, 5, 1),
-            start_hour=Decimal("9"), end_hour=Decimal("10"),
+            task_id=TASK_ID,
+            date=date(2026, 5, 1),
+            start_hour=Decimal("9"),
+            end_hour=Decimal("10"),
             source="outlook",
         )
 
@@ -134,14 +167,18 @@ def test_create_rejects_invalid_source() -> None:
 def test_create_accepts_valid_sources() -> None:
     """ScheduleBlockCreate must accept both valid source values."""
     b1 = ScheduleBlockCreate(
-        task_id=TASK_ID, date=date(2026, 5, 1),
-        start_hour=Decimal("9"), end_hour=Decimal("10"),
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
         source="manual",
     )
     assert b1.source == "manual"
     b2 = ScheduleBlockCreate(
-        task_id=TASK_ID, date=date(2026, 5, 1),
-        start_hour=Decimal("9"), end_hour=Decimal("10"),
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9"),
+        end_hour=Decimal("10"),
         source="google_calendar",
     )
     assert b2.source == "google_calendar"
@@ -150,8 +187,10 @@ def test_create_accepts_valid_sources() -> None:
 def test_create_accepts_decimal_hours() -> None:
     """ScheduleBlockCreate must accept fractional hours (e.g. 9.5 = 9:30)."""
     b = ScheduleBlockCreate(
-        task_id=TASK_ID, date=date(2026, 5, 1),
-        start_hour=Decimal("9.5"), end_hour=Decimal("10.75"),
+        task_id=TASK_ID,
+        date=date(2026, 5, 1),
+        start_hour=Decimal("9.5"),
+        end_hour=Decimal("10.75"),
     )
     assert b.start_hour == Decimal("9.5")
     assert b.end_hour == Decimal("10.75")

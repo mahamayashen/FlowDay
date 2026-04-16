@@ -15,7 +15,15 @@ def test_schedule_block_table_name() -> None:
 def test_schedule_block_has_required_columns() -> None:
     """ScheduleBlock must have all columns from DATA_MODEL.md."""
     columns = {c.name for c in inspect(ScheduleBlock).columns}
-    expected = {"id", "task_id", "date", "start_hour", "end_hour", "source", "created_at"}
+    expected = {
+        "id",
+        "task_id",
+        "date",
+        "start_hour",
+        "end_hour",
+        "source",
+        "created_at",
+    }
     assert expected.issubset(columns), f"Missing columns: {expected - columns}"
 
 

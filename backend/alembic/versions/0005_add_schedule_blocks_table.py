@@ -50,9 +50,7 @@ def upgrade() -> None:
             name="ck_schedule_blocks_end_gt_start",
         ),
     )
-    op.create_index(
-        "idx_schedule_block_date", "schedule_blocks", ["date", "task_id"]
-    )
+    op.create_index("idx_schedule_block_date", "schedule_blocks", ["date", "task_id"])
 
 
 def downgrade() -> None:

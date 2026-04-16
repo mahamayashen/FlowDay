@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, UTC
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
@@ -63,7 +63,7 @@ async def test_get_block_returns_block_for_owner() -> None:
 
 @pytest.mark.asyncio
 async def test_get_block_raises_404_when_not_found() -> None:
-    """get_schedule_block must raise 404 when block doesn't exist or user doesn't own it."""
+    """get_schedule_block must raise 404 when not found."""
     db = AsyncMock()
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = None
@@ -185,7 +185,11 @@ async def test_list_blocks_returns_blocks_for_date() -> None:
     mock_result.scalars.return_value.all.return_value = [fake1, fake2]
     db.execute.return_value = mock_result
 
-    result = await list_schedule_blocks(db=db, user_id=USER_ID, query_date=date(2026, 5, 1))
+    result = await list_schedule_blocks(
+        db=db,
+        user_id=USER_ID,
+        query_date=date(2026, 5, 1),
+    )
 
     assert len(result) == 2
 
@@ -198,7 +202,11 @@ async def test_list_blocks_returns_empty_for_no_blocks() -> None:
     mock_result.scalars.return_value.all.return_value = []
     db.execute.return_value = mock_result
 
-    result = await list_schedule_blocks(db=db, user_id=USER_ID, query_date=date(2026, 5, 1))
+    result = await list_schedule_blocks(
+        db=db,
+        user_id=USER_ID,
+        query_date=date(2026, 5, 1),
+    )
 
     assert result == []
 
@@ -211,7 +219,11 @@ async def test_list_blocks_scopes_to_user() -> None:
     mock_result.scalars.return_value.all.return_value = []
     db.execute.return_value = mock_result
 
-    await list_schedule_blocks(db=db, user_id=USER_ID, query_date=date(2026, 5, 1))
+    await list_schedule_blocks(
+        db=db,
+        user_id=USER_ID,
+        query_date=date(2026, 5, 1),
+    )
 
     executed_stmt = db.execute.call_args[0][0]
     compiled = str(executed_stmt.compile(compile_kwargs={"literal_binds": True}))
@@ -239,7 +251,10 @@ async def test_update_block_applies_changes() -> None:
 
     data = ScheduleBlockUpdate(start_hour=Decimal("8"), end_hour=Decimal("11"))
     result = await update_schedule_block(
-        db=db, block_id=BLOCK_ID, user_id=USER_ID, data=data,
+        db=db,
+        block_id=BLOCK_ID,
+        user_id=USER_ID,
+        data=data,
     )
 
     assert result == fake
@@ -257,7 +272,12 @@ async def test_update_block_raises_404_when_not_found() -> None:
 
     data = ScheduleBlockUpdate(start_hour=Decimal("8"))
     with pytest.raises(HTTPException) as exc_info:
-        await update_schedule_block(db=db, block_id=BLOCK_ID, user_id=USER_ID, data=data)
+        await update_schedule_block(
+            db=db,
+            block_id=BLOCK_ID,
+            user_id=USER_ID,
+            data=data,
+        )
 
     assert exc_info.value.status_code == 404
 
@@ -277,7 +297,12 @@ async def test_update_block_raises_409_on_overlap() -> None:
 
     data = ScheduleBlockUpdate(start_hour=Decimal("9"), end_hour=Decimal("10"))
     with pytest.raises(HTTPException) as exc_info:
-        await update_schedule_block(db=db, block_id=BLOCK_ID, user_id=USER_ID, data=data)
+        await update_schedule_block(
+            db=db,
+            block_id=BLOCK_ID,
+            user_id=USER_ID,
+            data=data,
+        )
 
     assert exc_info.value.status_code == 409
 

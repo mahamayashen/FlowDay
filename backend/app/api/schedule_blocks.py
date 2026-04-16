@@ -45,9 +45,7 @@ async def list_schedule_blocks_route(
     db: AsyncSession = Depends(get_db),
 ) -> list[ScheduleBlockResponse]:
     """List schedule blocks for a given date."""
-    blocks = await list_schedule_blocks(
-        db=db, user_id=current_user.id, query_date=date
-    )
+    blocks = await list_schedule_blocks(db=db, user_id=current_user.id, query_date=date)
     return [ScheduleBlockResponse.model_validate(b) for b in blocks]
 
 
@@ -58,9 +56,7 @@ async def get_schedule_block_route(
     db: AsyncSession = Depends(get_db),
 ) -> ScheduleBlockResponse:
     """Get a single schedule block by ID."""
-    block = await get_schedule_block(
-        db=db, block_id=block_id, user_id=current_user.id
-    )
+    block = await get_schedule_block(db=db, block_id=block_id, user_id=current_user.id)
     return ScheduleBlockResponse.model_validate(block)
 
 
@@ -87,6 +83,4 @@ async def delete_schedule_block_route(
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Delete a schedule block."""
-    await delete_schedule_block(
-        db=db, block_id=block_id, user_id=current_user.id
-    )
+    await delete_schedule_block(db=db, block_id=block_id, user_id=current_user.id)

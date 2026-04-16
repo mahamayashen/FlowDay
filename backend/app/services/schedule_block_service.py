@@ -161,7 +161,11 @@ async def update_schedule_block(
 
     if "date" in updates or "start_hour" in updates or "end_hour" in updates:
         await _check_overlap(
-            db, user_id, effective_date, effective_start, effective_end,
+            db,
+            user_id,
+            effective_date,
+            effective_start,
+            effective_end,
             exclude_id=block_id,
         )
 
