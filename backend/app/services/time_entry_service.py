@@ -11,35 +11,18 @@ from app.models.project import Project
 from app.models.task import Task
 from app.models.time_entry import TimeEntry
 from app.schemas.time_entry import TimeEntryStart
-
-
-async def _verify_task_ownership(
-    db: AsyncSession,
-    task_id: uuid.UUID,
-    user_id: uuid.UUID,
-) -> None:
-    """Verify that the task exists and belongs to the user via Project."""
-    stmt = (
-        select(Task)
-        .join(Project, Task.project_id == Project.id)
-        .where(
-            Task.id == task_id,
-            Project.user_id == user_id,
-        )
-    )
-    result = await db.execute(stmt)
-    if result.scalar_one_or_none() is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found",
-        )
+from app.services.ownership import verify_task_ownership
 
 
 async def _check_no_active_timer(
     db: AsyncSession,
     user_id: uuid.UUID,
 ) -> None:
-    """Raise 409 if the user already has an active (unstopped) timer."""
+    """Raise 409 if the user already has an active (unstopped) timer.
+
+    Uses FOR UPDATE to prevent race conditions where two concurrent
+    requests could both pass the check and create duplicate active timers.
+    """
     stmt = (
         select(TimeEntry)
         .join(Task, TimeEntry.task_id == Task.id)
@@ -48,9 +31,10 @@ async def _check_no_active_timer(
             Project.user_id == user_id,
             TimeEntry.ended_at.is_(None),
         )
+        .with_for_update()
     )
     result = await db.execute(stmt)
-    if result.scalar_one_or_none() is not None:
+    if result.scalars().first() is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="User already has an active timer",
@@ -88,13 +72,11 @@ async def start_timer(
     data: TimeEntryStart,
 ) -> TimeEntry:
     """Start a new timer, verifying task ownership and no active timer."""
-    await _verify_task_ownership(db, data.task_id, user_id)
+    await verify_task_ownership(db, data.task_id, user_id)
     await _check_no_active_timer(db, user_id)
 
-    entry = TimeEntry(
-        task_id=data.task_id,
-        started_at=data.started_at or datetime.now(UTC),
-    )
+    started = data.started_at if data.started_at is not None else datetime.now(UTC)
+    entry = TimeEntry(task_id=data.task_id, started_at=started)
     db.add(entry)
     await db.commit()
     await db.refresh(entry)

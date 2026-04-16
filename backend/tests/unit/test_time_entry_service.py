@@ -51,7 +51,7 @@ async def test_start_timer_returns_time_entry() -> None:
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     # Mock for active timer check
     mock_active_result = MagicMock()
-    mock_active_result.scalar_one_or_none.return_value = None
+    mock_active_result.scalars.return_value.first.return_value = None
     db.execute.side_effect = [mock_task_result, mock_active_result]
 
     data = TimeEntryStart(task_id=TASK_ID)
@@ -87,7 +87,7 @@ async def test_start_timer_raises_409_when_active_timer_exists() -> None:
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     # Active timer found
     mock_active_result = MagicMock()
-    mock_active_result.scalar_one_or_none.return_value = _make_fake_entry()
+    mock_active_result.scalars.return_value.first.return_value = _make_fake_entry()
     db.execute.side_effect = [mock_task_result, mock_active_result]
 
     data = TimeEntryStart(task_id=TASK_ID)
@@ -105,7 +105,7 @@ async def test_start_timer_query_checks_user_for_active() -> None:
     mock_task_result = MagicMock()
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     mock_active_result = MagicMock()
-    mock_active_result.scalar_one_or_none.return_value = None
+    mock_active_result.scalars.return_value.first.return_value = None
     db.execute.side_effect = [mock_task_result, mock_active_result]
 
     data = TimeEntryStart(task_id=TASK_ID)
@@ -126,7 +126,7 @@ async def test_start_timer_uses_provided_started_at() -> None:
     mock_task_result = MagicMock()
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     mock_active_result = MagicMock()
-    mock_active_result.scalar_one_or_none.return_value = None
+    mock_active_result.scalars.return_value.first.return_value = None
     db.execute.side_effect = [mock_task_result, mock_active_result]
 
     custom_time = datetime(2026, 5, 1, 14, 30, tzinfo=UTC)
@@ -158,7 +158,7 @@ async def test_start_timer_detail_on_active_timer() -> None:
     mock_task_result = MagicMock()
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     mock_active_result = MagicMock()
-    mock_active_result.scalar_one_or_none.return_value = _make_fake_entry()
+    mock_active_result.scalars.return_value.first.return_value = _make_fake_entry()
     db.execute.side_effect = [mock_task_result, mock_active_result]
 
     data = TimeEntryStart(task_id=TASK_ID)
@@ -412,7 +412,7 @@ async def test_active_timer_check_query_filters() -> None:
     mock_task_result = MagicMock()
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     mock_active_result = MagicMock()
-    mock_active_result.scalar_one_or_none.return_value = None
+    mock_active_result.scalars.return_value.first.return_value = None
     db.execute.side_effect = [mock_task_result, mock_active_result]
 
     data = TimeEntryStart(task_id=TASK_ID)
@@ -522,7 +522,7 @@ async def test_start_timer_active_detail_message_exact() -> None:
     mock_task_result = MagicMock()
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     mock_active_result = MagicMock()
-    mock_active_result.scalar_one_or_none.return_value = _make_fake_entry()
+    mock_active_result.scalars.return_value.first.return_value = _make_fake_entry()
     db.execute.side_effect = [mock_task_result, mock_active_result]
 
     data = TimeEntryStart(task_id=TASK_ID)
@@ -559,7 +559,7 @@ async def test_active_timer_check_join_uses_equality() -> None:
     mock_task_result = MagicMock()
     mock_task_result.scalar_one_or_none.return_value = MagicMock()
     mock_active_result = MagicMock()
-    mock_active_result.scalar_one_or_none.return_value = None
+    mock_active_result.scalars.return_value.first.return_value = None
     db.execute.side_effect = [mock_task_result, mock_active_result]
 
     data = TimeEntryStart(task_id=TASK_ID)

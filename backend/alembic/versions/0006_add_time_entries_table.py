@@ -34,7 +34,12 @@ def upgrade() -> None:
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("ended_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("duration_seconds", sa.Integer(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
     )
     op.create_index(
         "idx_time_entry_task_started", "time_entries", ["task_id", "started_at"]

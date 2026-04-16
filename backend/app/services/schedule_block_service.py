@@ -11,6 +11,7 @@ from app.models.project import Project
 from app.models.schedule_block import ScheduleBlock
 from app.models.task import Task
 from app.schemas.schedule_block import ScheduleBlockCreate, ScheduleBlockUpdate
+from app.services.ownership import verify_task_ownership
 
 
 async def _get_block_with_ownership(
@@ -39,28 +40,6 @@ async def _get_block_with_ownership(
             detail="Schedule block not found",
         )
     return block
-
-
-async def _verify_task_ownership(
-    db: AsyncSession,
-    task_id: uuid.UUID,
-    user_id: uuid.UUID,
-) -> None:
-    """Verify that the task exists and belongs to the user via Project."""
-    stmt = (
-        select(Task)
-        .join(Project, Task.project_id == Project.id)
-        .where(
-            Task.id == task_id,
-            Project.user_id == user_id,
-        )
-    )
-    result = await db.execute(stmt)
-    if result.scalar_one_or_none() is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found",
-        )
 
 
 async def _check_overlap(
@@ -99,7 +78,7 @@ async def create_schedule_block(
     data: ScheduleBlockCreate,
 ) -> ScheduleBlock:
     """Create a new schedule block, verifying task ownership and no overlap."""
-    await _verify_task_ownership(db, data.task_id, user_id)
+    await verify_task_ownership(db, data.task_id, user_id)
     await _check_overlap(db, user_id, data.date, data.start_hour, data.end_hour)
 
     block = ScheduleBlock(

@@ -49,13 +49,13 @@ async def stop_timer_route(
 @router.get("", response_model=list[TimeEntryResponse])
 async def list_time_entries_route(
     task_id: uuid.UUID | None = Query(default=None),
-    date: date | None = Query(default=None),
+    entry_date: date | None = Query(default=None, alias="date"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[TimeEntryResponse]:
     """List time entries with optional filters."""
     entries = await list_time_entries(
-        db=db, user_id=current_user.id, task_id=task_id, query_date=date
+        db=db, user_id=current_user.id, task_id=task_id, query_date=entry_date
     )
     return [TimeEntryResponse.model_validate(e) for e in entries]
 
