@@ -54,7 +54,10 @@ def test_external_sync_provider_not_nullable() -> None:
 
 def test_external_sync_provider_is_string_20() -> None:
     """ExternalSync.provider must be String(20)."""
+    from sqlalchemy import String as SAString
+
     col = inspect(ExternalSync).columns["provider"]
+    assert isinstance(col.type, SAString)
     assert col.type.length == 20
 
 
@@ -66,7 +69,10 @@ def test_external_sync_last_synced_at_nullable() -> None:
 
 def test_external_sync_last_synced_at_is_datetime_tz() -> None:
     """ExternalSync.last_synced_at must be timezone-aware."""
+    from sqlalchemy import DateTime as SADateTime
+
     col = inspect(ExternalSync).columns["last_synced_at"]
+    assert isinstance(col.type, SADateTime)
     assert col.type.timezone is True
 
 
@@ -103,7 +109,10 @@ def test_external_sync_created_at_not_nullable() -> None:
 
 def test_external_sync_created_at_is_datetime_tz() -> None:
     """ExternalSync.created_at must be timezone-aware."""
+    from sqlalchemy import DateTime as SADateTime
+
     col = inspect(ExternalSync).columns["created_at"]
+    assert isinstance(col.type, SADateTime)
     assert col.type.timezone is True
 
 

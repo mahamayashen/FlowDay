@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,9 +12,7 @@ USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 SYNC_ID = uuid.UUID("00000000-0000-0000-0000-aaaaaaaaaaaa")
 
 
-def _make_fake_sync(
-    provider: str = "github", status: str = "active"
-) -> MagicMock:
+def _make_fake_sync(provider: str = "github", status: str = "active") -> MagicMock:
     fake = MagicMock()
     fake.id = SYNC_ID
     fake.user_id = USER_ID
@@ -26,7 +23,7 @@ def _make_fake_sync(
     return fake
 
 
-def _mock_db_returning(rows: list) -> AsyncMock:
+def _mock_db_returning(rows: list[MagicMock]) -> AsyncMock:
     db = AsyncMock()
     result = MagicMock()
     scalars = MagicMock()

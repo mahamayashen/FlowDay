@@ -6,12 +6,12 @@ from app.services.sync_provider import BaseSyncProvider, ProviderRegistry
 
 
 class _FakeProvider(BaseSyncProvider):
-    async def sync(self, db, sync_record) -> None:  # type: ignore[override]
+    async def sync(self, db: object, sync_record: object) -> None:
         pass
 
 
 class _AnotherProvider(BaseSyncProvider):
-    async def sync(self, db, sync_record) -> None:  # type: ignore[override]
+    async def sync(self, db: object, sync_record: object) -> None:
         pass
 
 
