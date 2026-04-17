@@ -31,7 +31,7 @@ def compute_accuracy_pct(planned: float, actual: float) -> float:
 
     Returns 0.0 when planned == 0 to avoid division by zero.
     """
-    if planned == 0:
+    if planned <= 0:
         return 0.0
     return (actual / planned) * 100
 

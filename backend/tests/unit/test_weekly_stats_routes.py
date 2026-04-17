@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncGenerator
-from datetime import date
+from datetime import date, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -21,7 +21,6 @@ USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 PROJ_X = uuid.UUID("00000000-0000-0000-0000-000000001001")
 
 WEEK_MONDAY = date(2026, 4, 13)
-WEEK_SUNDAY = date(2026, 4, 19)
 
 
 def _make_fake_user() -> MagicMock:
@@ -35,7 +34,7 @@ def _make_fake_user() -> MagicMock:
 def _make_weekly_response(week_start: date = WEEK_MONDAY) -> WeeklyStatsResponse:
     return WeeklyStatsResponse(
         week_start=week_start,
-        week_end=WEEK_SUNDAY,
+        week_end=week_start + timedelta(days=6),
         projects=[
             ProjectWeeklyStats(
                 project_id=PROJ_X,

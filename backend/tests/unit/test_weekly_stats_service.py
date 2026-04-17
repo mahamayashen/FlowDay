@@ -6,6 +6,8 @@ from datetime import date
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from app.services.analytics_service import (
     align_to_monday,
@@ -49,6 +51,29 @@ def test_accuracy_pct_over_100_percent() -> None:
 
 def test_accuracy_pct_exact_match() -> None:
     assert compute_accuracy_pct(3.0, 3.0) == 100.0
+
+
+# ---------------------------------------------------------------------------
+# compute_accuracy_pct — property-based tests
+# ---------------------------------------------------------------------------
+
+
+@given(
+    planned=st.floats(min_value=0.01, max_value=1000.0),
+    actual=st.floats(min_value=0.0, max_value=1000.0),
+)
+def test_accuracy_pct_positive_planned_returns_ratio(
+    planned: float, actual: float
+) -> None:
+    """When planned > 0, result equals (actual / planned) * 100."""
+    result = compute_accuracy_pct(planned, actual)
+    assert result == pytest.approx((actual / planned) * 100, rel=1e-6)
+
+
+@given(actual=st.floats(min_value=0.0, max_value=1000.0))
+def test_accuracy_pct_zero_planned_always_zero(actual: float) -> None:
+    """When planned == 0, result is always 0.0 regardless of actual."""
+    assert compute_accuracy_pct(0.0, actual) == 0.0
 
 
 # ---------------------------------------------------------------------------
