@@ -50,7 +50,7 @@ def upgrade() -> None:
             "created_at",
             sa.DateTime(timezone=True),
             nullable=False,
-            server_default=sa.func.now(),
+            server_default=sa.text("NOW() AT TIME ZONE 'UTC'"),
         ),
         sa.CheckConstraint(
             "provider IN ('google_calendar', 'github')",
