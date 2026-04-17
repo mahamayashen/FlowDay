@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # override via .env in browser-testing scenarios
     GOOGLE_REDIRECT_URI: str = "http://localhost:5060/auth/google/callback"
 
+    # OAuth — Google Calendar (separate scope from login OAuth)
+    GOOGLE_CALENDAR_REDIRECT_URI: str = (
+        "http://localhost:5060/sync/google-calendar/callback"
+    )
+
     # OAuth — GitHub
     GITHUB_CLIENT_ID: str | None = None
     GITHUB_CLIENT_SECRET: str | None = None

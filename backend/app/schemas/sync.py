@@ -7,6 +7,12 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 
+class GoogleCalendarAuthResponse(BaseModel):
+    """Response for the Google Calendar OAuth initiation endpoint."""
+
+    authorization_url: str
+
+
 class SyncStatusResponse(BaseModel):
     """Response schema for an ExternalSync record."""
 
