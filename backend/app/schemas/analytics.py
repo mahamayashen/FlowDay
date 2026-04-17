@@ -43,3 +43,31 @@ class PlannedVsActualResponse(BaseModel):
     date: date
     tasks: list[TaskComparison]
     summary: PlannedVsActualSummary
+
+
+class ProjectWeeklyStats(BaseModel):
+    """Per-project breakdown for the week."""
+
+    project_id: uuid.UUID
+    project_name: str
+    project_color: str
+    planned_hours: float
+    actual_hours: float
+    accuracy_pct: float
+
+
+class WeeklyStatsSummary(BaseModel):
+    """Aggregate totals across all projects for the week."""
+
+    total_planned_hours: float
+    total_actual_hours: float
+    average_accuracy_pct: float
+
+
+class WeeklyStatsResponse(BaseModel):
+    """Full response for the weekly-stats endpoint."""
+
+    week_start: date
+    week_end: date
+    projects: list[ProjectWeeklyStats]
+    summary: WeeklyStatsSummary
