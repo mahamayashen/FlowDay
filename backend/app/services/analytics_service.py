@@ -58,9 +58,7 @@ async def get_planned_vs_actual(
     planned_rows = planned_result.all()
 
     # Query 2: actual hours per task from completed time entries
-    day_start = datetime(
-        query_date.year, query_date.month, query_date.day, tzinfo=UTC
-    )
+    day_start = datetime(query_date.year, query_date.month, query_date.day, tzinfo=UTC)
     day_end = day_start + timedelta(days=1)
     actual_stmt = (
         select(
@@ -83,12 +81,10 @@ async def get_planned_vs_actual(
 
     # Merge in Python
     planned_map: dict[uuid.UUID, tuple[str, float]] = {
-        row.task_id: (row.title, float(row.planned_hours))
-        for row in planned_rows
+        row.task_id: (row.title, float(row.planned_hours)) for row in planned_rows
     }
     actual_map: dict[uuid.UUID, tuple[str, float]] = {
-        row.task_id: (row.title, float(row.actual_hours))
-        for row in actual_rows
+        row.task_id: (row.title, float(row.actual_hours)) for row in actual_rows
     }
 
     all_task_ids = set(planned_map) | set(actual_map)
