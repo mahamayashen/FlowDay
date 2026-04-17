@@ -84,6 +84,7 @@ async def test_auth_returns_authorization_url(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_auth_requires_authentication(client: AsyncClient) -> None:
     """GET /sync/google-calendar/auth without JWT returns 401."""
+
     async def override_db() -> AsyncMock:  # type: ignore[misc]
         yield AsyncMock()
 
@@ -103,24 +104,28 @@ async def test_auth_requires_authentication(client: AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_callback_success_creates_sync_record(client: AsyncClient) -> None:
-    """GET /sync/google-calendar/callback with valid code returns 200 and sync record."""
+    """GET /sync/google-calendar/callback with valid code returns 200."""
     _setup_overrides()
     try:
-        with patch(
-            "app.api.sync.exchange_code_for_tokens",
-            new_callable=AsyncMock,
-            return_value={
-                "access_token": "access-abc",
-                "refresh_token": "refresh-xyz",
-                "expires_in": 3600,
-            },
-        ), patch(
-            "app.api.sync.store_tokens_in_sync_record",
-            new_callable=AsyncMock,
-        ), patch(
-            "app.api.sync.get_or_create_google_calendar_sync",
-            new_callable=AsyncMock,
-            return_value=_make_sync_response(),
+        with (
+            patch(
+                "app.api.sync.exchange_code_for_tokens",
+                new_callable=AsyncMock,
+                return_value={
+                    "access_token": "access-abc",
+                    "refresh_token": "refresh-xyz",
+                    "expires_in": 3600,
+                },
+            ),
+            patch(
+                "app.api.sync.store_tokens_in_sync_record",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "app.api.sync.get_or_create_google_calendar_sync",
+                new_callable=AsyncMock,
+                return_value=_make_sync_response(),
+            ),
         ):
             response = await client.get(
                 "/sync/google-calendar/callback",
@@ -152,6 +157,7 @@ async def test_callback_rejects_invalid_state(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_callback_requires_authentication(client: AsyncClient) -> None:
     """GET /sync/google-calendar/callback without JWT returns 401."""
+
     async def override_db() -> AsyncMock:  # type: ignore[misc]
         yield AsyncMock()
 

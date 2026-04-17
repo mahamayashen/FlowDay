@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -20,7 +20,7 @@ _SYNC_DAYS_AHEAD = 7
 
 
 class GoogleCalendarSyncProvider(BaseSyncProvider):
-    """Syncs Google Calendar events as ScheduleBlock rows with source=google_calendar."""
+    """Syncs Google Calendar events as ScheduleBlock rows (source=google_calendar)."""
 
     async def sync(self, db: AsyncSession, sync_record: ExternalSync) -> None:
         """Fetch calendar events and upsert them as schedule blocks."""
@@ -28,9 +28,11 @@ class GoogleCalendarSyncProvider(BaseSyncProvider):
 
         now = datetime.now(UTC)
         time_min = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-        time_max = (now + timedelta(days=_SYNC_DAYS_AHEAD)).replace(
-            hour=23, minute=59, second=59, microsecond=0
-        ).isoformat()
+        time_max = (
+            (now + timedelta(days=_SYNC_DAYS_AHEAD))
+            .replace(hour=23, minute=59, second=59, microsecond=0)
+            .isoformat()
+        )
 
         events = await fetch_calendar_events(access_token, time_min, time_max)
 
@@ -97,7 +99,9 @@ async def _delete_existing_blocks(
     """Delete google_calendar ScheduleBlocks for a user within the date range."""
     # ScheduleBlock → Task → Project (user_id)
     task_ids_result = await db.execute(
-        select(Task.id).join(Project, Task.project_id == Project.id).where(
+        select(Task.id)
+        .join(Project, Task.project_id == Project.id)
+        .where(
             Project.user_id == user_id,
             Project.name == _SENTINEL_PROJECT_NAME,
         )
@@ -119,7 +123,7 @@ async def _delete_existing_blocks(
 def _event_to_block_data(
     event: dict[str, Any],
 ) -> dict[str, Any] | None:
-    """Convert a Google Calendar event dict to block fields, or None for all-day events."""
+    """Convert a Google Calendar event to block fields, or None for all-day events."""
     start_obj = event.get("start", {})
     end_obj = event.get("end", {})
 
@@ -132,7 +136,7 @@ def _event_to_block_data(
     start_dt = datetime.fromisoformat(start_dt_str)
     end_dt = datetime.fromisoformat(end_dt_str)
 
-    event_date = start_dt.astimezone(timezone.utc).date()
+    event_date = start_dt.astimezone(UTC).date()
     start_hour = Decimal(str(round(start_dt.hour + start_dt.minute / 60, 2)))
     end_hour = Decimal(str(round(end_dt.hour + end_dt.minute / 60, 2)))
 

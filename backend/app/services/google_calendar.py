@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlencode
 
 import httpx
@@ -40,8 +40,10 @@ async def _post_to_token_endpoint(payload: dict[str, str]) -> dict[str, Any]:
     async with httpx.AsyncClient() as client:
         resp = await client.post(GOOGLE_TOKEN_URL, data=payload)
     if resp.status_code != 200:
-        raise HTTPException(status_code=401, detail="Google token endpoint request failed")
-    return resp.json()
+        raise HTTPException(
+            status_code=401, detail="Google token endpoint request failed"
+        )
+    return cast(dict[str, Any], resp.json())
 
 
 async def exchange_code_for_tokens(code: str) -> dict[str, Any]:
@@ -56,7 +58,9 @@ async def exchange_code_for_tokens(code: str) -> dict[str, Any]:
         }
     )
     if "access_token" not in token_data:
-        raise HTTPException(status_code=401, detail="Failed to exchange Google auth code")
+        raise HTTPException(
+            status_code=401, detail="Failed to exchange Google auth code"
+        )
     return token_data
 
 
@@ -157,7 +161,7 @@ async def get_valid_access_token(
     # Token expired — refresh it
     token_data = await refresh_access_token(encrypted_refresh)
     await store_tokens_in_sync_record(db, sync_record, token_data)
-    return token_data["access_token"]
+    return str(token_data["access_token"])
 
 
 async def get_or_create_google_calendar_sync(

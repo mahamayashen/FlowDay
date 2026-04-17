@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
@@ -20,7 +20,7 @@ async def test_callback_creates_external_sync_record(
     db_session: AsyncSession,
     test_user: User,
 ) -> None:
-    """GET /sync/google-calendar/callback creates an ExternalSync row with encrypted tokens."""
+    """GET /sync/google-calendar/callback creates an ExternalSync row with tokens."""
     fake_tokens = {
         "access_token": "integration-access",
         "refresh_token": "integration-refresh",
@@ -55,7 +55,9 @@ async def test_callback_creates_external_sync_record(
     assert "encrypted_access_token" in config
     assert "encrypted_refresh_token" in config
     assert decrypt_oauth_token(config["encrypted_access_token"]) == "integration-access"
-    assert decrypt_oauth_token(config["encrypted_refresh_token"]) == "integration-refresh"
+    assert (
+        decrypt_oauth_token(config["encrypted_refresh_token"]) == "integration-refresh"
+    )
 
 
 @pytest.mark.asyncio
@@ -64,7 +66,7 @@ async def test_sync_trigger_creates_schedule_blocks(
     db_session: AsyncSession,
     test_user: User,
 ) -> None:
-    """POST /sync/google_calendar/trigger creates ScheduleBlock rows for fetched events."""
+    """POST /sync/google_calendar/trigger creates ScheduleBlock rows for events."""
     # Pre-insert ExternalSync record with valid tokens
     future = (datetime.now(UTC) + timedelta(hours=1)).isoformat()
     sync_record = ExternalSync(

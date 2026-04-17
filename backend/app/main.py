@@ -5,8 +5,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-import app.services.google_calendar_provider  # noqa: F401 — registers Google Calendar provider
-
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
@@ -20,6 +18,7 @@ from app.core.database import dispose_engine, init_engine
 from app.core.metrics import configure_metrics
 from app.core.redis import close_redis, init_redis
 from app.core.sentry import SentryBreadcrumbMiddleware, configure_sentry
+from app.services import google_calendar_provider as _gcal_provider  # noqa: F401
 
 
 @asynccontextmanager

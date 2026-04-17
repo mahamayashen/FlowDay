@@ -9,7 +9,6 @@ import pytest
 from app.core.security import encrypt_oauth_token
 from app.services.sync_provider import provider_registry
 
-
 # ---------------------------------------------------------------------------
 # Provider registration
 # ---------------------------------------------------------------------------
@@ -18,7 +17,6 @@ from app.services.sync_provider import provider_registry
 def test_provider_registered_in_registry() -> None:
     """GoogleCalendarSyncProvider must be registered under 'google_calendar'."""
     import app.services.google_calendar_provider  # noqa: F401
-
     from app.services.google_calendar_provider import GoogleCalendarSyncProvider
 
     registered = provider_registry.get("google_calendar")
@@ -32,7 +30,7 @@ def test_provider_registered_in_registry() -> None:
 
 @pytest.mark.asyncio
 async def test_sync_creates_sentinel_project_task_and_block() -> None:
-    """sync() creates a sentinel project, task per event, and schedule block per event."""
+    """sync() creates a sentinel project, task per event, and block per event."""
     import app.services.google_calendar_provider  # noqa: F401
     from app.services.google_calendar_provider import GoogleCalendarSyncProvider
 
@@ -58,14 +56,17 @@ async def test_sync_creates_sentinel_project_task_and_block() -> None:
     db = AsyncMock()
     db.execute = AsyncMock(return_value=_mock_scalar_none())
 
-    with patch(
-        "app.services.google_calendar_provider.get_valid_access_token",
-        new_callable=AsyncMock,
-        return_value="access-token",
-    ), patch(
-        "app.services.google_calendar_provider.fetch_calendar_events",
-        new_callable=AsyncMock,
-        return_value=fake_events,
+    with (
+        patch(
+            "app.services.google_calendar_provider.get_valid_access_token",
+            new_callable=AsyncMock,
+            return_value="access-token",
+        ),
+        patch(
+            "app.services.google_calendar_provider.fetch_calendar_events",
+            new_callable=AsyncMock,
+            return_value=fake_events,
+        ),
     ):
         await provider.sync(db, sync_record)
 
@@ -97,14 +98,17 @@ async def test_sync_skips_all_day_events() -> None:
     db = AsyncMock()
     db.execute = AsyncMock(return_value=_mock_scalar_none())
 
-    with patch(
-        "app.services.google_calendar_provider.get_valid_access_token",
-        new_callable=AsyncMock,
-        return_value="access-token",
-    ), patch(
-        "app.services.google_calendar_provider.fetch_calendar_events",
-        new_callable=AsyncMock,
-        return_value=fake_events,
+    with (
+        patch(
+            "app.services.google_calendar_provider.get_valid_access_token",
+            new_callable=AsyncMock,
+            return_value="access-token",
+        ),
+        patch(
+            "app.services.google_calendar_provider.fetch_calendar_events",
+            new_callable=AsyncMock,
+            return_value=fake_events,
+        ),
     ):
         await provider.sync(db, sync_record)
 
@@ -120,10 +124,10 @@ async def test_sync_skips_all_day_events() -> None:
 @pytest.mark.asyncio
 async def test_sync_token_error_propagates() -> None:
     """sync() propagates HTTPException when token retrieval fails."""
+    from fastapi import HTTPException
+
     import app.services.google_calendar_provider  # noqa: F401
     from app.services.google_calendar_provider import GoogleCalendarSyncProvider
-
-    from fastapi import HTTPException
 
     provider = GoogleCalendarSyncProvider()
     sync_record = MagicMock()
