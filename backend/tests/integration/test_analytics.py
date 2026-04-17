@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import uuid
 from datetime import date, timedelta
 
 from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.time_entry import TimeEntry
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -77,7 +82,9 @@ async def test_planned_vs_actual_empty_day(auth_client: AsyncClient) -> None:
     assert body["summary"]["total_actual_hours"] == 0.0
 
 
-async def test_planned_vs_actual_unplanned_work(auth_client: AsyncClient) -> None:
+async def test_planned_vs_actual_unplanned_work(
+    auth_client: AsyncClient, db_session: AsyncSession
+) -> None:
     """A time entry with no schedule block appears as UNPLANNED."""
     _, task_id = await _create_task(auth_client)
 
@@ -87,6 +94,16 @@ async def test_planned_vs_actual_unplanned_work(auth_client: AsyncClient) -> Non
     )
     entry_id = start_resp.json()["id"]
     await auth_client.post(f"/time-entries/{entry_id}/stop")
+
+    # In CI, start and stop happen within the same second → duration_seconds = 0,
+    # which the analytics query filters out (duration_seconds > 0). Force a
+    # non-zero duration so the entry counts as actual work.
+    result = await db_session.execute(
+        select(TimeEntry).where(TimeEntry.id == uuid.UUID(entry_id))
+    )
+    entry = result.scalar_one()
+    entry.duration_seconds = 60
+    await db_session.flush()
 
     today = _today()
     resp = await auth_client.get(f"/analytics/planned-vs-actual?date={today}")
