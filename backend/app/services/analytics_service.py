@@ -89,7 +89,7 @@ async def get_planned_vs_actual(
         .where(
             TimeEntry.started_at >= day_start,
             TimeEntry.started_at < day_end,
-            TimeEntry.duration_seconds.isnot(None),
+            TimeEntry.duration_seconds > 0,
             Project.user_id == user_id,
         )
         .group_by(TimeEntry.task_id, Task.title)
@@ -185,7 +185,7 @@ async def get_weekly_stats(
         .where(
             TimeEntry.started_at >= week_start_dt,
             TimeEntry.started_at < week_end_dt,
-            TimeEntry.duration_seconds.isnot(None),
+            TimeEntry.duration_seconds > 0,
             Project.user_id == user_id,
         )
         .group_by(Project.id, Project.name, Project.color)
