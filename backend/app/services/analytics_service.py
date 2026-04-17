@@ -58,7 +58,7 @@ async def get_planned_vs_actual(
     planned_rows = planned_result.all()
 
     # Query 2: actual hours per task from completed time entries
-    day_start = datetime(query_date.year, query_date.month, query_date.day, tzinfo=UTC)
+    day_start = datetime.combine(query_date, datetime.min.time(), tzinfo=UTC)
     day_end = day_start + timedelta(days=1)
     actual_stmt = (
         select(
@@ -90,9 +90,9 @@ async def get_planned_vs_actual(
     all_task_ids = set(planned_map) | set(actual_map)
     comparisons: list[TaskComparison] = []
     for tid in sorted(all_task_ids):
-        title = planned_map.get(tid, (None, 0.0))[0] or actual_map[tid][0]
-        planned_h = planned_map.get(tid, ("", 0.0))[1]
-        actual_h = actual_map.get(tid, ("", 0.0))[1]
+        title = planned_map[tid][0] if tid in planned_map else actual_map[tid][0]
+        planned_h = planned_map[tid][1] if tid in planned_map else 0.0
+        actual_h = actual_map[tid][1] if tid in actual_map else 0.0
         comparisons.append(
             TaskComparison(
                 task_id=tid,
