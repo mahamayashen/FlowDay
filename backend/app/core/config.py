@@ -36,6 +36,7 @@ class Settings(BaseSettings):
 
     # Monitoring (optional — silently disabled when absent)
     SENTRY_DSN: str | None = None
+    PROMETHEUS_ENABLED: bool = True
 
 
 settings = Settings()
