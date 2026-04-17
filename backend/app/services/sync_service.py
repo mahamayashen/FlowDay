@@ -53,11 +53,13 @@ async def trigger_sync(
         provider_instance = provider_cls()
         await provider_instance.sync(db, sync_record)
         sync_record.last_synced_at = datetime.now(UTC)
-        sync_record.status = SyncStatus.ACTIVE
+        sync_record.status = SyncStatus.ACTIVE  # always reset to ACTIVE on success
     except HTTPException:
         raise
     except Exception:
         logger.exception("sync failed for provider %s (user %s)", provider, user_id)
+        # last_synced_at is intentionally left unchanged on failure to preserve
+        # the last known-good sync timestamp for display purposes.
         sync_record.status = SyncStatus.ERROR
 
     await db.commit()
