@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -15,5 +16,5 @@ class SyncStatusResponse(BaseModel):
     provider: str
     status: str
     last_synced_at: datetime | None
-    sync_config_json: dict  # type: ignore[type-arg]
+    sync_config_json: dict[str, Any]
     created_at: datetime
