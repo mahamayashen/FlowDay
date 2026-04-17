@@ -6,7 +6,9 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from app.core.metrics import configure_metrics
+from prometheus_client import Counter, Histogram
+
+from app.core.metrics import agent_latency_seconds, configure_metrics, judge_score, token_cost_total
 
 
 def test_configure_metrics_enabled_instruments_app() -> None:
@@ -53,3 +55,44 @@ async def test_metrics_endpoint_absent_when_disabled() -> None:
         response = await client.get("/metrics")
 
     assert response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Cycle 2: AI metric placeholder tests
+# ---------------------------------------------------------------------------
+
+
+def test_ai_metrics_registered_as_correct_types() -> None:
+    """The AI metric singletons must be the correct prometheus_client types."""
+    assert isinstance(agent_latency_seconds, Histogram)
+    assert isinstance(token_cost_total, Counter)
+    assert isinstance(judge_score, Histogram)
+
+
+def test_agent_latency_has_agent_name_label() -> None:
+    """agent_latency_seconds must carry the 'agent_name' label."""
+    assert "agent_name" in agent_latency_seconds._labelnames  # type: ignore[attr-defined]
+
+
+def test_token_cost_has_agent_name_and_model_labels() -> None:
+    """token_cost_total must carry 'agent_name' and 'model' labels."""
+    assert "agent_name" in token_cost_total._labelnames  # type: ignore[attr-defined]
+    assert "model" in token_cost_total._labelnames  # type: ignore[attr-defined]
+
+
+async def test_ai_metrics_appear_in_metrics_output() -> None:
+    """After observing values, metric names must appear in GET /metrics output."""
+    app = FastAPI()
+    configure_metrics(app, enabled=True)
+
+    agent_latency_seconds.labels(agent_name="test_agent").observe(0.5)
+    token_cost_total.labels(agent_name="test_agent", model="gpt-4").inc(10)
+    judge_score.labels(agent_name="test_agent").observe(85)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/metrics")
+
+    body = response.text
+    assert "agent_latency_seconds" in body
+    assert "token_cost_total" in body
+    assert "judge_score" in body
