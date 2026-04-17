@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from prometheus_client import Counter, Histogram
+from prometheus_client import CollectorRegistry, Counter, Histogram
 
 from app.core.metrics import (
     agent_latency_seconds,
@@ -40,7 +40,9 @@ def test_configure_metrics_disabled_skips_instrumentation() -> None:
 async def test_metrics_endpoint_returns_200() -> None:
     """A real app with metrics enabled must expose GET /metrics returning 200."""
     app = FastAPI()
-    configure_metrics(app, enabled=True)
+    # Use an isolated registry so this test never clashes with other real
+    # Instrumentator instances created in the same pytest process.
+    configure_metrics(app, enabled=True, registry=CollectorRegistry())
 
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
@@ -88,7 +90,12 @@ def test_token_cost_has_agent_name_and_model_labels() -> None:
 
 
 async def test_ai_metrics_appear_in_metrics_output() -> None:
-    """After observing values, metric names must appear in GET /metrics output."""
+    """After observing values, metric names must appear in GET /metrics output.
+
+    Uses the global default registry (no custom registry arg) so that the
+    module-level AI metric singletons — which self-register on import — are
+    included in the /metrics response alongside the instrumentator's HTTP metrics.
+    """
     app = FastAPI()
     configure_metrics(app, enabled=True)
 

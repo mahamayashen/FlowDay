@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI
-from prometheus_client import Counter, Histogram
+from prometheus_client import CollectorRegistry, Counter, Histogram
 from prometheus_fastapi_instrumentator import Instrumentator
 
 # AI Agent metric placeholders — scaffolding for the future agent pipeline
@@ -26,8 +26,22 @@ judge_score: Histogram = Histogram(
 )
 
 
-def configure_metrics(app: FastAPI, *, enabled: bool = True) -> None:
-    """Instrument the app with Prometheus metrics; silently skip when disabled."""
+def configure_metrics(
+    app: FastAPI,
+    *,
+    enabled: bool = True,
+    registry: CollectorRegistry | None = None,
+) -> None:
+    """Instrument the app with Prometheus metrics; silently skip when disabled.
+
+    Args:
+        app: The FastAPI application to instrument.
+        enabled: When False, no instrumentation is applied (useful for testing
+            or environments that use a different scraping stack).
+        registry: Optional CollectorRegistry; defaults to the global REGISTRY.
+            Pass a fresh CollectorRegistry() in tests to avoid duplicate-metric
+            errors if multiple Instrumentator instances are created in one process.
+    """
     if not enabled:
         return
-    Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+    Instrumentator(registry=registry).instrument(app).expose(app, endpoint="/metrics")

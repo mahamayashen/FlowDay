@@ -34,6 +34,10 @@ FlowDay exposes a Prometheus-compatible `/metrics` endpoint and ships Grafana da
 
 Set `PROMETHEUS_ENABLED=false` in `.env` to disable the `/metrics` endpoint (e.g., in production environments where a different scraper is used).
 
+## Security Note
+
+The `/metrics` endpoint is **unauthenticated by design** — Prometheus scrapers require direct access without tokens. In production, restrict access at the reverse proxy or network level (e.g., allow only the Prometheus server's IP, or bind the metrics port to an internal interface). Do not expose port 5060 directly to the public internet without such controls.
+
 ## Available Metrics
 
 ### HTTP metrics (auto-instrumented)
