@@ -170,3 +170,67 @@ async def test_get_weekly_stats_auto_aligns_to_monday() -> None:
     resp = await get_weekly_stats(db, USER_ID, wednesday)
 
     assert resp.week_start == WEEK_MONDAY  # aligned to Monday
+
+
+# ---------------------------------------------------------------------------
+# Cycle 4 — SQL query inspection
+# ---------------------------------------------------------------------------
+
+
+def _compile(stmt: object) -> str:
+    return str(stmt.compile(compile_kwargs={"literal_binds": True}))  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_weekly_planned_query_joins_and_filters() -> None:
+    """Planned query must JOIN ScheduleBlock→Task→Project, group by project, filter by week range + user_id."""
+    db = _mock_weekly_db([], [])
+    await get_weekly_stats(db, USER_ID, WEEK_MONDAY)
+
+    planned_stmt = db.execute.call_args_list[0][0][0]
+    compiled = _compile(planned_stmt)
+
+    assert "schedule_blocks.task_id = tasks.id" in compiled.lower()
+    assert "tasks.project_id = projects.id" in compiled.lower()
+    assert "2026-04-13" in compiled   # week_start
+    assert "2026-04-20" in compiled   # next_monday
+    assert USER_ID.hex in compiled
+    assert " - " in compiled          # end_hour - start_hour
+
+
+@pytest.mark.asyncio
+async def test_weekly_actual_query_joins_and_filters() -> None:
+    """Actual query must JOIN TimeEntry→Task→Project, filter by datetime range + user_id, divide by 3600."""
+    db = _mock_weekly_db([], [])
+    await get_weekly_stats(db, USER_ID, WEEK_MONDAY)
+
+    actual_stmt = db.execute.call_args_list[1][0][0]
+    compiled = _compile(actual_stmt)
+
+    assert "time_entries.task_id = tasks.id" in compiled.lower()
+    assert "tasks.project_id = projects.id" in compiled.lower()
+    assert "2026-04-13" in compiled   # week_start_dt date part
+    assert "2026-04-20" in compiled   # week_end_dt date part
+    assert USER_ID.hex in compiled
+    assert "3600" in compiled
+    assert ">=" in compiled
+    assert "< '2026-04-20" in compiled
+
+
+@pytest.mark.asyncio
+async def test_weekly_date_range_spans_seven_days() -> None:
+    """Both queries must reference exactly the Monday and the following Monday."""
+    db = _mock_weekly_db([], [])
+    await get_weekly_stats(db, USER_ID, WEEK_MONDAY)
+
+    planned_stmt = db.execute.call_args_list[0][0][0]
+    actual_stmt = db.execute.call_args_list[1][0][0]
+
+    planned_compiled = _compile(planned_stmt)
+    actual_compiled = _compile(actual_stmt)
+
+    # Monday 2026-04-13 and next Monday 2026-04-20 must both appear
+    assert "2026-04-13" in planned_compiled
+    assert "2026-04-20" in planned_compiled
+    assert "2026-04-13" in actual_compiled
+    assert "2026-04-20" in actual_compiled
