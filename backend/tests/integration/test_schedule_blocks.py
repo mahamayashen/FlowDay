@@ -20,7 +20,7 @@ async def _create_task(client: AsyncClient) -> str:
         f"/projects/{project_id}/tasks", json={"title": "Test Task"}
     )
     assert resp.status_code == 201
-    return resp.json()["id"]
+    return str(resp.json()["id"])
 
 
 # ── Create ────────────────────────────────────────────────────────────────────
