@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-
 from prometheus_client import Counter, Histogram
 
-from app.core.metrics import agent_latency_seconds, configure_metrics, judge_score, token_cost_total
+from app.core.metrics import (
+    agent_latency_seconds,
+    configure_metrics,
+    judge_score,
+    token_cost_total,
+)
 
 
 def test_configure_metrics_enabled_instruments_app() -> None:
@@ -39,7 +42,9 @@ async def test_metrics_endpoint_returns_200() -> None:
     app = FastAPI()
     configure_metrics(app, enabled=True)
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.get("/metrics")
 
     assert response.status_code == 200
@@ -51,7 +56,9 @@ async def test_metrics_endpoint_absent_when_disabled() -> None:
     app = FastAPI()
     configure_metrics(app, enabled=False)
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.get("/metrics")
 
     assert response.status_code == 404
@@ -71,13 +78,13 @@ def test_ai_metrics_registered_as_correct_types() -> None:
 
 def test_agent_latency_has_agent_name_label() -> None:
     """agent_latency_seconds must carry the 'agent_name' label."""
-    assert "agent_name" in agent_latency_seconds._labelnames  # type: ignore[attr-defined]
+    assert "agent_name" in agent_latency_seconds._labelnames
 
 
 def test_token_cost_has_agent_name_and_model_labels() -> None:
     """token_cost_total must carry 'agent_name' and 'model' labels."""
-    assert "agent_name" in token_cost_total._labelnames  # type: ignore[attr-defined]
-    assert "model" in token_cost_total._labelnames  # type: ignore[attr-defined]
+    assert "agent_name" in token_cost_total._labelnames
+    assert "model" in token_cost_total._labelnames
 
 
 async def test_ai_metrics_appear_in_metrics_output() -> None:
@@ -89,7 +96,9 @@ async def test_ai_metrics_appear_in_metrics_output() -> None:
     token_cost_total.labels(agent_name="test_agent", model="gpt-4").inc(10)
     judge_score.labels(agent_name="test_agent").observe(85)
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.get("/metrics")
 
     body = response.text

@@ -53,7 +53,7 @@ ignore_missing_imports = true
 exclude = ["mutants/"]
 
 [tool.mutmut]
-paths_to_mutate = "app/core/database.py:app/core/redis.py:app/core/sentry.py:app/api/health.py"
+paths_to_mutate = "app/core/database.py:app/core/redis.py:app/core/sentry.py:app/core/metrics.py:app/api/health.py"
 runner = "python -m pytest tests/unit/ tests/test_health.py -x -q --tb=no"
 
 [tool.pytest.ini_options]
