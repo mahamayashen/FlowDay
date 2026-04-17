@@ -33,6 +33,4 @@ async def weekly_stats_route(
     db: AsyncSession = Depends(get_db),
 ) -> WeeklyStatsResponse:
     """Return per-project weekly stats for the week containing week_start."""
-    return await get_weekly_stats(
-        db=db, user_id=current_user.id, week_start=week_start
-    )
+    return await get_weekly_stats(db=db, user_id=current_user.id, week_start=week_start)

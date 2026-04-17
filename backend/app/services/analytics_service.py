@@ -3,6 +3,23 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime, timedelta
 
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.project import Project
+from app.models.schedule_block import ScheduleBlock
+from app.models.task import Task
+from app.models.time_entry import TimeEntry
+from app.schemas.analytics import (
+    PlannedVsActualResponse,
+    PlannedVsActualSummary,
+    ProjectWeeklyStats,
+    StatusTag,
+    TaskComparison,
+    WeeklyStatsResponse,
+    WeeklyStatsSummary,
+)
+
 
 def align_to_monday(d: date) -> date:
     """Return the Monday of the week containing *d*."""
@@ -17,23 +34,6 @@ def compute_accuracy_pct(planned: float, actual: float) -> float:
     if planned == 0:
         return 0.0
     return (actual / planned) * 100
-
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.models.project import Project
-from app.models.schedule_block import ScheduleBlock
-from app.models.task import Task
-from app.models.time_entry import TimeEntry
-from app.schemas.analytics import (
-    PlannedVsActualResponse,
-    PlannedVsActualSummary,
-    ProjectWeeklyStats,
-    StatusTag,
-    TaskComparison,
-    WeeklyStatsSummary,
-    WeeklyStatsResponse,
-)
 
 
 def compute_status_tag(planned_hours: float, actual_hours: float) -> StatusTag:
@@ -143,7 +143,7 @@ async def get_weekly_stats(
     user_id: uuid.UUID,
     week_start: date,
 ) -> WeeklyStatsResponse:
-    """Return per-project planned vs actual hours for the week containing *week_start*."""
+    """Return per-project planned vs actual hours for the week containing week_start."""
     monday = align_to_monday(week_start)
     next_monday = monday + timedelta(days=7)
     sunday = monday + timedelta(days=6)
@@ -195,12 +195,10 @@ async def get_weekly_stats(
 
     # Merge in Python
     planned_map: dict[uuid.UUID, tuple[str, str, float]] = {
-        row.id: (row.name, row.color, float(row.planned_hours))
-        for row in planned_rows
+        row.id: (row.name, row.color, float(row.planned_hours)) for row in planned_rows
     }
     actual_map: dict[uuid.UUID, tuple[str, str, float]] = {
-        row.id: (row.name, row.color, float(row.actual_hours))
-        for row in actual_rows
+        row.id: (row.name, row.color, float(row.actual_hours)) for row in actual_rows
     }
 
     all_project_ids = set(planned_map) | set(actual_map)

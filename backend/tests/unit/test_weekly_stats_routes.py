@@ -13,8 +13,8 @@ from app.core.deps import get_current_user
 from app.main import app
 from app.schemas.analytics import (
     ProjectWeeklyStats,
-    WeeklyStatsSummary,
     WeeklyStatsResponse,
+    WeeklyStatsSummary,
 )
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")

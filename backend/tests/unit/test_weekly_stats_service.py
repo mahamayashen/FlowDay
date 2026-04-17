@@ -13,7 +13,6 @@ from app.services.analytics_service import (
     get_weekly_stats,
 )
 
-
 # ---------------------------------------------------------------------------
 # Cycle 1 — align_to_monday
 # ---------------------------------------------------------------------------
@@ -183,7 +182,7 @@ def _compile(stmt: object) -> str:
 
 @pytest.mark.asyncio
 async def test_weekly_planned_query_joins_and_filters() -> None:
-    """Planned query must JOIN ScheduleBlock→Task→Project, group by project, filter by week range + user_id."""
+    """Planned query must JOIN ScheduleBlock→Task→Project, group by project."""
     db = _mock_weekly_db([], [])
     await get_weekly_stats(db, USER_ID, WEEK_MONDAY)
 
@@ -192,15 +191,15 @@ async def test_weekly_planned_query_joins_and_filters() -> None:
 
     assert "schedule_blocks.task_id = tasks.id" in compiled.lower()
     assert "tasks.project_id = projects.id" in compiled.lower()
-    assert "2026-04-13" in compiled   # week_start
-    assert "2026-04-20" in compiled   # next_monday
+    assert "2026-04-13" in compiled  # week_start
+    assert "2026-04-20" in compiled  # next_monday
     assert USER_ID.hex in compiled
-    assert " - " in compiled          # end_hour - start_hour
+    assert " - " in compiled  # end_hour - start_hour
 
 
 @pytest.mark.asyncio
 async def test_weekly_actual_query_joins_and_filters() -> None:
-    """Actual query must JOIN TimeEntry→Task→Project, filter by datetime range + user_id, divide by 3600."""
+    """Actual query must JOIN TimeEntry→Task→Project, filter by datetime range."""
     db = _mock_weekly_db([], [])
     await get_weekly_stats(db, USER_ID, WEEK_MONDAY)
 
@@ -209,8 +208,8 @@ async def test_weekly_actual_query_joins_and_filters() -> None:
 
     assert "time_entries.task_id = tasks.id" in compiled.lower()
     assert "tasks.project_id = projects.id" in compiled.lower()
-    assert "2026-04-13" in compiled   # week_start_dt date part
-    assert "2026-04-20" in compiled   # week_end_dt date part
+    assert "2026-04-13" in compiled  # week_start_dt date part
+    assert "2026-04-20" in compiled  # week_end_dt date part
     assert USER_ID.hex in compiled
     assert "3600" in compiled
     assert ">=" in compiled
