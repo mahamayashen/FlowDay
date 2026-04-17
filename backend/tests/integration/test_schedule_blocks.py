@@ -135,3 +135,64 @@ async def test_other_user_block_returns_404(
 
     resp = await other_auth_client.get(f"/schedule-blocks/{block_id}")
     assert resp.status_code == 404
+
+
+# ── Overlap validation ────────────────────────────────────────────────────────
+
+
+async def test_create_overlapping_block_returns_409(auth_client: AsyncClient) -> None:
+    task_id = await _create_task(auth_client)
+    await auth_client.post(
+        "/schedule-blocks",
+        json={"task_id": task_id, "date": _DATE, "start_hour": 9.0, "end_hour": 11.0},
+    )
+    resp = await auth_client.post(
+        "/schedule-blocks",
+        json={"task_id": task_id, "date": _DATE, "start_hour": 10.0, "end_hour": 12.0},
+    )
+    assert resp.status_code == 409
+
+
+async def test_create_adjacent_block_succeeds(auth_client: AsyncClient) -> None:
+    """Blocks touching at boundary (9-11 then 11-13) must not conflict."""
+    task_id = await _create_task(auth_client)
+    await auth_client.post(
+        "/schedule-blocks",
+        json={"task_id": task_id, "date": _DATE, "start_hour": 9.0, "end_hour": 11.0},
+    )
+    resp = await auth_client.post(
+        "/schedule-blocks",
+        json={"task_id": task_id, "date": _DATE, "start_hour": 11.0, "end_hour": 13.0},
+    )
+    assert resp.status_code == 201
+
+
+async def test_update_block_to_overlap_returns_409(auth_client: AsyncClient) -> None:
+    task_id = await _create_task(auth_client)
+    await auth_client.post(
+        "/schedule-blocks",
+        json={"task_id": task_id, "date": _DATE, "start_hour": 9.0, "end_hour": 10.0},
+    )
+    create_resp = await auth_client.post(
+        "/schedule-blocks",
+        json={"task_id": task_id, "date": _DATE, "start_hour": 11.0, "end_hour": 12.0},
+    )
+    block_id = create_resp.json()["id"]
+
+    # Move second block to overlap with first
+    resp = await auth_client.put(
+        f"/schedule-blocks/{block_id}",
+        json={"start_hour": 9.5, "end_hour": 11.0},
+    )
+    assert resp.status_code == 409
+
+
+async def test_create_block_end_not_gt_start_returns_422(
+    auth_client: AsyncClient,
+) -> None:
+    task_id = await _create_task(auth_client)
+    resp = await auth_client.post(
+        "/schedule-blocks",
+        json={"task_id": task_id, "date": _DATE, "start_hour": 11.0, "end_hour": 9.0},
+    )
+    assert resp.status_code == 422
