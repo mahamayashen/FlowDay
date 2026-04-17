@@ -15,6 +15,7 @@ from app.api.tasks import router as tasks_router
 from app.api.time_entries import router as time_entries_router
 from app.core.config import settings
 from app.core.database import dispose_engine, init_engine
+from app.core.metrics import configure_metrics
 from app.core.redis import close_redis, init_redis
 from app.core.sentry import SentryBreadcrumbMiddleware, configure_sentry
 
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    configure_metrics(app, enabled=settings.PROMETHEUS_ENABLED)
     app.add_middleware(SentryBreadcrumbMiddleware)  # type: ignore[arg-type]
 
     app.include_router(health_router)
