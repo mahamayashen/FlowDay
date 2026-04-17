@@ -10,6 +10,7 @@ from app.api.auth import router as auth_router
 from app.api.health import router as health_router
 from app.api.projects import router as projects_router
 from app.api.schedule_blocks import router as schedule_blocks_router
+from app.api.sync import router as sync_router
 from app.api.tasks import router as tasks_router
 from app.api.time_entries import router as time_entries_router
 from app.core.config import settings
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
     app.include_router(projects_router)
     app.include_router(tasks_router)
     app.include_router(schedule_blocks_router)
+    app.include_router(sync_router)
     app.include_router(time_entries_router)
 
     return app
