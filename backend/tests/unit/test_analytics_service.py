@@ -218,7 +218,7 @@ def test_compute_status_tag_zero_zero() -> None:
 
 
 def _compile(stmt: object) -> str:
-    return str(stmt.compile(compile_kwargs={"literal_binds": True}))  # type: ignore[union-attr]
+    return str(stmt.compile(compile_kwargs={"literal_binds": True}))  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio
