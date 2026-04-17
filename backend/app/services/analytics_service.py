@@ -8,6 +8,16 @@ def align_to_monday(d: date) -> date:
     """Return the Monday of the week containing *d*."""
     return d - timedelta(days=d.weekday())
 
+
+def compute_accuracy_pct(planned: float, actual: float) -> float:
+    """Return estimation accuracy as a percentage.
+
+    Returns 0.0 when planned == 0 to avoid division by zero.
+    """
+    if planned == 0:
+        return 0.0
+    return (actual / planned) * 100
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
