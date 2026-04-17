@@ -3,6 +3,11 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime, timedelta
 
+
+def align_to_monday(d: date) -> date:
+    """Return the Monday of the week containing *d*."""
+    return d - timedelta(days=d.weekday())
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
