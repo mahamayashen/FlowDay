@@ -157,3 +157,27 @@ async def test_trigger_sync_sets_error_on_failure() -> None:
 
     assert fake_record.status == "error"
     db.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_trigger_sync_reraises_http_exception() -> None:
+    """trigger_sync does not swallow HTTPException raised by the provider."""
+    fake_record = _make_fake_sync("github")
+    db = AsyncMock()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = fake_record
+    db.execute.return_value = result
+
+    mock_provider_instance = AsyncMock()
+    mock_provider_instance.sync.side_effect = HTTPException(
+        status_code=401, detail="OAuth token expired"
+    )
+    mock_provider_cls = MagicMock(return_value=mock_provider_instance)
+
+    with patch("app.services.sync_service.provider_registry") as mock_registry:
+        mock_registry.get.return_value = mock_provider_cls
+        with pytest.raises(HTTPException) as exc_info:
+            await trigger_sync(db, USER_ID, "github")
+
+    assert exc_info.value.status_code == 401
+    assert fake_record.status != "error"

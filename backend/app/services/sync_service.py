@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -9,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.external_sync import ExternalSync, SyncStatus
 from app.services.sync_provider import provider_registry
+
+logger = logging.getLogger(__name__)
 
 
 async def get_sync_status(
@@ -51,7 +54,10 @@ async def trigger_sync(
         await provider_instance.sync(db, sync_record)
         sync_record.last_synced_at = datetime.now(UTC)
         sync_record.status = SyncStatus.ACTIVE
+    except HTTPException:
+        raise
     except Exception:
+        logger.exception("sync failed for provider %s (user %s)", provider, user_id)
         sync_record.status = SyncStatus.ERROR
 
     await db.commit()

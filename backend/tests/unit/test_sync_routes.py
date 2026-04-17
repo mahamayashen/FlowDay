@@ -86,6 +86,7 @@ async def test_get_sync_status_returns_200(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_get_sync_status_returns_401_without_auth(client: AsyncClient) -> None:
     """GET /sync/status without auth returns 401."""
+
     async def override_db() -> AsyncMock:  # type: ignore[misc]
         yield AsyncMock()
 
@@ -142,6 +143,7 @@ async def test_trigger_sync_returns_200(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_trigger_sync_returns_401_without_auth(client: AsyncClient) -> None:
     """POST /sync/github/trigger without auth returns 401."""
+
     async def override_db() -> AsyncMock:  # type: ignore[misc]
         yield AsyncMock()
 
@@ -213,3 +215,15 @@ async def test_trigger_sync_passes_provider_to_service(client: AsyncClient) -> N
             assert call_kwargs["user_id"] == USER_ID
     finally:
         _clear_overrides()
+
+
+@pytest.mark.asyncio
+async def test_trigger_sync_rejects_invalid_provider(client: AsyncClient) -> None:
+    """POST /sync/invalid_provider/trigger returns 422 (FastAPI enum validation)."""
+    _setup_overrides()
+    try:
+        response = await client.post("/sync/invalid_provider/trigger")
+    finally:
+        _clear_overrides()
+
+    assert response.status_code == 422
