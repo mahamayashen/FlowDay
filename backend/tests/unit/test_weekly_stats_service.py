@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import uuid
+from collections import namedtuple
 from datetime import date
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.services.analytics_service import align_to_monday, compute_accuracy_pct
+from app.services.analytics_service import (
+    align_to_monday,
+    compute_accuracy_pct,
+    get_weekly_stats,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -43,3 +50,123 @@ def test_accuracy_pct_over_100_percent() -> None:
 
 def test_accuracy_pct_exact_match() -> None:
     assert compute_accuracy_pct(3.0, 3.0) == 100.0
+
+
+# ---------------------------------------------------------------------------
+# Cycle 3 — get_weekly_stats (mocked DB)
+# ---------------------------------------------------------------------------
+
+USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+PROJ_X = uuid.UUID("00000000-0000-0000-0000-000000001001")
+PROJ_Y = uuid.UUID("00000000-0000-0000-0000-000000001002")
+
+PlannedProjectRow = namedtuple(
+    "PlannedProjectRow", ["id", "name", "color", "planned_hours"]
+)
+ActualProjectRow = namedtuple(
+    "ActualProjectRow", ["id", "name", "color", "actual_hours"]
+)
+
+WEEK_MONDAY = date(2026, 4, 13)  # known Monday
+
+
+def _mock_weekly_db(
+    planned_rows: list[PlannedProjectRow],
+    actual_rows: list[ActualProjectRow],
+) -> AsyncMock:
+    db = AsyncMock()
+    planned_result = MagicMock()
+    planned_result.all.return_value = planned_rows
+    actual_result = MagicMock()
+    actual_result.all.return_value = actual_rows
+    db.execute.side_effect = [planned_result, actual_result]
+    return db
+
+
+@pytest.mark.asyncio
+async def test_get_weekly_stats_mixed_projects() -> None:
+    """Two projects: one with planned+actual, one with only planned."""
+    db = _mock_weekly_db(
+        planned_rows=[
+            PlannedProjectRow(PROJ_X, "Project X", "#ff0000", 4.0),
+            PlannedProjectRow(PROJ_Y, "Project Y", "#00ff00", 2.0),
+        ],
+        actual_rows=[
+            ActualProjectRow(PROJ_X, "Project X", "#ff0000", 3.0),
+        ],
+    )
+    resp = await get_weekly_stats(db, USER_ID, WEEK_MONDAY)
+
+    assert resp.week_start == WEEK_MONDAY
+    assert resp.week_end == date(2026, 4, 19)
+
+    by_id = {p.project_id: p for p in resp.projects}
+    assert by_id[PROJ_X].planned_hours == pytest.approx(4.0)
+    assert by_id[PROJ_X].actual_hours == pytest.approx(3.0)
+    assert by_id[PROJ_X].accuracy_pct == pytest.approx(75.0)
+
+    assert by_id[PROJ_Y].planned_hours == pytest.approx(2.0)
+    assert by_id[PROJ_Y].actual_hours == pytest.approx(0.0)
+    assert by_id[PROJ_Y].accuracy_pct == pytest.approx(0.0)
+
+    assert resp.summary.total_planned_hours == pytest.approx(6.0)
+    assert resp.summary.total_actual_hours == pytest.approx(3.0)
+    # Both projects have planned > 0: mean of [75.0, 0.0] = 37.5
+    assert resp.summary.average_accuracy_pct == pytest.approx(37.5)
+
+
+@pytest.mark.asyncio
+async def test_get_weekly_stats_empty_week() -> None:
+    """No data at all → empty projects list, zero summary."""
+    db = _mock_weekly_db([], [])
+    resp = await get_weekly_stats(db, USER_ID, WEEK_MONDAY)
+
+    assert resp.projects == []
+    assert resp.summary.total_planned_hours == 0.0
+    assert resp.summary.total_actual_hours == 0.0
+    assert resp.summary.average_accuracy_pct == 0.0
+
+
+@pytest.mark.asyncio
+async def test_get_weekly_stats_only_actual() -> None:
+    """Unplanned work: actual but no schedule blocks."""
+    db = _mock_weekly_db(
+        planned_rows=[],
+        actual_rows=[ActualProjectRow(PROJ_X, "Project X", "#ff0000", 2.0)],
+    )
+    resp = await get_weekly_stats(db, USER_ID, WEEK_MONDAY)
+
+    assert len(resp.projects) == 1
+    proj = resp.projects[0]
+    assert proj.planned_hours == pytest.approx(0.0)
+    assert proj.actual_hours == pytest.approx(2.0)
+    assert proj.accuracy_pct == pytest.approx(0.0)
+    # No projects with planned > 0 → average is 0.0
+    assert resp.summary.average_accuracy_pct == pytest.approx(0.0)
+
+
+@pytest.mark.asyncio
+async def test_get_weekly_stats_only_planned() -> None:
+    """Planned but no actuals → accuracy 0%."""
+    db = _mock_weekly_db(
+        planned_rows=[PlannedProjectRow(PROJ_X, "Project X", "#ff0000", 3.0)],
+        actual_rows=[],
+    )
+    resp = await get_weekly_stats(db, USER_ID, WEEK_MONDAY)
+
+    assert len(resp.projects) == 1
+    proj = resp.projects[0]
+    assert proj.planned_hours == pytest.approx(3.0)
+    assert proj.actual_hours == pytest.approx(0.0)
+    assert proj.accuracy_pct == pytest.approx(0.0)
+    assert resp.summary.average_accuracy_pct == pytest.approx(0.0)
+
+
+@pytest.mark.asyncio
+async def test_get_weekly_stats_auto_aligns_to_monday() -> None:
+    """Passing a Wednesday still returns a response with week_start on Monday."""
+    db = _mock_weekly_db([], [])
+    wednesday = date(2026, 4, 15)
+    resp = await get_weekly_stats(db, USER_ID, wednesday)
+
+    assert resp.week_start == WEEK_MONDAY  # aligned to Monday
