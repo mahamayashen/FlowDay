@@ -63,5 +63,8 @@ async def trigger_sync(
         sync_record.status = SyncStatus.ERROR
 
     await db.commit()
-    await db.refresh(sync_record)
+    try:
+        await db.refresh(sync_record)
+    except Exception:
+        logger.warning("refresh failed after sync commit for provider %s", provider)
     return sync_record

@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -52,7 +53,7 @@ class ExternalSync(Base):
     last_synced_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    sync_config_json: Mapped[dict] = mapped_column(  # type: ignore[type-arg]
+    sync_config_json: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'")
     )
     status: Mapped[str] = mapped_column(
