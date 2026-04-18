@@ -85,6 +85,7 @@ class MeetingAnalystResult(BaseModel):
     longest_meeting_hours: float
     focus_time_hours: float
     insights: list[str]
+<<<<<<< HEAD
 
 
 # ---------------------------------------------------------------------------
