@@ -8,6 +8,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
+
 # ---------------------------------------------------------------------------
 # Shared data transfer objects (pre-fetched from DB before agent calls)
 # ---------------------------------------------------------------------------
