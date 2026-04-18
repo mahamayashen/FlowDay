@@ -6,6 +6,9 @@ from datetime import date
 import pytest
 from pydantic_ai.models.test import TestModel
 
+# CONFLICT RESOLUTION NOTE:
+# Option A (chosen): top-level import + typed fixture `list[ScheduleBlockData]` + `-> None` annotations
+# Option B (incoming): inline import inside fixture + untyped `list` + no return type annotations
 from app.agents.schemas import ScheduleBlockData
 
 
