@@ -117,7 +117,6 @@ class CodeAnalystResult(BaseModel):
     avg_pr_cycle_hours: float | None
     most_active_repo: str | None
     insights: list[str]
-<<<<<<< HEAD
 
 
 # ---------------------------------------------------------------------------
@@ -158,6 +157,7 @@ class TaskAnalystResult(BaseModel):
     avg_completion_hours: float | None
     priority_distribution: dict[str, int]
     insights: list[str]
+<<<<<<< HEAD
 
 
 # ---------------------------------------------------------------------------
