@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: str | None = None
     GITHUB_CLIENT_SECRET: str | None = None
     GITHUB_REDIRECT_URI: str = "http://localhost:5060/auth/github/callback"
+    GITHUB_SYNC_REDIRECT_URI: str = "http://localhost:5060/sync/github/callback"
 
     # Monitoring (optional — silently disabled when absent)
     SENTRY_DSN: str | None = None
