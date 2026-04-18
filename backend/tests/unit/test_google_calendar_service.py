@@ -24,6 +24,22 @@ from app.services.google_calendar import (
 USER_ID = str(uuid.UUID("00000000-0000-0000-0000-000000000003"))
 
 
+def _make_httpx_mock(
+    method: str = "get", response_data: object = None, status: int = 200
+) -> MagicMock:
+    """Create a properly configured httpx.AsyncClient mock."""
+    mock_resp = MagicMock()
+    mock_resp.status_code = status
+    mock_resp.json.return_value = response_data or {}
+
+    mock_client = MagicMock()
+    coro = AsyncMock(return_value=mock_resp)
+    setattr(mock_client, method, coro)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+    return mock_client
+
+
 # ---------------------------------------------------------------------------
 # build_authorization_url
 # ---------------------------------------------------------------------------
@@ -48,29 +64,22 @@ def test_build_authorization_url_state_matches_user_id(user_id: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# exchange_code_for_tokens
+# exchange_code_for_tokens (mock _post_to_token_endpoint)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
 async def test_exchange_code_success_returns_tokens() -> None:
-    """exchange_code_for_tokens returns access and refresh tokens on success."""
+    """exchange_code_for_tokens returns access and refresh tokens."""
     fake_tokens = {
         "access_token": "access-abc",
         "refresh_token": "refresh-xyz",
         "expires_in": 3600,
     }
-    mock_resp = MagicMock()
-    mock_resp.status_code = 200
-    mock_resp.json.return_value = fake_tokens
-
-    mock_client = AsyncMock()
-    mock_client.post = AsyncMock(return_value=mock_resp)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=False)
-
     with patch(
-        "app.services.google_calendar.httpx.AsyncClient", return_value=mock_client
+        "app.services.google_calendar._post_to_token_endpoint",
+        new_callable=AsyncMock,
+        return_value=fake_tokens,
     ):
         result = await exchange_code_for_tokens("auth-code")
 
@@ -80,18 +89,11 @@ async def test_exchange_code_success_returns_tokens() -> None:
 
 @pytest.mark.asyncio
 async def test_exchange_code_failure_raises_http_exception() -> None:
-    """exchange_code_for_tokens raises HTTPException 401 when Google returns error."""
-    mock_resp = MagicMock()
-    mock_resp.status_code = 400
-    mock_resp.json.return_value = {"error": "invalid_grant"}
-
-    mock_client = AsyncMock()
-    mock_client.post = AsyncMock(return_value=mock_resp)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=False)
-
+    """exchange_code_for_tokens raises 401 when token endpoint fails."""
     with patch(
-        "app.services.google_calendar.httpx.AsyncClient", return_value=mock_client
+        "app.services.google_calendar._post_to_token_endpoint",
+        new_callable=AsyncMock,
+        side_effect=HTTPException(status_code=401, detail="fail"),
     ):
         with pytest.raises(HTTPException) as exc_info:
             await exchange_code_for_tokens("bad-code")
@@ -99,28 +101,34 @@ async def test_exchange_code_failure_raises_http_exception() -> None:
     assert exc_info.value.status_code == 401
 
 
+@pytest.mark.asyncio
+async def test_exchange_code_raises_when_no_access_token_in_response() -> None:
+    """exchange_code_for_tokens raises 401 when response lacks access_token."""
+    with patch(
+        "app.services.google_calendar._post_to_token_endpoint",
+        new_callable=AsyncMock,
+        return_value={"token_type": "Bearer"},
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            await exchange_code_for_tokens("code-no-token")
+
+    assert exc_info.value.status_code == 401
+
+
 # ---------------------------------------------------------------------------
-# refresh_access_token
+# refresh_access_token (mock _post_to_token_endpoint)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
 async def test_refresh_access_token_success() -> None:
-    """refresh_access_token decrypts the refresh token and posts to Google."""
+    """refresh_access_token decrypts the refresh token and returns tokens."""
     encrypted = encrypt_oauth_token("my-refresh-token")
 
-    fake_response = {"access_token": "new-access", "expires_in": 3600}
-    mock_resp = MagicMock()
-    mock_resp.status_code = 200
-    mock_resp.json.return_value = fake_response
-
-    mock_client = AsyncMock()
-    mock_client.post = AsyncMock(return_value=mock_resp)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=False)
-
     with patch(
-        "app.services.google_calendar.httpx.AsyncClient", return_value=mock_client
+        "app.services.google_calendar._post_to_token_endpoint",
+        new_callable=AsyncMock,
+        return_value={"access_token": "new-access", "expires_in": 3600},
     ):
         result = await refresh_access_token(encrypted)
 
@@ -129,20 +137,29 @@ async def test_refresh_access_token_success() -> None:
 
 @pytest.mark.asyncio
 async def test_refresh_failure_raises_http_exception() -> None:
-    """refresh_access_token raises HTTPException 401 when Google returns error."""
+    """refresh_access_token raises 401 when token endpoint fails."""
     encrypted = encrypt_oauth_token("bad-refresh-token")
 
-    mock_resp = MagicMock()
-    mock_resp.status_code = 400
-    mock_resp.json.return_value = {"error": "invalid_grant"}
+    with patch(
+        "app.services.google_calendar._post_to_token_endpoint",
+        new_callable=AsyncMock,
+        side_effect=HTTPException(status_code=401, detail="fail"),
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            await refresh_access_token(encrypted)
 
-    mock_client = AsyncMock()
-    mock_client.post = AsyncMock(return_value=mock_resp)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=False)
+    assert exc_info.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_refresh_raises_when_no_access_token_in_response() -> None:
+    """refresh_access_token raises 401 when response lacks access_token."""
+    encrypted = encrypt_oauth_token("refresh-token")
 
     with patch(
-        "app.services.google_calendar.httpx.AsyncClient", return_value=mock_client
+        "app.services.google_calendar._post_to_token_endpoint",
+        new_callable=AsyncMock,
+        return_value={"token_type": "Bearer"},
     ):
         with pytest.raises(HTTPException) as exc_info:
             await refresh_access_token(encrypted)
@@ -151,7 +168,7 @@ async def test_refresh_failure_raises_http_exception() -> None:
 
 
 # ---------------------------------------------------------------------------
-# fetch_calendar_events
+# fetch_calendar_events (httpx mock - only these use AsyncClient)
 # ---------------------------------------------------------------------------
 
 
@@ -159,17 +176,11 @@ async def test_refresh_failure_raises_http_exception() -> None:
 async def test_fetch_calendar_events_returns_list() -> None:
     """fetch_calendar_events returns a list of event dicts."""
     events = [{"id": "evt1", "summary": "Meeting"}]
-    mock_resp = MagicMock()
-    mock_resp.status_code = 200
-    mock_resp.json.return_value = {"items": events}
-
-    mock_client = AsyncMock()
-    mock_client.get = AsyncMock(return_value=mock_resp)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=False)
+    mock_client = _make_httpx_mock("get", {"items": events}, 200)
 
     with patch(
-        "app.services.google_calendar.httpx.AsyncClient", return_value=mock_client
+        "app.services.google_calendar.httpx.AsyncClient",
+        return_value=mock_client,
     ):
         result = await fetch_calendar_events(
             "token", "2026-01-01T00:00:00Z", "2026-01-08T00:00:00Z"
@@ -188,18 +199,18 @@ async def test_fetch_calendar_events_handles_pagination() -> None:
     mock_resp1 = MagicMock()
     mock_resp1.status_code = 200
     mock_resp1.json.return_value = page1
-
     mock_resp2 = MagicMock()
     mock_resp2.status_code = 200
     mock_resp2.json.return_value = page2
 
-    mock_client = AsyncMock()
+    mock_client = MagicMock()
     mock_client.get = AsyncMock(side_effect=[mock_resp1, mock_resp2])
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
     with patch(
-        "app.services.google_calendar.httpx.AsyncClient", return_value=mock_client
+        "app.services.google_calendar.httpx.AsyncClient",
+        return_value=mock_client,
     ):
         result = await fetch_calendar_events(
             "token", "2026-01-01T00:00:00Z", "2026-01-08T00:00:00Z"
@@ -212,18 +223,12 @@ async def test_fetch_calendar_events_handles_pagination() -> None:
 
 @pytest.mark.asyncio
 async def test_fetch_calendar_events_raises_on_error() -> None:
-    """fetch_calendar_events raises HTTPException 502 when Google returns error."""
-    mock_resp = MagicMock()
-    mock_resp.status_code = 403
-    mock_resp.json.return_value = {"error": "forbidden"}
-
-    mock_client = AsyncMock()
-    mock_client.get = AsyncMock(return_value=mock_resp)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=False)
+    """fetch_calendar_events raises HTTPException 502 on Google error."""
+    mock_client = _make_httpx_mock("get", {"error": "forbidden"}, 403)
 
     with patch(
-        "app.services.google_calendar.httpx.AsyncClient", return_value=mock_client
+        "app.services.google_calendar.httpx.AsyncClient",
+        return_value=mock_client,
     ):
         with pytest.raises(HTTPException) as exc_info:
             await fetch_calendar_events(
@@ -264,10 +269,12 @@ async def test_store_tokens_encrypts_access_and_refresh() -> None:
 
 @pytest.mark.asyncio
 async def test_store_tokens_preserves_existing_refresh_when_omitted() -> None:
-    """store_tokens_in_sync_record keeps old refresh token when token_data omits it."""
+    """store_tokens keeps old refresh token when token_data omits it."""
     old_encrypted_refresh = encrypt_oauth_token("old-refresh")
     sync_record = MagicMock()
-    sync_record.sync_config_json = {"encrypted_refresh_token": old_encrypted_refresh}
+    sync_record.sync_config_json = {
+        "encrypted_refresh_token": old_encrypted_refresh,
+    }
     db = AsyncMock()
 
     token_data = {"access_token": "new-access", "expires_in": 3600}
@@ -278,6 +285,47 @@ async def test_store_tokens_preserves_existing_refresh_when_omitted() -> None:
     )
 
 
+@pytest.mark.asyncio
+async def test_store_tokens_sets_future_expiry() -> None:
+    """store_tokens_in_sync_record stores a future token_expiry."""
+    sync_record = MagicMock()
+    sync_record.sync_config_json = {}
+    db = AsyncMock()
+
+    before = datetime.now(UTC)
+    token_data = {
+        "access_token": "tok",
+        "refresh_token": "ref",
+        "expires_in": 3600,
+    }
+    await store_tokens_in_sync_record(db, sync_record, token_data)
+
+    expiry_str = sync_record.sync_config_json["token_expiry"]
+    assert expiry_str is not None
+    expiry = datetime.fromisoformat(expiry_str)
+    assert expiry > before
+
+
+@pytest.mark.asyncio
+async def test_store_tokens_expiry_reflects_expires_in() -> None:
+    """store_tokens sets token_expiry ~now + expires_in seconds."""
+    sync_record = MagicMock()
+    sync_record.sync_config_json = {}
+    db = AsyncMock()
+
+    token_data = {
+        "access_token": "tok",
+        "refresh_token": "ref",
+        "expires_in": 7200,
+    }
+    before = datetime.now(UTC)
+    await store_tokens_in_sync_record(db, sync_record, token_data)
+
+    expiry = datetime.fromisoformat(sync_record.sync_config_json["token_expiry"])
+    assert expiry > before + timedelta(seconds=7100)
+    assert expiry < before + timedelta(seconds=7300)
+
+
 # ---------------------------------------------------------------------------
 # get_valid_access_token
 # ---------------------------------------------------------------------------
@@ -285,7 +333,7 @@ async def test_store_tokens_preserves_existing_refresh_when_omitted() -> None:
 
 @pytest.mark.asyncio
 async def test_get_valid_token_returns_cached_when_not_expired() -> None:
-    """get_valid_access_token returns cached token without refreshing if still valid."""
+    """get_valid_access_token returns cached token without refreshing."""
     future = (datetime.now(UTC) + timedelta(hours=1)).isoformat()
     sync_record = MagicMock()
     sync_record.sync_config_json = {
@@ -296,7 +344,8 @@ async def test_get_valid_token_returns_cached_when_not_expired() -> None:
     db = AsyncMock()
 
     with patch(
-        "app.services.google_calendar.refresh_access_token", new_callable=AsyncMock
+        "app.services.google_calendar.refresh_access_token",
+        new_callable=AsyncMock,
     ) as mock_refresh:
         result = await get_valid_access_token(db, sync_record)
 
@@ -306,7 +355,7 @@ async def test_get_valid_token_returns_cached_when_not_expired() -> None:
 
 @pytest.mark.asyncio
 async def test_get_valid_token_refreshes_when_expired() -> None:
-    """get_valid_access_token refreshes the token when expiry has passed."""
+    """get_valid_access_token refreshes when expiry has passed."""
     past = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
     sync_record = MagicMock()
     sync_record.sync_config_json = {
@@ -336,7 +385,7 @@ async def test_get_valid_token_refreshes_when_expired() -> None:
 
 @pytest.mark.asyncio
 async def test_get_valid_token_raises_when_no_tokens() -> None:
-    """get_valid_access_token raises 401 HTTPException when no tokens stored."""
+    """get_valid_access_token raises 401 when no tokens stored."""
     sync_record = MagicMock()
     sync_record.sync_config_json = {}
     db = AsyncMock()
