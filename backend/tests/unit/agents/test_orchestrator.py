@@ -72,6 +72,7 @@ async def test_run_group_a_isolates_single_agent_failure(
 ) -> None:
     """A single agent failure does not prevent the other three from succeeding."""
     import app.agents.orchestrator as orch_mod
+<<<<<<< HEAD
     from app.agents import code_analyst as ca_mod
     from app.agents import meeting_analyst as ma_mod
     from app.agents import task_analyst as tk_mod
@@ -86,6 +87,23 @@ async def test_run_group_a_isolates_single_agent_failure(
             raise RuntimeError("Simulated time_analyst failure")
         return await real_run_agent(agent, name, deps)
 
+=======
+    from app.agents.orchestrator import run_group_a
+    from app.agents.schemas import GroupAResult
+
+    from app.agents import meeting_analyst as ma_mod
+    from app.agents import code_analyst as ca_mod
+    from app.agents import task_analyst as tk_mod
+
+    # Capture real _run_agent before patching to avoid recursion
+    real_run_agent = orch_mod._run_agent
+
+    async def selective_failure(agent, name, deps):
+        if name == "time_analyst":
+            raise RuntimeError("Simulated time_analyst failure")
+        return await real_run_agent(agent, name, deps)
+
+>>>>>>> de81fab ([#28][GREEN] implement: GroupAResult schema, run_group_a orchestrator with asyncio.gather, error isolation, and Prometheus metrics)
     with (
         ma_mod.meeting_analyst.override(model=TestModel()),
         ca_mod.code_analyst.override(model=TestModel()),

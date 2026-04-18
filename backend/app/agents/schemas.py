@@ -157,7 +157,6 @@ class TaskAnalystResult(BaseModel):
     avg_completion_hours: float | None
     priority_distribution: dict[str, int]
     insights: list[str]
-<<<<<<< HEAD
 
 
 # ---------------------------------------------------------------------------
