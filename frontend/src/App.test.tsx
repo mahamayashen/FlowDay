@@ -23,6 +23,18 @@ describe('App', () => {
     expect(root).toBeTruthy()
     expect(root.className).toContain('dark-bg')
   })
+
+  it('provides QueryClient to the component tree without error', () => {
+    // If QueryClientProvider is missing, React Query hooks throw.
+    // This test simply asserts the app renders without throwing.
+    expect(() =>
+      render(
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <App />
+        </MemoryRouter>,
+      ),
+    ).not.toThrow()
+  })
 })
 
 describe('Routing', () => {
