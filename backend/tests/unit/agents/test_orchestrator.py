@@ -9,6 +9,12 @@ import pytest
 from pydantic_ai import Agent
 from pydantic_ai.models.test import TestModel
 
+# CONFLICT RESOLUTION NOTE:
+# Option A (chosen — main): typed fixtures + `Any`/`Agent` imports + inline `selective_failure`
+#   closure (no global state) for the isolation test
+# Option B (incoming): untyped fixtures + module-level `_failing_time_analyst_wrapper`
+#   with `global _call_count` side-effect counter
+
 
 @pytest.fixture
 def user_id() -> uuid.UUID:
