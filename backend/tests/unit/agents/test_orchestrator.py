@@ -64,33 +64,34 @@ async def test_run_group_a_isolates_single_agent_failure(
     mock_db, user_id, analysis_date
 ):
     """A single agent failure does not prevent the other three from succeeding."""
+    import app.agents.orchestrator as orch_mod
     from app.agents.orchestrator import run_group_a
     from app.agents.schemas import GroupAResult
 
-    from app.agents import time_analyst as ta_mod
     from app.agents import meeting_analyst as ma_mod
     from app.agents import code_analyst as ca_mod
     from app.agents import task_analyst as tk_mod
 
-    # Make time_analyst raise, others succeed via TestModel
+    # Capture real _run_agent before patching to avoid recursion
+    real_run_agent = orch_mod._run_agent
+
+    async def selective_failure(agent, name, deps):
+        if name == "time_analyst":
+            raise RuntimeError("Simulated time_analyst failure")
+        return await real_run_agent(agent, name, deps)
+
     with (
-        ta_mod.time_analyst.override(model=TestModel(call_tools=["final_result"])),
         ma_mod.meeting_analyst.override(model=TestModel()),
         ca_mod.code_analyst.override(model=TestModel()),
         tk_mod.task_analyst.override(model=TestModel()),
+        patch("app.agents.orchestrator._run_agent", side_effect=selective_failure),
     ):
-        with patch(
-            "app.agents.orchestrator._run_agent",
-            wraps=_failing_time_analyst_wrapper,
-        ):
-            result = await run_group_a(mock_db, user_id, analysis_date)
+        result = await run_group_a(mock_db, user_id, analysis_date)
 
     assert isinstance(result, GroupAResult)
-    # Other three should succeed
     assert result.meeting_analysis is not None
     assert result.code_analysis is not None
     assert result.task_analysis is not None
-    # Time analyst failed
     assert result.time_analysis is None
     assert "time_analyst" in result.errors
 
@@ -133,20 +134,3 @@ async def test_run_group_a_records_latency_metrics(
     }
 
 
-# ---------------------------------------------------------------------------
-# Helpers for failure isolation test
-# ---------------------------------------------------------------------------
-
-_call_count = 0
-
-
-async def _failing_time_analyst_wrapper(agent, name, deps):
-    """Simulate time_analyst failing, others succeeding normally."""
-    global _call_count
-    _call_count += 1
-    if name == "time_analyst":
-        raise RuntimeError("Simulated time_analyst failure")
-    # Delegate to real _run_agent logic for others
-    from app.agents.orchestrator import _run_agent
-
-    return await _run_agent(agent, name, deps)

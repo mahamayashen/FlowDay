@@ -5,7 +5,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ---------------------------------------------------------------------------
@@ -156,3 +156,18 @@ class TaskAnalystResult(BaseModel):
     avg_completion_hours: float | None
     priority_distribution: dict[str, int]
     insights: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Group A aggregate result
+# ---------------------------------------------------------------------------
+
+
+class GroupAResult(BaseModel):
+    """Aggregated output from all four Group A parallel analyst agents."""
+
+    time_analysis: TimeAnalystResult | None = None
+    meeting_analysis: MeetingAnalystResult | None = None
+    code_analysis: CodeAnalystResult | None = None
+    task_analysis: TaskAnalystResult | None = None
+    errors: dict[str, str] = Field(default_factory=dict)
