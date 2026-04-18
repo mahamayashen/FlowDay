@@ -13,6 +13,12 @@ class GoogleCalendarAuthResponse(BaseModel):
     authorization_url: str
 
 
+class GitHubAuthResponse(BaseModel):
+    """Response for the GitHub OAuth initiation endpoint."""
+
+    authorization_url: str
+
+
 class SyncStatusResponse(BaseModel):
     """Response schema for an ExternalSync record."""
 
