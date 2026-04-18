@@ -13,12 +13,14 @@ from hypothesis import strategies as st
 from app.core.security import encrypt_oauth_token
 from app.services.google_calendar import (
     GOOGLE_AUTH_URL,
+    _sign_state,
     build_authorization_url,
     exchange_code_for_tokens,
     fetch_calendar_events,
     get_valid_access_token,
     refresh_access_token,
     store_tokens_in_sync_record,
+    verify_state,
 )
 
 USER_ID = str(uuid.UUID("00000000-0000-0000-0000-000000000003"))
@@ -57,10 +59,22 @@ def test_build_authorization_url_contains_required_params() -> None:
 
 @hyp_settings(max_examples=20)
 @given(st.uuids().map(str))
-def test_build_authorization_url_state_matches_user_id(user_id: str) -> None:
-    """State parameter in URL always equals the provided user_id."""
+def test_build_authorization_url_state_contains_user_id(user_id: str) -> None:
+    """State parameter in URL contains the user_id as a prefix."""
     url = build_authorization_url(user_id)
-    assert f"state={user_id}" in url
+    assert f"state={user_id}." in url
+
+
+def test_verify_state_accepts_valid_signature() -> None:
+    """verify_state returns True for a correctly signed state."""
+    signed = _sign_state(USER_ID)
+    assert verify_state(signed, USER_ID) is True
+
+
+def test_verify_state_rejects_tampered_signature() -> None:
+    """verify_state returns False for a tampered state."""
+    assert verify_state("wrong-state", USER_ID) is False
+    assert verify_state(f"{USER_ID}.badsig", USER_ID) is False
 
 
 # ---------------------------------------------------------------------------

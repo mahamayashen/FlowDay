@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.main import app
 from app.schemas.sync import SyncStatusResponse
+from app.services.google_calendar import _sign_state
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000002")
 SYNC_ID = uuid.UUID("00000000-0000-0000-0000-bbbbbbbbbbbb")
@@ -129,7 +130,7 @@ async def test_callback_success_creates_sync_record(client: AsyncClient) -> None
         ):
             response = await client.get(
                 "/sync/google-calendar/callback",
-                params={"code": "auth-code-123", "state": str(USER_ID)},
+                params={"code": "auth-code-123", "state": _sign_state(str(USER_ID))},
             )
     finally:
         _clear_overrides()

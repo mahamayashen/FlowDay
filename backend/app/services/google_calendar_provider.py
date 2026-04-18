@@ -38,10 +38,12 @@ class GoogleCalendarSyncProvider(BaseSyncProvider):
 
         project = await _get_or_create_sentinel_project(db, sync_record.user_id)
 
-        # Delete existing google_calendar blocks for user in the date range
+        # Delete existing tasks + blocks (CASCADE) for the sentinel project
         sync_start = now.date()
         sync_end = (now + timedelta(days=_SYNC_DAYS_AHEAD)).date()
-        await _delete_existing_blocks(db, sync_record.user_id, sync_start, sync_end)
+        await _delete_existing_tasks_and_blocks(
+            db, sync_record.user_id, sync_start, sync_end
+        )
 
         for event in events:
             block_data = _event_to_block_data(event)
@@ -90,34 +92,32 @@ async def _get_or_create_sentinel_project(
     return project
 
 
-async def _delete_existing_blocks(
+async def _delete_existing_tasks_and_blocks(
     db: AsyncSession,
     user_id: Any,
     start: date,
     end: date,
 ) -> None:
-    """Delete google_calendar ScheduleBlocks for a user within the date range."""
-    # ScheduleBlock → Task → Project (user_id)
+    """Delete sentinel Tasks (and their ScheduleBlocks via CASCADE) in date range."""
+    # Find task IDs that have google_calendar blocks in the date range
     task_ids_result = await db.execute(
         select(Task.id)
         .join(Project, Task.project_id == Project.id)
+        .join(ScheduleBlock, ScheduleBlock.task_id == Task.id)
         .where(
             Project.user_id == user_id,
             Project.name == _SENTINEL_PROJECT_NAME,
+            ScheduleBlock.source == ScheduleBlockSource.GOOGLE_CALENDAR,
+            ScheduleBlock.date >= start,
+            ScheduleBlock.date <= end,
         )
     )
     task_ids = [row[0] for row in task_ids_result.all()]
     if not task_ids:
         return
 
-    await db.execute(
-        delete(ScheduleBlock).where(
-            ScheduleBlock.task_id.in_(task_ids),
-            ScheduleBlock.source == ScheduleBlockSource.GOOGLE_CALENDAR,
-            ScheduleBlock.date >= start,
-            ScheduleBlock.date <= end,
-        )
-    )
+    # Deleting tasks cascades to their schedule blocks
+    await db.execute(delete(Task).where(Task.id.in_(task_ids)))
 
 
 def _event_to_block_data(
@@ -133,12 +133,12 @@ def _event_to_block_data(
     if not start_dt_str or not end_dt_str:
         return None  # all-day event — no hour information
 
-    start_dt = datetime.fromisoformat(start_dt_str)
-    end_dt = datetime.fromisoformat(end_dt_str)
+    start_utc = datetime.fromisoformat(start_dt_str).astimezone(UTC)
+    end_utc = datetime.fromisoformat(end_dt_str).astimezone(UTC)
 
-    event_date = start_dt.astimezone(UTC).date()
-    start_hour = Decimal(str(round(start_dt.hour + start_dt.minute / 60, 2)))
-    end_hour = Decimal(str(round(end_dt.hour + end_dt.minute / 60, 2)))
+    event_date = start_utc.date()
+    start_hour = Decimal(str(round(start_utc.hour + start_utc.minute / 60, 2)))
+    end_hour = Decimal(str(round(end_utc.hour + end_utc.minute / 60, 2)))
 
     if end_hour <= start_hour:
         end_hour = start_hour + Decimal("0.5")
