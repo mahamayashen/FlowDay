@@ -18,6 +18,7 @@ from app.core.database import dispose_engine, init_engine
 from app.core.metrics import configure_metrics
 from app.core.redis import close_redis, init_redis
 from app.core.sentry import SentryBreadcrumbMiddleware, configure_sentry
+from app.services import google_calendar_provider as _gcal_provider  # noqa: F401
 
 
 @asynccontextmanager
