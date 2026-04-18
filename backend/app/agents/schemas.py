@@ -85,7 +85,6 @@ class MeetingAnalystResult(BaseModel):
     longest_meeting_hours: float
     focus_time_hours: float
     insights: list[str]
-<<<<<<< HEAD
 
 
 # ---------------------------------------------------------------------------
@@ -118,6 +117,7 @@ class CodeAnalystResult(BaseModel):
     avg_pr_cycle_hours: float | None
     most_active_repo: str | None
     insights: list[str]
+<<<<<<< HEAD
 
 
 # ---------------------------------------------------------------------------
