@@ -12,6 +12,7 @@ from app.core.security import decrypt_oauth_token, encrypt_oauth_token
 from app.models.external_sync import ExternalSync
 from app.models.schedule_block import ScheduleBlock
 from app.models.user import User
+from app.services.google_calendar import _sign_state
 
 
 @pytest.mark.asyncio
@@ -34,7 +35,7 @@ async def test_callback_creates_external_sync_record(
     ):
         resp = await auth_client.get(
             "/sync/google-calendar/callback",
-            params={"code": "auth-code", "state": str(test_user.id)},
+            params={"code": "auth-code", "state": _sign_state(str(test_user.id))},
         )
 
     assert resp.status_code == 200

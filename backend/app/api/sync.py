@@ -13,6 +13,7 @@ from app.services.google_calendar import (
     exchange_code_for_tokens,
     get_or_create_google_calendar_sync,
     store_tokens_in_sync_record,
+    verify_state,
 )
 from app.services.sync_service import get_sync_status, trigger_sync
 
@@ -57,7 +58,7 @@ async def google_calendar_callback_route(
     db: AsyncSession = Depends(get_db),
 ) -> SyncStatusResponse:
     """Handle Google Calendar OAuth callback, store tokens, and return sync record."""
-    if state != str(current_user.id):
+    if not verify_state(state, str(current_user.id)):
         raise HTTPException(status_code=400, detail="Invalid OAuth state parameter")
 
     token_data = await exchange_code_for_tokens(code)

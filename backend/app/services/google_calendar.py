@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
@@ -21,6 +23,19 @@ GOOGLE_CALENDAR_EVENTS_URL = (
 )
 
 
+def _sign_state(user_id: str) -> str:
+    """Create an HMAC-signed state parameter: user_id.signature."""
+    sig = hmac.new(
+        settings.SECRET_KEY.encode(), user_id.encode(), hashlib.sha256
+    ).hexdigest()[:16]
+    return f"{user_id}.{sig}"
+
+
+def verify_state(state: str, user_id: str) -> bool:
+    """Verify that state was signed by this server for this user."""
+    return hmac.compare_digest(state, _sign_state(user_id))
+
+
 def build_authorization_url(user_id: str) -> str:
     """Build the Google OAuth consent URL for calendar access."""
     params = {
@@ -30,7 +45,7 @@ def build_authorization_url(user_id: str) -> str:
         "scope": GOOGLE_CALENDAR_SCOPE,
         "access_type": "offline",
         "prompt": "consent",
-        "state": user_id,
+        "state": _sign_state(user_id),
     }
     return f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
 
@@ -86,7 +101,7 @@ async def store_tokens_in_sync_record(
     token_data: dict[str, Any],
 ) -> None:
     """Encrypt and persist access/refresh tokens in sync_config_json."""
-    expires_in: int = token_data.get("expires_in", 3600)
+    expires_in = int(token_data.get("expires_in", 3600))
     expiry = (datetime.now(UTC) + timedelta(seconds=expires_in)).isoformat()
 
     current_config: dict[str, Any] = dict(sync_record.sync_config_json or {})
