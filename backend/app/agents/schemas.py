@@ -116,3 +116,43 @@ class CodeAnalystResult(BaseModel):
     avg_pr_cycle_hours: float | None
     most_active_repo: str | None
     insights: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Task Analyst
+# ---------------------------------------------------------------------------
+
+
+class TaskData(BaseModel):
+    """A single task pre-fetched for the Task Analyst."""
+
+    task_id: uuid.UUID
+    title: str
+    project_name: str
+    status: str  # "todo" | "in_progress" | "done"
+    priority: str  # "low" | "medium" | "high" | "urgent"
+    estimate_minutes: int | None
+    due_date: date | None
+    created_at: datetime
+    completed_at: datetime | None
+
+
+@dataclass
+class TaskAnalystDeps:
+    """Dependencies injected into the Task Analyst via RunContext."""
+
+    user_id: uuid.UUID
+    analysis_date: date
+    tasks: list[TaskData] = field(default_factory=list)
+
+
+class TaskAnalystResult(BaseModel):
+    """Structured output produced by the Task Analyst agent."""
+
+    total_tasks: int
+    completed_tasks: int
+    completion_rate_pct: float
+    overdue_tasks: int
+    avg_completion_hours: float | None
+    priority_distribution: dict[str, int]
+    insights: list[str]
