@@ -3,10 +3,12 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, it, expect } from 'vitest'
 import App from './App'
 
+const future = { v7_startTransition: true, v7_relativeSplatPath: true } as const
+
 describe('App', () => {
   it('renders without crashing', () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={future}>
         <App />
       </MemoryRouter>,
     )
@@ -15,7 +17,7 @@ describe('App', () => {
 
   it('has dark background root element', () => {
     const { container } = render(
-      <MemoryRouter>
+      <MemoryRouter future={future}>
         <App />
       </MemoryRouter>,
     )
@@ -25,11 +27,9 @@ describe('App', () => {
   })
 
   it('provides QueryClient to the component tree without error', () => {
-    // If QueryClientProvider is missing, React Query hooks throw.
-    // This test simply asserts the app renders without throwing.
     expect(() =>
       render(
-        <MemoryRouter initialEntries={['/dashboard']}>
+        <MemoryRouter initialEntries={['/dashboard']} future={future}>
           <App />
         </MemoryRouter>,
       ),
@@ -40,7 +40,7 @@ describe('App', () => {
 describe('Routing', () => {
   it('renders login page at /login', () => {
     render(
-      <MemoryRouter initialEntries={['/login']}>
+      <MemoryRouter initialEntries={['/login']} future={future}>
         <App />
       </MemoryRouter>,
     )
@@ -49,7 +49,7 @@ describe('Routing', () => {
 
   it('renders dashboard page at /dashboard', () => {
     render(
-      <MemoryRouter initialEntries={['/dashboard']}>
+      <MemoryRouter initialEntries={['/dashboard']} future={future}>
         <App />
       </MemoryRouter>,
     )
@@ -58,7 +58,7 @@ describe('Routing', () => {
 
   it('renders planner page at /planner', () => {
     render(
-      <MemoryRouter initialEntries={['/planner']}>
+      <MemoryRouter initialEntries={['/planner']} future={future}>
         <App />
       </MemoryRouter>,
     )
@@ -67,7 +67,7 @@ describe('Routing', () => {
 
   it('renders review page at /review', () => {
     render(
-      <MemoryRouter initialEntries={['/review']}>
+      <MemoryRouter initialEntries={['/review']} future={future}>
         <App />
       </MemoryRouter>,
     )
@@ -76,7 +76,7 @@ describe('Routing', () => {
 
   it('redirects unknown routes to login', () => {
     render(
-      <MemoryRouter initialEntries={['/unknown-path']}>
+      <MemoryRouter initialEntries={['/unknown-path']} future={future}>
         <App />
       </MemoryRouter>,
     )
