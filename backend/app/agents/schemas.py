@@ -84,3 +84,35 @@ class MeetingAnalystResult(BaseModel):
     longest_meeting_hours: float
     focus_time_hours: float
     insights: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Code Analyst
+# ---------------------------------------------------------------------------
+
+
+class GitHubSyncData(BaseModel):
+    """GitHub sync metadata — populated when a GitHub sync record exists."""
+
+    last_synced_at: datetime | None
+    sync_config: dict[str, object]
+
+
+@dataclass
+class CodeAnalystDeps:
+    """Dependencies injected into the Code Analyst via RunContext."""
+
+    user_id: uuid.UUID
+    analysis_date: date
+    github_sync: GitHubSyncData | None = None
+
+
+class CodeAnalystResult(BaseModel):
+    """Structured output produced by the Code Analyst agent."""
+
+    data_available: bool
+    commits_count: int
+    pull_requests_count: int
+    avg_pr_cycle_hours: float | None
+    most_active_repo: str | None
+    insights: list[str]
