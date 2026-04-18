@@ -59,3 +59,28 @@ class TimeAnalystResult(BaseModel):
     most_active_project: str | None
     avg_session_minutes: float
     insights: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Meeting Analyst
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class MeetingAnalystDeps:
+    """Dependencies injected into the Meeting Analyst via RunContext."""
+
+    user_id: uuid.UUID
+    analysis_date: date
+    calendar_blocks: list[ScheduleBlockData] = field(default_factory=list)
+
+
+class MeetingAnalystResult(BaseModel):
+    """Structured output produced by the Meeting Analyst agent."""
+
+    total_meeting_hours: float
+    meeting_count: int
+    avg_meeting_duration_hours: float
+    longest_meeting_hours: float
+    focus_time_hours: float
+    insights: list[str]
