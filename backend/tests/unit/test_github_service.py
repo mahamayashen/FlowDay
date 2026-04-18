@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -255,7 +254,7 @@ async def test_store_github_tokens_omits_expiry_when_no_expires_in() -> None:
 
 @pytest.mark.asyncio
 async def test_get_valid_github_token_returns_stored_without_expiry() -> None:
-    """get_valid_github_access_token returns stored token when no token_expiry (classic)."""
+    """get_valid_github_access_token returns token when no token_expiry (classic)."""
     sync_record = MagicMock()
     sync_record.sync_config_json = {
         "encrypted_access_token": encrypt_oauth_token("classic-token"),
@@ -383,8 +382,18 @@ async def test_get_or_create_github_sync_returns_existing() -> None:
 async def test_fetch_github_repos_returns_list() -> None:
     """fetch_github_repos returns a list of repo dicts."""
     repos = [
-        {"id": 1, "full_name": "user/repo1", "owner": {"login": "user"}, "name": "repo1"},
-        {"id": 2, "full_name": "user/repo2", "owner": {"login": "user"}, "name": "repo2"},
+        {
+            "id": 1,
+            "full_name": "user/repo1",
+            "owner": {"login": "user"},
+            "name": "repo1",
+        },  # noqa: E501
+        {
+            "id": 2,
+            "full_name": "user/repo2",
+            "owner": {"login": "user"},
+            "name": "repo2",
+        },  # noqa: E501
     ]
     mock_resp = MagicMock()
     mock_resp.status_code = 200
@@ -428,13 +437,23 @@ async def test_fetch_github_repos_raises_on_error() -> None:
 async def test_fetch_github_commits_returns_commits_for_date_range() -> None:
     """fetch_github_commits returns a list of commit dicts."""
     commits = [
-        {"sha": "abc123", "commit": {"message": "fix: thing", "author": {"date": "2026-04-18T10:00:00Z"}}},
+        {
+            "sha": "abc123",
+            "commit": {
+                "message": "fix: thing",
+                "author": {"date": "2026-04-18T10:00:00Z"},
+            },
+        },
     ]
     mock_client = _make_httpx_mock("get", commits, 200)
 
     with patch("app.services.github_sync.httpx.AsyncClient", return_value=mock_client):
         result = await fetch_github_commits(
-            "access-token", "user", "repo1", "2026-04-11T00:00:00Z", "2026-04-18T23:59:59Z"
+            "access-token",
+            "user",
+            "repo1",
+            "2026-04-11T00:00:00Z",
+            "2026-04-18T23:59:59Z",
         )
 
     assert len(result) == 1

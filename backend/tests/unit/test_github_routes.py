@@ -79,7 +79,9 @@ async def test_github_auth_returns_authorization_url(client: AsyncClient) -> Non
     assert response.status_code == 200
     data = response.json()
     assert "authorization_url" in data
-    assert data["authorization_url"].startswith("https://github.com/login/oauth/authorize")
+    assert data["authorization_url"].startswith(
+        "https://github.com/login/oauth/authorize"
+    )
 
 
 @pytest.mark.asyncio

@@ -101,8 +101,8 @@ async def test_sync_creates_sentinel_project_and_tasks() -> None:
 async def test_sync_creates_tasks_for_pull_requests() -> None:
     """sync() creates Task rows for pull requests."""
     import app.services.github_sync_provider  # noqa: F401
-    from app.services.github_sync_provider import GitHubSyncProvider
     from app.models.task import Task
+    from app.services.github_sync_provider import GitHubSyncProvider
 
     provider = GitHubSyncProvider()
 
@@ -160,8 +160,8 @@ async def test_sync_creates_tasks_for_pull_requests() -> None:
 async def test_sync_handles_empty_repos() -> None:
     """sync() creates no tasks when there are no repos."""
     import app.services.github_sync_provider  # noqa: F401
-    from app.services.github_sync_provider import GitHubSyncProvider
     from app.models.task import Task
+    from app.services.github_sync_provider import GitHubSyncProvider
 
     provider = GitHubSyncProvider()
 

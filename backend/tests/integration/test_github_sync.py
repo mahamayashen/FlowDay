@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -56,7 +55,8 @@ async def test_github_callback_creates_external_sync_record(
     assert record is not None
     config = record.sync_config_json
     assert "encrypted_access_token" in config
-    assert decrypt_oauth_token(config["encrypted_access_token"]) == "ghu_integration_access"
+    decrypted = decrypt_oauth_token(config["encrypted_access_token"])
+    assert decrypted == "ghu_integration_access"
     # No token_expiry for classic OAuth token
     assert "token_expiry" not in config
 
@@ -81,7 +81,11 @@ async def test_github_sync_trigger_creates_tasks(
     await db_session.flush()
 
     fake_repos = [
-        {"full_name": "testuser/myrepo", "owner": {"login": "testuser"}, "name": "myrepo"},
+        {
+            "full_name": "testuser/myrepo",
+            "owner": {"login": "testuser"},
+            "name": "myrepo",
+        },
     ]
     fake_commits = [
         {
