@@ -1,9 +1,24 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import App from './App'
 import { useAuthStore } from './stores/authStore'
 import type { TokenPair, User } from './types/auth'
+
+vi.mock('./api/projects', () => ({
+  useProjects: () => ({ data: [], isLoading: false, isError: false }),
+  useCreateProject: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateProject: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteProject: () => ({ mutate: vi.fn() }),
+}))
+
+vi.mock('./api/tasks', () => ({
+  useProjectTasks: () => ({ data: [], isLoading: false, isError: false }),
+  useCreateTask: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateTask: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteTask: () => ({ mutate: vi.fn() }),
+}))
+
 
 const future = { v7_startTransition: true, v7_relativeSplatPath: true } as const
 

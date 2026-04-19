@@ -1,0 +1,11 @@
+.task-filter {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.task-filter .form-field {
+  flex: 1;
+  min-width: 100px;
+}
