@@ -1,28 +1,40 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { fetchCurrentUser } from '../api/auth'
+import { fetchCurrentUser, AuthError } from '../api/auth'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
-  const { isAuthenticated, tokens, user, setUser, setUserLoading, isUserLoading, logout } =
-    useAuthStore()
+  const { isAuthenticated, tokens, user, setUser, setUserLoading, logout } = useAuthStore()
   const navigate = useNavigate()
+  const fetchingRef = useRef(false)
 
   useEffect(() => {
-    if (tokens && !user && !isUserLoading) {
+    if (tokens && !user && !fetchingRef.current) {
+      fetchingRef.current = true
       setUserLoading(true)
       fetchCurrentUser()
         .then(setUser)
-        .catch(() => {
-          logout()
-          navigate('/login', { replace: true })
+        .catch((err: unknown) => {
+          if (err instanceof AuthError && (err.status === 401 || err.status === 403)) {
+            logout()
+            navigate('/login', { replace: true })
+          }
+        })
+        .finally(() => {
+          fetchingRef.current = false
         })
     }
-  }, [tokens, user, isUserLoading, setUser, setUserLoading, logout, navigate])
+    return () => {
+      if (fetchingRef.current) {
+        fetchingRef.current = false
+        setUserLoading(false)
+      }
+    }
+  }, [tokens, user, setUser, setUserLoading, logout, navigate])
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
