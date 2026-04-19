@@ -4,13 +4,7 @@ import NarrativeSection from '../components/NarrativeSection'
 import JudgeScoreCard from '../components/JudgeScoreCard'
 import ScoreTrendChart from '../components/ScoreTrendChart'
 import ReviewHistoryList from '../components/ReviewHistoryList'
-import { getWeekStart, formatLocalDate } from '../utils/reviewUtils'
-
-function addWeeks(weekStart: string, weeks: number): string {
-  const d = new Date(weekStart + 'T00:00:00')
-  d.setDate(d.getDate() + weeks * 7)
-  return formatLocalDate(d)
-}
+import { getWeekStart, formatLocalDate, addWeeks } from '../utils/reviewUtils'
 
 function WeeklyReviewPage(): React.JSX.Element {
   const [selectedWeekStart, setSelectedWeekStart] = useState<string>(() =>

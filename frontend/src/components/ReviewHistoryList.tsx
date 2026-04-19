@@ -29,7 +29,12 @@ function ReviewHistoryList({
         <li
           key={review.week_start}
           data-testid={`review-history-item-${review.week_start}`}
+          role="button"
+          tabIndex={0}
           onClick={() => onSelectWeek(review.week_start)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') onSelectWeek(review.week_start)
+          }}
           style={{
             cursor: 'pointer',
             fontWeight: review.week_start === selectedWeekStart ? 'bold' : 'normal',

@@ -8,7 +8,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import type { WeeklyReview } from '../types/weeklyReview'
+import type { WeeklyReview, JudgeScores } from '../types/weeklyReview'
 
 interface ScoreTrendChartProps {
   reviews: WeeklyReview[]
@@ -16,12 +16,12 @@ interface ScoreTrendChartProps {
 
 function ScoreTrendChart({ reviews }: ScoreTrendChartProps): React.JSX.Element {
   const chartData = reviews
-    .filter((r) => r.scores_json !== null)
+    .filter((r): r is WeeklyReview & { scores_json: JudgeScores } => r.scores_json !== null)
     .map((r) => ({
       week: r.week_start,
-      actionability: r.scores_json!.actionability,
-      accuracy: r.scores_json!.accuracy,
-      coherence: r.scores_json!.coherence,
+      actionability: r.scores_json.actionability,
+      accuracy: r.scores_json.accuracy,
+      coherence: r.scores_json.coherence,
     }))
 
   if (chartData.length === 0) {
