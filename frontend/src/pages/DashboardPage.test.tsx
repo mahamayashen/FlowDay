@@ -55,6 +55,12 @@ const mockTasks: Task[] = [
   },
 ]
 
+vi.mock('../api/timeEntries', () => ({
+  useActiveTimer: () => ({ data: null }),
+  useStartTimer: () => ({ mutate: vi.fn() }),
+  useStopTimer: () => ({ mutate: vi.fn() }),
+}))
+
 vi.mock('../api/projects', () => ({
   useProjects: vi.fn(),
   useCreateProject: () => ({ mutate: vi.fn(), isPending: false }),

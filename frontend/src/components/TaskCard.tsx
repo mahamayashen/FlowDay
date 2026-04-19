@@ -1,6 +1,9 @@
 import React from 'react'
 import './TaskCard.css'
 import type { Task, TaskStatus } from '../types/task'
+import TimerButton from './TimerButton'
+import { useTimerStore } from '../stores/timerStore'
+import { useActiveTimer, useStartTimer, useStopTimer } from '../api/timeEntries'
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
   todo: 'Todo',
@@ -18,6 +21,31 @@ function TaskCard({ task, onClick }: TaskCardProps): React.JSX.Element {
   // Parse due_date as local midnight so comparison is timezone-consistent
   const isOverdue = task.due_date !== null && new Date(task.due_date + 'T00:00:00') < today
 
+  const { data: activeEntry } = useActiveTimer()
+  const startTimer = useStartTimer()
+  const stopTimer = useStopTimer()
+  const startTick = useTimerStore((s) => s.startTick)
+  const stopTick = useTimerStore((s) => s.stopTick)
+
+  const taskActiveEntry = activeEntry?.task_id === task.id ? activeEntry : null
+
+  function handleStart() {
+    startTimer.mutate(
+      { task_id: task.id },
+      {
+        onSuccess: (entry) => {
+          startTick(entry.id, entry.started_at, entry.task_id)
+        },
+      },
+    )
+  }
+
+  function handleStop(entryId: string) {
+    stopTimer.mutate(entryId, {
+      onSuccess: () => stopTick(),
+    })
+  }
+
   return (
     <div className="task-card" data-testid="task-card" onClick={onClick}>
       <span
@@ -34,6 +62,13 @@ function TaskCard({ task, onClick }: TaskCardProps): React.JSX.Element {
             {task.due_date}
           </span>
         )}
+      </div>
+      <div className="task-card-actions" data-testid="task-card-actions">
+        <TimerButton
+          activeEntry={taskActiveEntry ?? null}
+          onStart={handleStart}
+          onStop={handleStop}
+        />
       </div>
       <span
         className={`task-status-badge status-${task.status}`}
