@@ -319,15 +319,16 @@ async def test_run_group_d_records_judge_score_metric(
     sample_narrative_result: NarrativeWriterResult,
 ) -> None:
     """run_group_d observes the overall_score in the judge_score histogram."""
-    from unittest.mock import patch
+    from unittest.mock import MagicMock, patch
 
     import app.agents.judge as judge_mod
     from app.agents.orchestrator import run_group_d
     from app.core.metrics import judge_score
 
+    mock_histogram = MagicMock()
     with (
         judge_mod.judge.override(model=_make_passing_model()),
-        patch.object(judge_score, "labels", wraps=judge_score.labels) as mock_labels,
+        patch.object(judge_score, "labels", return_value=mock_histogram) as mock_labels,
     ):
         result = await run_group_d(
             group_a_result=full_group_a_result,
@@ -338,7 +339,7 @@ async def test_run_group_d_records_judge_score_metric(
         )
 
     mock_labels.assert_called_once_with(agent_name="judge")
-    mock_labels.return_value.observe.assert_called_once_with(result.overall_score)
+    mock_histogram.observe.assert_called_once_with(result.overall_score)
 
 
 def test_judge_retry_count_metric_exists() -> None:

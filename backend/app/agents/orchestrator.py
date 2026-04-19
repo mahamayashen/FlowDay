@@ -19,12 +19,15 @@ from app.agents.base import (
     run_with_metrics,
 )
 from app.agents.code_analyst import code_analyst
+from app.agents.judge import judge
 from app.agents.meeting_analyst import meeting_analyst
 from app.agents.narrative_writer import narrative_writer
 from app.agents.pattern_detector import pattern_detector
 from app.agents.schemas import (
     CodeAnalystDeps,
     GroupAResult,
+    JudgeDeps,
+    JudgeResult,
     MeetingAnalystDeps,
     NarrativeWriterDeps,
     NarrativeWriterResult,
@@ -35,6 +38,7 @@ from app.agents.schemas import (
 )
 from app.agents.task_analyst import task_analyst
 from app.agents.time_analyst import time_analyst
+from app.core.metrics import judge_score
 
 log = logging.getLogger(__name__)
 
@@ -165,3 +169,34 @@ async def run_group_c(
         pattern_result=pattern_result,
     )
     return await run_with_metrics(narrative_writer, "narrative_writer", deps)
+
+
+async def run_group_d(
+    group_a_result: GroupAResult,
+    pattern_result: PatternDetectorResult,
+    narrative_result: NarrativeWriterResult,
+    user_id: uuid.UUID,
+    analysis_date: date,
+) -> JudgeResult:
+    """Run the Judge agent (Group D) to score the Narrative Writer's output.
+
+    Args:
+        group_a_result: Aggregated output from all Group A analysts.
+        pattern_result: Output from the Pattern Detector (Group B).
+        narrative_result: Output from the Narrative Writer (Group C).
+        user_id: The user whose data was analyzed.
+        analysis_date: The reference date for the analysis.
+
+    Returns:
+        JudgeResult with dimension scores and feedback.
+    """
+    deps = JudgeDeps(
+        user_id=user_id,
+        analysis_date=analysis_date,
+        group_a_result=group_a_result,
+        pattern_result=pattern_result,
+        narrative_result=narrative_result,
+    )
+    result = await run_with_metrics(judge, "judge", deps)
+    judge_score.labels(agent_name="judge").observe(result.overall_score)
+    return result

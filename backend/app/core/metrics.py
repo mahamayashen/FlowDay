@@ -25,6 +25,12 @@ judge_score: Histogram = Histogram(
     buckets=(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
 )
 
+judge_retry_count: Counter = Counter(
+    "judge_retry_count",
+    "Number of ModelRetry events triggered by the judge agent",
+    labelnames=["agent_name"],
+)
+
 
 def configure_metrics(
     app: FastAPI,
