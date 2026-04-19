@@ -1,0 +1,23 @@
+export function buildOAuthUrl(provider: 'google' | 'github'): string {
+  const origin = window.location.origin
+  const redirectUri = `${origin}/auth/${provider}/callback`
+
+  if (provider === 'google') {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'email profile',
+    })
+    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+  }
+
+  const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID as string
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    scope: 'user:email',
+  })
+  return `https://github.com/login/oauth/authorize?${params.toString()}`
+}
