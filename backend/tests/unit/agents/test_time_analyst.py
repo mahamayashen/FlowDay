@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 from pydantic_ai.models.test import TestModel
@@ -17,16 +17,16 @@ def sample_time_entries() -> list:
             task_id=task_id,
             task_title="Write tests",
             project_name="FlowDay",
-            started_at=datetime(2026, 4, 14, 9, 0, tzinfo=timezone.utc),
-            ended_at=datetime(2026, 4, 14, 11, 0, tzinfo=timezone.utc),
+            started_at=datetime(2026, 4, 14, 9, 0, tzinfo=UTC),
+            ended_at=datetime(2026, 4, 14, 11, 0, tzinfo=UTC),
             duration_seconds=7200,
         ),
         TimeEntryData(
             task_id=task_id,
             task_title="Write tests",
             project_name="FlowDay",
-            started_at=datetime(2026, 4, 14, 13, 0, tzinfo=timezone.utc),
-            ended_at=datetime(2026, 4, 14, 14, 0, tzinfo=timezone.utc),
+            started_at=datetime(2026, 4, 14, 13, 0, tzinfo=UTC),
+            ended_at=datetime(2026, 4, 14, 14, 0, tzinfo=UTC),
             duration_seconds=3600,
         ),
     ]

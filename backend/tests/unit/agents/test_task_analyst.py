@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 from pydantic_ai.models.test import TestModel
@@ -11,7 +11,7 @@ from pydantic_ai.models.test import TestModel
 def sample_tasks() -> list:
     from app.agents.schemas import TaskData
 
-    now = datetime(2026, 4, 14, 10, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 4, 14, 10, 0, tzinfo=UTC)
     return [
         TaskData(
             task_id=uuid.uuid4(),
@@ -21,7 +21,7 @@ def sample_tasks() -> list:
             priority="high",
             estimate_minutes=60,
             due_date=date(2026, 4, 14),
-            created_at=datetime(2026, 4, 13, 9, 0, tzinfo=timezone.utc),
+            created_at=datetime(2026, 4, 13, 9, 0, tzinfo=UTC),
             completed_at=now,
         ),
         TaskData(
@@ -32,7 +32,7 @@ def sample_tasks() -> list:
             priority="high",
             estimate_minutes=120,
             due_date=date(2026, 4, 13),  # overdue
-            created_at=datetime(2026, 4, 12, 9, 0, tzinfo=timezone.utc),
+            created_at=datetime(2026, 4, 12, 9, 0, tzinfo=UTC),
             completed_at=None,
         ),
         TaskData(
@@ -43,7 +43,7 @@ def sample_tasks() -> list:
             priority="medium",
             estimate_minutes=30,
             due_date=None,
-            created_at=datetime(2026, 4, 14, 8, 0, tzinfo=timezone.utc),
+            created_at=datetime(2026, 4, 14, 8, 0, tzinfo=UTC),
             completed_at=None,
         ),
     ]
@@ -77,10 +77,8 @@ async def test_task_analyst_result_conforms_to_schema(sample_tasks):
 @pytest.mark.asyncio
 async def test_task_analyst_no_completed_tasks():
     """Completion rate is 0 when all tasks are in todo state."""
-    from app.agents.schemas import TaskAnalystDeps, TaskAnalystResult
+    from app.agents.schemas import TaskAnalystDeps, TaskAnalystResult, TaskData
     from app.agents.task_analyst import task_analyst
-
-    from app.agents.schemas import TaskData
 
     tasks = [
         TaskData(
@@ -91,7 +89,7 @@ async def test_task_analyst_no_completed_tasks():
             priority="low",
             estimate_minutes=None,
             due_date=None,
-            created_at=datetime(2026, 4, 14, 8, 0, tzinfo=timezone.utc),
+            created_at=datetime(2026, 4, 14, 8, 0, tzinfo=UTC),
             completed_at=None,
         )
     ]

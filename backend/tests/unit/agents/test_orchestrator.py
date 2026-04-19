@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -31,17 +31,14 @@ def mock_db():
 
 
 @pytest.mark.asyncio
-async def test_run_group_a_returns_all_four_results(
-    mock_db, user_id, analysis_date
-):
+async def test_run_group_a_returns_all_four_results(mock_db, user_id, analysis_date):
     """run_group_a returns GroupAResult with all four analyst outputs."""
+    from app.agents import code_analyst as ca_mod
+    from app.agents import meeting_analyst as ma_mod
+    from app.agents import task_analyst as tk_mod
+    from app.agents import time_analyst as ta_mod
     from app.agents.orchestrator import run_group_a
     from app.agents.schemas import GroupAResult
-
-    from app.agents import time_analyst as ta_mod
-    from app.agents import meeting_analyst as ma_mod
-    from app.agents import code_analyst as ca_mod
-    from app.agents import task_analyst as tk_mod
 
     with (
         ta_mod.time_analyst.override(model=TestModel()),
@@ -65,12 +62,11 @@ async def test_run_group_a_isolates_single_agent_failure(
 ):
     """A single agent failure does not prevent the other three from succeeding."""
     import app.agents.orchestrator as orch_mod
+    from app.agents import code_analyst as ca_mod
+    from app.agents import meeting_analyst as ma_mod
+    from app.agents import task_analyst as tk_mod
     from app.agents.orchestrator import run_group_a
     from app.agents.schemas import GroupAResult
-
-    from app.agents import meeting_analyst as ma_mod
-    from app.agents import code_analyst as ca_mod
-    from app.agents import task_analyst as tk_mod
 
     # Capture real _run_agent before patching to avoid recursion
     real_run_agent = orch_mod._run_agent
@@ -97,17 +93,13 @@ async def test_run_group_a_isolates_single_agent_failure(
 
 
 @pytest.mark.asyncio
-async def test_run_group_a_records_latency_metrics(
-    mock_db, user_id, analysis_date
-):
+async def test_run_group_a_records_latency_metrics(mock_db, user_id, analysis_date):
     """run_group_a observes agent_latency_seconds for each agent."""
-    from app.agents.orchestrator import run_group_a
-
-    from app.agents import time_analyst as ta_mod
-    from app.agents import meeting_analyst as ma_mod
     from app.agents import code_analyst as ca_mod
+    from app.agents import meeting_analyst as ma_mod
     from app.agents import task_analyst as tk_mod
-
+    from app.agents import time_analyst as ta_mod
+    from app.agents.orchestrator import run_group_a
     from app.core.metrics import agent_latency_seconds
 
     with (
@@ -132,5 +124,3 @@ async def test_run_group_a_records_latency_metrics(
         "code_analyst",
         "task_analyst",
     }
-
-

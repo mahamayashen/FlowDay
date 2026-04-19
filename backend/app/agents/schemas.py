@@ -1,4 +1,5 @@
 """Pydantic schemas for agent deps and result types (Group A parallel analysts)."""
+
 from __future__ import annotations
 
 import uuid
@@ -6,7 +7,6 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 
 from pydantic import BaseModel, Field
-
 
 # ---------------------------------------------------------------------------
 # Shared data transfer objects (pre-fetched from DB before agent calls)

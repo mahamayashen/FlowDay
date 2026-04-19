@@ -1,4 +1,5 @@
 """Task Analyst agent — analyzes Task completion data for task management insights."""
+
 from __future__ import annotations
 
 from pydantic_ai import Agent, RunContext
@@ -15,9 +16,9 @@ task_analyst: Agent[TaskAnalystDeps, TaskAnalystResult] = Agent(
         "You are a task management analyst. "
         "Given a list of tasks for a user, produce structured insights about their "
         "task completion patterns, priority breakdown, and overdue items. "
-        "completion_rate_pct = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0. "
+        "completion_rate_pct = (completed / total * 100) if total > 0 else 0. "
         "overdue_tasks = tasks with due_date < analysis_date and status != 'done'. "
-        "All numeric fields must be >= 0. completion_rate_pct must be between 0 and 100. "
+        "All numeric fields must be >= 0. completion_rate_pct between 0 and 100. "
         "Provide 2-4 concise, actionable insights in the insights list."
     ),
 )

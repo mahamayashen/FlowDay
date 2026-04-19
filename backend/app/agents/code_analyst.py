@@ -1,4 +1,5 @@
 """Code Analyst agent — analyzes GitHub sync data for code productivity insights."""
+
 from __future__ import annotations
 
 from pydantic_ai import Agent, RunContext
@@ -16,8 +17,9 @@ code_analyst: Agent[CodeAnalystDeps, CodeAnalystResult] = Agent(
         "Given GitHub sync metadata for a user, produce structured insights about "
         "their code productivity. "
         "When data_available is false (no GitHub sync configured), set all numeric "
-        "fields to 0, set data_available=false, avg_pr_cycle_hours and most_active_repo "
-        "to null, and provide a single insight explaining that GitHub is not connected. "
+        "fields to 0, set data_available=false, avg_pr_cycle_hours and "
+        "most_active_repo to null, and provide a single insight explaining that "
+        "GitHub is not connected. "
         "Provide 2-4 concise, actionable insights otherwise."
     ),
 )

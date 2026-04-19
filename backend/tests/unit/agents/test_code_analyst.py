@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 from pydantic_ai.models.test import TestModel
@@ -12,7 +12,7 @@ def sample_github_sync():
     from app.agents.schemas import GitHubSyncData
 
     return GitHubSyncData(
-        last_synced_at=datetime(2026, 4, 14, 8, 0, tzinfo=timezone.utc),
+        last_synced_at=datetime(2026, 4, 14, 8, 0, tzinfo=UTC),
         sync_config={"repo_count": 3, "most_active_repo": "FlowDay"},
     )
 

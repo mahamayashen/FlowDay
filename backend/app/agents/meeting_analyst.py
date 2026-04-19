@@ -1,4 +1,5 @@
 """Meeting Analyst agent — analyzes Google Calendar data for meeting load insights."""
+
 from __future__ import annotations
 
 from pydantic_ai import Agent, RunContext
@@ -17,7 +18,8 @@ meeting_analyst: Agent[MeetingAnalystDeps, MeetingAnalystResult] = Agent(
         "You are a meeting load analyst. "
         "Given a list of calendar events for a user's day, produce structured insights "
         "about their meeting burden and available focus time. "
-        "All numeric fields must be >= 0. focus_time_hours = max(0, 8 - total_meeting_hours). "
+        "All numeric fields must be >= 0. "
+        "focus_time_hours = max(0, 8 - total_meeting_hours). "
         "Provide 2-4 concise, actionable insights in the insights list."
     ),
 )

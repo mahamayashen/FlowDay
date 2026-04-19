@@ -1,4 +1,5 @@
 """Time Analyst agent — analyzes TimeEntry data for time utilization insights."""
+
 from __future__ import annotations
 
 from pydantic_ai import Agent, RunContext
@@ -27,14 +28,10 @@ async def add_time_context(ctx: RunContext[TimeAnalystDeps]) -> str:
     deps = ctx.deps
     total_tracked = sum(e.duration_seconds for e in deps.time_entries) / 3600.0
     total_planned = sum(
-        b.end_hour - b.start_hour
-        for b in deps.schedule_blocks
-        if b.source == "manual"
+        b.end_hour - b.start_hour for b in deps.schedule_blocks if b.source == "manual"
     )
     sessions = len(deps.time_entries)
-    avg_session = (
-        (total_tracked * 60 / sessions) if sessions > 0 else 0.0
-    )
+    avg_session = (total_tracked * 60 / sessions) if sessions > 0 else 0.0
 
     projects: dict[str, float] = {}
     for entry in deps.time_entries:
