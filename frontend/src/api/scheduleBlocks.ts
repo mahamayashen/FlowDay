@@ -49,10 +49,11 @@ export function useCreateScheduleBlock() {
 export function useUpdateScheduleBlock() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ blockId, data }: { blockId: string; data: ScheduleBlockUpdate }) =>
+    mutationFn: ({ blockId, data }: { blockId: string; data: ScheduleBlockUpdate; originalDate: string }) =>
       updateScheduleBlock(blockId, data),
-    onSuccess: (_result, { data }) => {
-      if (data.date) {
+    onSuccess: (_result, { data, originalDate }) => {
+      queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_KEYS.byDate(originalDate) })
+      if (data.date && data.date !== originalDate) {
         queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_KEYS.byDate(data.date) })
       }
     },

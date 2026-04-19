@@ -29,8 +29,6 @@ interface TimelineGridProps {
   blocks: ScheduleBlock[]
   tasks: Map<string, Task>
   projects: Map<string, Project>
-  onDropTask: (taskId: string, startHour: number) => void
-  onMoveBlock: (blockId: string, newStartHour: number) => void
   onResizeBlock: (blockId: string, newEndHour: number) => void
   onDeleteBlock: (blockId: string) => void
 }

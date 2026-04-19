@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import type { DragEndEvent } from '@dnd-kit/core'
 import { useQueries } from '@tanstack/react-query'
@@ -25,6 +25,13 @@ function PlannerPage(): React.JSX.Element {
   const deleteBlock = useDeleteScheduleBlock()
 
   const [overlapError, setOverlapError] = useState<string | null>(null)
+  const overlapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (overlapTimerRef.current !== null) clearTimeout(overlapTimerRef.current)
+    }
+  }, [])
 
   const taskQueries = useQueries({
     queries: projects.map((p: Project) => ({
@@ -75,8 +82,9 @@ function PlannerPage(): React.JSX.Element {
   }, [projects])
 
   function showOverlapError(message: string): void {
+    if (overlapTimerRef.current !== null) clearTimeout(overlapTimerRef.current)
     setOverlapError(message)
-    setTimeout(() => setOverlapError(null), 3000)
+    overlapTimerRef.current = setTimeout(() => setOverlapError(null), 3000)
   }
 
   function handleDragEnd(event: DragEndEvent): void {
@@ -106,7 +114,7 @@ function PlannerPage(): React.JSX.Element {
       const newEndHour = Math.min(dropHour + duration, workHoursEnd)
 
       updateBlock.mutate(
-        { blockId: block.id, data: { date: selectedDate, start_hour: dropHour, end_hour: newEndHour } },
+        { blockId: block.id, originalDate: block.date, data: { date: selectedDate, start_hour: dropHour, end_hour: newEndHour } },
         {
           onError: () => showOverlapError('This time slot overlaps with an existing block.'),
         },
@@ -118,7 +126,7 @@ function PlannerPage(): React.JSX.Element {
     const block = blocks.find((b) => b.id === blockId)
     if (!block) return
     updateBlock.mutate(
-      { blockId, data: { date: block.date, start_hour: block.start_hour, end_hour: newEndHour } },
+      { blockId, originalDate: block.date, data: { date: block.date, start_hour: block.start_hour, end_hour: newEndHour } },
       { onError: () => showOverlapError('Cannot resize: overlaps with an existing block.') },
     )
   }
@@ -151,24 +159,6 @@ function PlannerPage(): React.JSX.Element {
             blocks={blocks}
             tasks={taskMap}
             projects={projectMap}
-            onDropTask={(taskId, startHour) => {
-              const task = taskMap.get(taskId)
-              if (!task) return
-              const durationHours = task.estimate_minutes ? task.estimate_minutes / 60 : 1
-              createBlock.mutate(
-                { data: { task_id: taskId, date: selectedDate, start_hour: startHour, end_hour: Math.min(startHour + durationHours, workHoursEnd), source: 'manual' } },
-                { onError: () => showOverlapError('This time slot overlaps with an existing block.') },
-              )
-            }}
-            onMoveBlock={(blockId, newStartHour) => {
-              const block = blocks.find((b) => b.id === blockId)
-              if (!block) return
-              const duration = block.end_hour - block.start_hour
-              updateBlock.mutate(
-                { blockId, data: { date: selectedDate, start_hour: newStartHour, end_hour: Math.min(newStartHour + duration, workHoursEnd) } },
-                { onError: () => showOverlapError('This time slot overlaps with an existing block.') },
-              )
-            }}
             onResizeBlock={handleResizeBlock}
             onDeleteBlock={handleDeleteBlock}
           />
