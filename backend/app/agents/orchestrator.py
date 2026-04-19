@@ -20,10 +20,13 @@ from app.agents.base import (
 )
 from app.agents.code_analyst import code_analyst
 from app.agents.meeting_analyst import meeting_analyst
+from app.agents.pattern_detector import pattern_detector
 from app.agents.schemas import (
     CodeAnalystDeps,
     GroupAResult,
     MeetingAnalystDeps,
+    PatternDetectorDeps,
+    PatternDetectorResult,
     TaskAnalystDeps,
     TimeAnalystDeps,
 )
@@ -110,3 +113,26 @@ async def run_group_a(
         task_analysis=task_result,
         errors=errors,
     )
+
+
+async def run_group_b(
+    group_a_result: GroupAResult,
+    user_id: uuid.UUID,
+    analysis_date: date,
+) -> PatternDetectorResult:
+    """Run the Pattern Detector agent (Group B) on Group A outputs.
+
+    Args:
+        group_a_result: Aggregated output from all Group A analysts.
+        user_id: The user whose data was analyzed.
+        analysis_date: The reference date for the analysis.
+
+    Returns:
+        PatternDetectorResult with detected cross-source patterns and summary.
+    """
+    deps = PatternDetectorDeps(
+        user_id=user_id,
+        analysis_date=analysis_date,
+        group_a_result=group_a_result,
+    )
+    return await run_with_metrics(pattern_detector, "pattern_detector", deps)
