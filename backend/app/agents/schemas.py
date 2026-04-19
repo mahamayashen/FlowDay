@@ -226,3 +226,29 @@ class NarrativeWriterResult(BaseModel):
     time_analysis: str = Field(min_length=1)
     productivity_patterns: str = Field(min_length=1)
     areas_of_concern: str = Field(min_length=1)
+
+
+# ---------------------------------------------------------------------------
+# Judge (Group D)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class JudgeDeps:
+    """Dependencies injected into the Judge agent via RunContext."""
+
+    user_id: uuid.UUID
+    analysis_date: date
+    group_a_result: GroupAResult
+    pattern_result: PatternDetectorResult
+    narrative_result: NarrativeWriterResult
+
+
+class JudgeResult(BaseModel):
+    """Structured output produced by the Judge agent."""
+
+    actionability_score: int = Field(ge=1, le=10)
+    accuracy_score: int = Field(ge=1, le=10)
+    coherence_score: int = Field(ge=1, le=10)
+    overall_score: int = Field(ge=1, le=10)
+    feedback: str = Field(min_length=1)
