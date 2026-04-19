@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserResponse(BaseModel):
@@ -44,4 +44,4 @@ class RefreshRequest(BaseModel):
 class OAuthCallbackRequest(BaseModel):
     """Request body for OAuth code exchange — keeps the code out of the URL."""
 
-    code: str
+    code: str = Field(min_length=1)
