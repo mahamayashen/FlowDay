@@ -23,7 +23,7 @@ function WeeklyBarChart({ data }: WeeklyBarChartProps): React.JSX.Element {
           <BarChart layout="vertical" data={data}>
             <XAxis type="number" unit="h" />
             <YAxis type="category" dataKey="name" width={100} />
-            <Tooltip formatter={(value: number) => `${value}h`} />
+            <Tooltip formatter={(value) => (typeof value === 'number' ? `${value}h` : value)} />
             <Bar dataKey="planned" name="Planned" fill="#f59e0b" />
             <Bar dataKey="actual" name="Actual" fill="#22c55e" />
           </BarChart>

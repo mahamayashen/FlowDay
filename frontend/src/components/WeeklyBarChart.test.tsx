@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import React from 'react'
 import WeeklyBarChart from './WeeklyBarChart'
 import type { WeeklyChartEntry } from '../types/analytics'
 
