@@ -210,8 +210,6 @@ async def run_group_d(
         log.error("Judge agent failed after retries: %s", exc)
         return None
 
-    judge_score.labels(agent_name="judge").observe(result.overall_score)
-
     # retry_count defaults to 0; pydantic-ai does not expose per-run retry count
     # on the result object — retries are tracked via judge_retry_count metric
     record = AgentScoreHistory(
@@ -225,5 +223,8 @@ async def run_group_d(
     )
     db.add(record)
     await db.flush()
+
+    # Observe metric only after the row is confirmed persisted.
+    judge_score.labels(agent_name="judge").observe(result.overall_score)
 
     return result
