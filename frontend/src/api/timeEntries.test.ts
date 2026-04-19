@@ -68,6 +68,6 @@ describe('useActiveTimer', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    expect(result.current.data).toBeUndefined()
+    expect(result.current.data).toBeNull()
   })
 })
