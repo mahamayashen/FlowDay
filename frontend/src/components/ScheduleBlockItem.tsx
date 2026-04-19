@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { HOUR_HEIGHT } from '../utils/planner'
 import type { ScheduleBlock } from '../types/scheduleBlock'
@@ -50,7 +50,7 @@ function ScheduleBlockItem({
     setResizeHeight(newHeight)
   }
 
-  function handleResizePointerUp(e: React.PointerEvent<HTMLDivElement>): void {
+  function handleResizePointerUp(): void {
     if (resizeHeight === null) return
     const rawEndHour = block.start_hour + resizeHeight / HOUR_HEIGHT
     const snapped = Math.round(rawEndHour * 4) / 4
@@ -100,7 +100,7 @@ function ScheduleBlockItem({
             data-testid="resize-handle"
             onPointerDown={handleResizePointerDown}
             onPointerMove={handleResizePointerMove}
-            onPointerUp={handleResizePointerUp}
+            onPointerUp={() => handleResizePointerUp()}
           />
         </>
       )}

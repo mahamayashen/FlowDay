@@ -62,7 +62,7 @@ export function useUpdateScheduleBlock() {
 export function useDeleteScheduleBlock() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ blockId, date }: { blockId: string; date: string }) => deleteScheduleBlock(blockId),
+    mutationFn: ({ blockId }: { blockId: string; date: string }) => deleteScheduleBlock(blockId),
     onSuccess: (_result, { date }) =>
       queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_KEYS.byDate(date) }),
   })
