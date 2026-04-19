@@ -1,17 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import './TimerButton.css'
 import type { TimeEntry } from '../types/timeEntry'
+import { formatElapsed } from '../utils/formatElapsed'
 
 interface TimerButtonProps {
   activeEntry: TimeEntry | null
   onStart: () => void
   onStop: (entryId: string) => void
-}
-
-function formatElapsed(seconds: number): string {
-  const mm = Math.floor(seconds / 60).toString().padStart(2, '0')
-  const ss = (seconds % 60).toString().padStart(2, '0')
-  return `${mm}:${ss}`
 }
 
 function TimerButton({ activeEntry, onStart, onStop }: TimerButtonProps): React.JSX.Element {
