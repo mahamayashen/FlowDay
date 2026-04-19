@@ -1,0 +1,22 @@
+.planner-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.planner-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.planner-overlap-error {
+  background: #7f1d1d;
+  color: #fca5a5;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  text-align: center;
+  border-bottom: 1px solid #991b1b;
+}
