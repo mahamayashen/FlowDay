@@ -5,9 +5,12 @@ import PlannerPage from './pages/PlannerPage'
 import ReviewPage from './pages/ReviewPage'
 import OAuthCallbackPage from './pages/OAuthCallbackPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import { useTimerBootstrap } from './hooks/useTimerBootstrap'
 import './index.css'
 
 function App(): React.JSX.Element {
+  useTimerBootstrap()
+
   return (
     <div className="dark-bg">
       <Routes>
