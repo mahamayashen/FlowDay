@@ -29,11 +29,13 @@ describe('timerStore', () => {
     expect(useTimerStore.getState().activeEntryId).toBe('entry-2')
   })
 
-  it('useIsTaskTimerActive returns true for active task', () => {
-    useTimerStore.getState().startTick('entry-99', undefined)
-    const active = useTimerStore.getState().isTaskTimerActive('task-with-entry-99')
-    // Can't know task_id here — test the selector with the activeEntryId directly
-    expect(useTimerStore.getState().activeEntryId).toBe('entry-99')
-    expect(active).toBe(false) // different task
+  it('isTaskTimerActive returns true for the active task', () => {
+    useTimerStore.getState().startTick('entry-1', 'task-abc')
+    expect(useTimerStore.getState().isTaskTimerActive('task-abc')).toBe(true)
+  })
+
+  it('isTaskTimerActive returns false for a different task', () => {
+    useTimerStore.getState().startTick('entry-1', 'task-abc')
+    expect(useTimerStore.getState().isTaskTimerActive('task-xyz')).toBe(false)
   })
 })

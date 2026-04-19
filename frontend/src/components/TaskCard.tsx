@@ -65,7 +65,7 @@ function TaskCard({ task, onClick }: TaskCardProps): React.JSX.Element {
       </div>
       <div className="task-card-actions" data-testid="task-card-actions">
         <TimerButton
-          activeEntry={taskActiveEntry ?? null}
+          activeEntry={taskActiveEntry}
           onStart={handleStart}
           onStop={handleStop}
         />
