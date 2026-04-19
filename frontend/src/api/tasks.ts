@@ -7,7 +7,7 @@ export const TASK_KEYS = {
   detail: (projectId: string, taskId: string) => ['tasks', projectId, taskId] as const,
 }
 
-async function fetchProjectTasks(projectId: string): Promise<Task[]> {
+export async function fetchProjectTasks(projectId: string): Promise<Task[]> {
   const res = await apiClient.get(`/projects/${projectId}/tasks`)
   if (!res.ok) throw new Error('Failed to fetch tasks')
   return res.json() as Promise<Task[]>
