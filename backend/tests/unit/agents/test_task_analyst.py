@@ -82,7 +82,7 @@ async def test_task_analyst_result_conforms_to_schema(
 @pytest.mark.asyncio
 async def test_task_analyst_no_completed_tasks() -> None:
     """Completion rate is 0 when all tasks are in todo state."""
-    from app.agents.schemas import TaskAnalystDeps, TaskAnalystResult, TaskData
+    from app.agents.schemas import TaskAnalystDeps, TaskAnalystResult
     from app.agents.task_analyst import task_analyst
 
     tasks = [
