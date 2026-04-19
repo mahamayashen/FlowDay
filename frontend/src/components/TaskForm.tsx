@@ -13,6 +13,7 @@ function TaskForm({ projectId, initialData, onSuccess }: TaskFormProps): React.J
   const isEdit = Boolean(initialData)
 
   const [title, setTitle] = useState(initialData?.title ?? '')
+  const [description, setDescription] = useState(initialData?.description ?? '')
   const [estimate, setEstimate] = useState(
     initialData?.estimate_minutes != null ? String(initialData.estimate_minutes) : '',
   )
@@ -38,6 +39,7 @@ function TaskForm({ projectId, initialData, onSuccess }: TaskFormProps): React.J
 
     const data = {
       title: title.trim(),
+      description: description.trim() || null,
       priority,
       status,
       estimate_minutes: estimate !== '' ? Number(estimate) : null,
@@ -66,6 +68,17 @@ function TaskForm({ projectId, initialData, onSuccess }: TaskFormProps): React.J
             {errors.title}
           </span>
         )}
+      </div>
+
+      <div className="form-field">
+        <label htmlFor="task-description">Description</label>
+        <textarea
+          id="task-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Optional"
+          rows={3}
+        />
       </div>
 
       <div className="form-field">

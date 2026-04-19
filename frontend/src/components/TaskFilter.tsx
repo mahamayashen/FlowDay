@@ -7,6 +7,7 @@ export interface TaskFilterState {
   priority: TaskPriority | 'all'
   status: TaskStatus | 'all'
   sortBy: SortKey
+  dueDateBefore: string | null
 }
 
 interface TaskFilterProps {
@@ -57,6 +58,18 @@ function TaskFilter({ value, onChange }: TaskFilterProps): React.JSX.Element {
           <option value="priority_desc">Priority</option>
           <option value="title_asc">Title</option>
         </select>
+      </div>
+
+      <div className="form-field">
+        <label htmlFor="filter-due-before">Due before</label>
+        <input
+          id="filter-due-before"
+          type="date"
+          value={value.dueDateBefore ?? ''}
+          onChange={(e) =>
+            onChange({ ...value, dueDateBefore: e.target.value || null })
+          }
+        />
       </div>
     </div>
   )

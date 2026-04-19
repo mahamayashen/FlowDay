@@ -32,6 +32,7 @@ describe('TaskForm', () => {
   it('renders all fields', () => {
     render(<TaskForm projectId="proj-1" onSuccess={vi.fn()} />)
     expect(screen.getByLabelText('Title')).toBeInTheDocument()
+    expect(screen.getByLabelText('Description')).toBeInTheDocument()
     expect(screen.getByLabelText('Estimate (minutes)')).toBeInTheDocument()
     expect(screen.getByLabelText('Priority')).toBeInTheDocument()
     expect(screen.getByLabelText('Status')).toBeInTheDocument()
@@ -79,6 +80,7 @@ describe('TaskForm', () => {
   it('pre-fills fields with initialData in edit mode', () => {
     render(<TaskForm projectId="proj-1" initialData={existingTask} onSuccess={vi.fn()} />)
     expect(screen.getByLabelText<HTMLInputElement>('Title').value).toBe('Old Title')
+    expect(screen.getByLabelText<HTMLTextAreaElement>('Description').value).toBe('Some description')
     expect(screen.getByLabelText<HTMLInputElement>('Estimate (minutes)').value).toBe('60')
     expect(screen.getByLabelText<HTMLSelectElement>('Priority').value).toBe('high')
     expect(screen.getByLabelText<HTMLSelectElement>('Status').value).toBe('in_progress')

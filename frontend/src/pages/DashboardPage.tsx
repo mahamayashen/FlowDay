@@ -7,33 +7,74 @@ import ProjectForm from '../components/ProjectForm'
 import TaskCard from '../components/TaskCard'
 import TaskForm from '../components/TaskForm'
 import TaskFilter from '../components/TaskFilter'
-import { filterByPriority, filterByStatus, sortTasks } from '../utils/taskFilters'
+import { filterByPriority, filterByStatus, filterByDueDateBefore, sortTasks } from '../utils/taskFilters'
 import type { TaskFilterState } from '../components/TaskFilter'
+import type { Project } from '../types/project'
+import type { Task } from '../types/task'
 
 const DEFAULT_FILTER: TaskFilterState = {
   priority: 'all',
   status: 'all',
   sortBy: 'due_date_asc',
+  dueDateBefore: null,
 }
 
 function DashboardPage(): React.JSX.Element {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [showProjectForm, setShowProjectForm] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [showTaskForm, setShowTaskForm] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [filter, setFilter] = useState<TaskFilterState>(DEFAULT_FILTER)
 
-  const { data: projects, isLoading: projectsLoading } = useProjects()
-  const { data: rawTasks } = useProjectTasks(selectedProjectId ?? '')
+  const { data: projects, isLoading: projectsLoading, isError: projectsError } = useProjects()
+  const { data: rawTasks, isError: tasksError } = useProjectTasks(selectedProjectId ?? '')
 
   const visibleTasks = selectedProjectId
     ? sortTasks(
         filterByStatus(
-          filterByPriority(rawTasks ?? [], filter.priority),
+          filterByPriority(
+            filterByDueDateBefore(rawTasks ?? [], filter.dueDateBefore),
+            filter.priority,
+          ),
           filter.status,
         ),
         filter.sortBy,
       )
     : []
+
+  function openCreateProject(): void {
+    setEditingProject(null)
+    setShowProjectForm((v) => !v)
+  }
+
+  function openEditProject(project: Project): void {
+    setShowProjectForm(false)
+    setEditingProject((prev) => (prev?.id === project.id ? null : project))
+  }
+
+  function closeProjectForm(): void {
+    setShowProjectForm(false)
+    setEditingProject(null)
+  }
+
+  function openCreateTask(): void {
+    setEditingTask(null)
+    setShowTaskForm((v) => !v)
+  }
+
+  function openEditTask(task: Task): void {
+    setShowTaskForm(false)
+    setEditingTask((prev) => (prev?.id === task.id ? null : task))
+  }
+
+  function closeTaskForm(): void {
+    setShowTaskForm(false)
+    setEditingTask(null)
+  }
+
+  const projectFormVisible = showProjectForm || editingProject !== null
+  const taskFormVisible = showTaskForm || editingTask !== null
 
   return (
     <main data-testid="page-dashboard" className="dashboard">
@@ -43,15 +84,18 @@ function DashboardPage(): React.JSX.Element {
           <button
             data-testid="btn-new-project"
             className="btn-icon"
-            onClick={() => setShowProjectForm((v) => !v)}
+            onClick={openCreateProject}
           >
             + New
           </button>
         </div>
 
-        {showProjectForm && (
+        {projectFormVisible && (
           <div data-testid="project-form-panel" className="form-panel">
-            <ProjectForm onSuccess={() => setShowProjectForm(false)} />
+            <ProjectForm
+              initialData={editingProject ?? undefined}
+              onSuccess={closeProjectForm}
+            />
           </div>
         )}
 
@@ -61,17 +105,30 @@ function DashboardPage(): React.JSX.Element {
           </span>
         )}
 
+        {projectsError && (
+          <span data-testid="projects-error" className="error-text">
+            Failed to load projects.
+          </span>
+        )}
+
         <ul className="project-list">
           {(projects ?? []).map((project) => (
-            <li key={project.id}>
+            <li key={project.id} className="project-list-item">
               <ProjectCard
                 project={project}
                 onClick={() => {
                   setSelectedProjectId(project.id)
-                  setShowTaskForm(false)
+                  closeTaskForm()
                   setFilter(DEFAULT_FILTER)
                 }}
               />
+              <button
+                data-testid="btn-edit-project"
+                className="btn-icon btn-edit"
+                onClick={() => openEditProject(project)}
+              >
+                Edit
+              </button>
             </li>
           ))}
         </ul>
@@ -85,25 +142,39 @@ function DashboardPage(): React.JSX.Element {
               <button
                 data-testid="btn-new-task"
                 className="btn-icon"
-                onClick={() => setShowTaskForm((v) => !v)}
+                onClick={openCreateTask}
               >
                 + New task
               </button>
             </div>
 
-            {showTaskForm && (
+            {taskFormVisible && (
               <div data-testid="task-form-panel" className="form-panel">
                 <TaskForm
                   projectId={selectedProjectId}
-                  onSuccess={() => setShowTaskForm(false)}
+                  initialData={editingTask ?? undefined}
+                  onSuccess={closeTaskForm}
                 />
               </div>
             )}
 
+            {tasksError && (
+              <span data-testid="tasks-error" className="error-text">
+                Failed to load tasks.
+              </span>
+            )}
+
             <ul className="task-list">
               {visibleTasks.map((task) => (
-                <li key={task.id}>
+                <li key={task.id} className="task-list-item">
                   <TaskCard task={task} />
+                  <button
+                    data-testid="btn-edit-task"
+                    className="btn-icon btn-edit"
+                    onClick={() => openEditTask(task)}
+                  >
+                    Edit
+                  </button>
                 </li>
               ))}
             </ul>

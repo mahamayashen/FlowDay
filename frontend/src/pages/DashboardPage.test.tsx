@@ -151,4 +151,40 @@ describe('DashboardPage', () => {
     fireEvent.click(screen.getAllByTestId('project-card')[0])
     expect(screen.getByTestId('task-filter')).toBeInTheDocument()
   })
+
+  it('shows project edit form when edit button is clicked', () => {
+    renderDashboard()
+    fireEvent.click(screen.getAllByTestId('btn-edit-project')[0])
+    expect(screen.getByTestId('project-form-panel')).toBeInTheDocument()
+  })
+
+  it('shows task edit form when task edit button is clicked', () => {
+    renderDashboard()
+    fireEvent.click(screen.getAllByTestId('project-card')[0])
+    fireEvent.click(screen.getAllByTestId('btn-edit-task')[0])
+    expect(screen.getByTestId('task-form-panel')).toBeInTheDocument()
+  })
+
+  it('shows error message when projects fail to load', () => {
+    mockUseProjects.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as ReturnType<typeof useProjects>)
+
+    renderDashboard()
+    expect(screen.getByTestId('projects-error')).toBeInTheDocument()
+  })
+
+  it('shows error message when tasks fail to load', () => {
+    mockUseProjectTasks.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as ReturnType<typeof useProjectTasks>)
+
+    renderDashboard()
+    fireEvent.click(screen.getAllByTestId('project-card')[0])
+    expect(screen.getByTestId('tasks-error')).toBeInTheDocument()
+  })
 })
