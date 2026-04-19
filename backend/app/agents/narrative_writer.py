@@ -1,4 +1,4 @@
-"""Narrative Writer agent — produces descriptive weekly review from Group A + B outputs."""
+"""Narrative Writer agent — descriptive weekly review from Group A + B outputs."""
 
 from __future__ import annotations
 
@@ -17,12 +17,13 @@ narrative_writer: Agent[NarrativeWriterDeps, NarrativeWriterResult] = Agent(
         "Given structured outputs from analyst agents and cross-source patterns, "
         "produce a descriptive and diagnostic narrative with exactly four sections: "
         "1) executive_summary: a high-level overview of the week's productivity, "
-        "2) time_analysis: how time was allocated and utilised across projects and meetings, "
-        "3) productivity_patterns: recurring themes and cross-source correlations observed, "
+        "2) time_analysis: how time was allocated and utilised across projects, "
+        "3) productivity_patterns: recurring themes and cross-source correlations, "
         "4) areas_of_concern: issues or risks identified in the data. "
         "Be DESCRIPTIVE and DIAGNOSTIC only — describe what happened and why. "
         "Do NOT provide prescriptive recommendations or action items. "
-        "If some data sources are unavailable, note their absence and work with available data."
+        "If some data sources are unavailable, note their absence "
+        "and work with what is available."
     ),
 )
 
