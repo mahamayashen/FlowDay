@@ -35,6 +35,7 @@ async function request(
   method: string,
   url: string,
   body?: unknown,
+  signal?: AbortSignal,
 ): Promise<Response> {
   const tokens = useAuthStore.getState().tokens
 
@@ -45,7 +46,7 @@ async function request(
     headers['Authorization'] = `Bearer ${tokens.access_token}`
   }
 
-  const init: RequestInit = { method, headers }
+  const init: RequestInit = { method, headers, signal }
   if (body !== undefined) {
     init.body = JSON.stringify(body)
   }
@@ -59,7 +60,7 @@ async function request(
     // Retry with new access token
     return fetch(url, {
       ...init,
-      headers: { ...headers, Authorization: `Bearer ${newTokens.access_token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${newTokens.access_token}` },
     })
   }
 
@@ -67,6 +68,6 @@ async function request(
 }
 
 export const apiClient = {
-  get: (url: string): Promise<Response> => request('GET', url),
-  post: (url: string, body?: unknown): Promise<Response> => request('POST', url, body),
+  get: (url: string, signal?: AbortSignal): Promise<Response> => request('GET', url, undefined, signal),
+  post: (url: string, body?: unknown, signal?: AbortSignal): Promise<Response> => request('POST', url, body, signal),
 }

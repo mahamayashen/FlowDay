@@ -6,8 +6,13 @@ export async function exchangeOAuthCode(
   code: string,
   signal?: AbortSignal,
 ): Promise<TokenPair> {
-  const url = `/auth/${provider}/callback?code=${encodeURIComponent(code)}`
-  const res = await fetch(url, { signal })
+  const url = `/auth/${provider}/callback`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+    signal,
+  })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error((data as { detail?: string }).detail ?? 'OAuth exchange failed')

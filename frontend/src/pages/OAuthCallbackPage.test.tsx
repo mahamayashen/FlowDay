@@ -74,7 +74,9 @@ describe('OAuthCallbackPage', () => {
     await waitFor(() =>
       expect(fetchSpy.mock.calls[0][0]).toContain('/auth/google/callback'),
     )
-    expect((fetchSpy.mock.calls[0][0] as string)).toContain('code=code-abc')
+    const requestInit = fetchSpy.mock.calls[0][1] as RequestInit
+    expect(requestInit.method).toBe('POST')
+    expect(JSON.parse(requestInit.body as string)).toEqual({ code: 'code-abc' })
   })
 
   it('stores tokens and user in authStore on success', async () => {
