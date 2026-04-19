@@ -5,7 +5,7 @@ Uses a different LLM provider than the Narrative Writer to avoid self-bias.
 
 from __future__ import annotations
 
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, ModelRetry, RunContext
 
 from app.agents.schemas import JudgeDeps, JudgeResult
 from app.core.config import settings
@@ -15,6 +15,7 @@ judge: Agent[JudgeDeps, JudgeResult] = Agent(
     output_type=JudgeResult,
     deps_type=JudgeDeps,
     defer_model_check=True,
+    retries=2,
     system_prompt=(
         "You are an impartial evaluator of weekly productivity review narratives. "
         "Given a narrative produced by an AI writer and the underlying data it was based on, "
@@ -100,3 +101,15 @@ async def add_evaluation_context(ctx: RunContext[JudgeDeps]) -> str:
     ]
 
     return "\n\n".join(sections)
+
+
+@judge.output_validator
+async def validate_scores(ctx: RunContext[JudgeDeps], result: JudgeResult) -> JudgeResult:
+    """Raise ModelRetry if any dimension score is below the configured threshold."""
+    threshold = settings.JUDGE_SCORE_THRESHOLD
+    if min(result.actionability_score, result.accuracy_score, result.coherence_score) < threshold:
+        raise ModelRetry(
+            f"One or more dimension scores are below the threshold of {threshold}. "
+            "Please re-evaluate and provide higher-quality scores."
+        )
+    return result

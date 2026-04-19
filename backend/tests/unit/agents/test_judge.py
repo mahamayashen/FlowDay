@@ -6,13 +6,34 @@ import uuid
 from datetime import date
 
 import pytest
-from pydantic_ai.models.test import TestModel
 
 from app.agents.schemas import (
     GroupAResult,
     NarrativeWriterResult,
     PatternDetectorResult,
 )
+
+
+def _make_passing_model():  # type: ignore[return]
+    """Return a FunctionModel that always emits scores above the retry threshold."""
+    from pydantic_ai.models.function import FunctionModel
+
+    from app.agents.schemas import JudgeResult
+
+    def _model(messages, info):  # type: ignore[return, type-arg]
+        from pydantic_ai.models.function import ModelResponse, TextPart
+
+        result = JudgeResult(
+            actionability_score=8,
+            accuracy_score=9,
+            coherence_score=7,
+            overall_score=8,
+            feedback="Well-grounded narrative with actionable observations.",
+        )
+        return ModelResponse(parts=[TextPart(result.model_dump_json())])
+
+    return FunctionModel(_model)
+
 
 # ---------------------------------------------------------------------------
 # Cycle 1 — Schema + basic agent output
@@ -25,7 +46,7 @@ async def test_judge_result_conforms_to_schema(
     sample_pattern_result: PatternDetectorResult,
     sample_narrative_result: NarrativeWriterResult,
 ) -> None:
-    """Agent with TestModel returns a valid JudgeResult schema."""
+    """Agent returns a valid JudgeResult schema."""
     from app.agents.judge import judge
     from app.agents.schemas import JudgeDeps, JudgeResult
 
@@ -37,7 +58,7 @@ async def test_judge_result_conforms_to_schema(
         narrative_result=sample_narrative_result,
     )
 
-    with judge.override(model=TestModel()):
+    with judge.override(model=_make_passing_model()):
         result = await judge.run("Analyze and produce structured insights.", deps=deps)
 
     output = result.output
@@ -67,7 +88,7 @@ async def test_judge_all_scores_within_range(
         narrative_result=sample_narrative_result,
     )
 
-    with judge.override(model=TestModel()):
+    with judge.override(model=_make_passing_model()):
         result = await judge.run("Analyze and produce structured insights.", deps=deps)
 
     output = result.output
@@ -99,7 +120,7 @@ async def test_judge_feedback_is_non_empty_string(
         narrative_result=sample_narrative_result,
     )
 
-    with judge.override(model=TestModel()):
+    with judge.override(model=_make_passing_model()):
         result = await judge.run("Analyze and produce structured insights.", deps=deps)
 
     assert isinstance(result.output.feedback, str)
