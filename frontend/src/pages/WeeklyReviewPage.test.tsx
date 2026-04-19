@@ -97,6 +97,26 @@ describe('WeeklyReviewPage', () => {
     expect(screen.getByTestId('review-history-list')).toBeInTheDocument()
   })
 
+  it('hides generate button during loading', () => {
+    vi.mocked(useWeeklyReview).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    } as ReturnType<typeof useWeeklyReview>)
+    render(<WeeklyReviewPage />, { wrapper })
+    expect(screen.queryByTestId('generate-review-btn')).not.toBeInTheDocument()
+  })
+
+  it('hides generate button during error', () => {
+    vi.mocked(useWeeklyReview).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as ReturnType<typeof useWeeklyReview>)
+    render(<WeeklyReviewPage />, { wrapper })
+    expect(screen.queryByTestId('generate-review-btn')).not.toBeInTheDocument()
+  })
+
   it('shows generate button when no review exists', () => {
     vi.mocked(useWeeklyReview).mockReturnValue({
       data: undefined,

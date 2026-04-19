@@ -46,14 +46,6 @@ function WeeklyReviewPage(): React.JSX.Element {
         </button>
       </section>
 
-      <button
-        data-testid="generate-review-btn"
-        disabled={isGenerating}
-        onClick={() => generateMutation.mutate(selectedWeekStart)}
-      >
-        {buttonLabel}
-      </button>
-
       {reviewQuery.isLoading && (
         <div data-testid="weekly-review-loading">Loading...</div>
       )}
@@ -64,6 +56,13 @@ function WeeklyReviewPage(): React.JSX.Element {
 
       {!reviewQuery.isLoading && !reviewQuery.isError && (
         <>
+          <button
+            data-testid="generate-review-btn"
+            disabled={isGenerating}
+            onClick={() => generateMutation.mutate(selectedWeekStart)}
+          >
+            {buttonLabel}
+          </button>
           <NarrativeSection
             narrative={review?.narrative ?? null}
             status={review?.status ?? 'pending'}

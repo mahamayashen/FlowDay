@@ -31,6 +31,7 @@ export function useWeeklyReview(weekStart: string) {
     queryKey: WEEKLY_REVIEW_KEYS.current(weekStart),
     queryFn: () => fetchWeeklyReview(weekStart),
     enabled: Boolean(weekStart),
+    staleTime: 0,
     refetchInterval: (query) =>
       query.state.data?.status === 'generating' ? 4000 : false,
   })
