@@ -202,3 +202,27 @@ class PatternDetectorResult(BaseModel):
 
     patterns: list[CrossPattern]
     summary: str
+
+
+# ---------------------------------------------------------------------------
+# Narrative Writer (Group C)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class NarrativeWriterDeps:
+    """Dependencies injected into the Narrative Writer via RunContext."""
+
+    user_id: uuid.UUID
+    analysis_date: date
+    group_a_result: GroupAResult
+    pattern_result: PatternDetectorResult
+
+
+class NarrativeWriterResult(BaseModel):
+    """Structured output produced by the Narrative Writer agent."""
+
+    executive_summary: str = Field(min_length=1)
+    time_analysis: str = Field(min_length=1)
+    productivity_patterns: str = Field(min_length=1)
+    areas_of_concern: str = Field(min_length=1)
