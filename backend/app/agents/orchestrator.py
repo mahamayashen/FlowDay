@@ -9,6 +9,7 @@ from datetime import date
 from typing import Any
 
 from pydantic_ai import Agent
+from pydantic_ai.exceptions import UnexpectedModelBehavior
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.base import (
@@ -19,12 +20,15 @@ from app.agents.base import (
     run_with_metrics,
 )
 from app.agents.code_analyst import code_analyst
+from app.agents.judge import judge
 from app.agents.meeting_analyst import meeting_analyst
 from app.agents.narrative_writer import narrative_writer
 from app.agents.pattern_detector import pattern_detector
 from app.agents.schemas import (
     CodeAnalystDeps,
     GroupAResult,
+    JudgeDeps,
+    JudgeResult,
     MeetingAnalystDeps,
     NarrativeWriterDeps,
     NarrativeWriterResult,
@@ -35,6 +39,8 @@ from app.agents.schemas import (
 )
 from app.agents.task_analyst import task_analyst
 from app.agents.time_analyst import time_analyst
+from app.core.metrics import judge_score
+from app.models.agent_score_history import AgentScoreHistory
 
 log = logging.getLogger(__name__)
 
@@ -165,3 +171,60 @@ async def run_group_c(
         pattern_result=pattern_result,
     )
     return await run_with_metrics(narrative_writer, "narrative_writer", deps)
+
+
+async def run_group_d(
+    db: AsyncSession,
+    group_a_result: GroupAResult,
+    pattern_result: PatternDetectorResult,
+    narrative_result: NarrativeWriterResult,
+    user_id: uuid.UUID,
+    analysis_date: date,
+) -> JudgeResult | None:
+    """Run the Judge agent (Group D) to score the Narrative Writer's output.
+
+    Persists the score to agent_score_history and records Prometheus metrics.
+    Returns None if the judge fails after all retries (logged, not raised).
+
+    Args:
+        db: Async database session for persisting score history.
+        group_a_result: Aggregated output from all Group A analysts.
+        pattern_result: Output from the Pattern Detector (Group B).
+        narrative_result: Output from the Narrative Writer (Group C).
+        user_id: The user whose data was analyzed.
+        analysis_date: The reference date for the analysis.
+
+    Returns:
+        JudgeResult with dimension scores and feedback, or None on failure.
+    """
+    deps = JudgeDeps(
+        user_id=user_id,
+        analysis_date=analysis_date,
+        group_a_result=group_a_result,
+        pattern_result=pattern_result,
+        narrative_result=narrative_result,
+    )
+    try:
+        result = await run_with_metrics(judge, "judge", deps)
+    except UnexpectedModelBehavior as exc:
+        log.error("Judge agent failed after retries: %s", exc)
+        return None
+
+    # retry_count defaults to 0; pydantic-ai does not expose per-run retry count
+    # on the result object — retries are tracked via judge_retry_count metric
+    record = AgentScoreHistory(
+        user_id=user_id,
+        analysis_date=analysis_date,
+        actionability_score=result.actionability_score,
+        accuracy_score=result.accuracy_score,
+        coherence_score=result.coherence_score,
+        overall_score=result.overall_score,
+        feedback=result.feedback,
+    )
+    db.add(record)
+    await db.flush()
+
+    # Observe metric only after the row is confirmed persisted.
+    judge_score.labels(agent_name="judge").observe(result.overall_score)
+
+    return result

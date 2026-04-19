@@ -20,9 +20,15 @@ token_cost_total: Counter = Counter(
 
 judge_score: Histogram = Histogram(
     "judge_score",
-    "Score assigned by the judge agent",
+    "Score assigned by the judge agent (1–10 scale)",
     labelnames=["agent_name"],
-    buckets=(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+    buckets=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+)
+
+judge_retry_count: Counter = Counter(
+    "judge_retry_count",
+    "Number of ModelRetry events triggered by the judge agent",
+    labelnames=["agent_name"],
 )
 
 

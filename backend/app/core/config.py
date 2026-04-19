@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "openai:gpt-4o-mini"
     LLM_JUDGE_MODEL: str = "google-gla:gemini-1.5-flash"
 
+    # Judge agent — minimum acceptable score per dimension (1–10); triggers retry below
+    JUDGE_SCORE_THRESHOLD: int = 6
+
     # Monitoring (optional — silently disabled when absent)
     SENTRY_DSN: str | None = None
     PROMETHEUS_ENABLED: bool = True
