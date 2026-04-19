@@ -1,8 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import React from 'react'
 import App from './App'
 import { useAuthStore } from './stores/authStore'
 import type { TokenPair, User } from './types/auth'
@@ -21,10 +19,6 @@ vi.mock('./api/tasks', () => ({
   useDeleteTask: () => ({ mutate: vi.fn() }),
 }))
 
-function withQueryClient(ui: React.ReactElement) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return React.createElement(QueryClientProvider, { client: queryClient }, ui)
-}
 
 const future = { v7_startTransition: true, v7_relativeSplatPath: true } as const
 
