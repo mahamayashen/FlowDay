@@ -92,6 +92,26 @@ describe('authStore — hydrate', () => {
     useAuthStore.getState().hydrate()
     expect(useAuthStore.getState().tokens).toBeNull()
   })
+
+  it('does not set isAuthenticated when stored object is missing access_token', () => {
+    localStorage.setItem('flowday_tokens', JSON.stringify({ refresh_token: 'r' }))
+    useAuthStore.getState().hydrate()
+    expect(useAuthStore.getState().isAuthenticated).toBe(false)
+    expect(useAuthStore.getState().tokens).toBeNull()
+  })
+
+  it('does not set isAuthenticated when stored object is missing refresh_token', () => {
+    localStorage.setItem('flowday_tokens', JSON.stringify({ access_token: 'a' }))
+    useAuthStore.getState().hydrate()
+    expect(useAuthStore.getState().isAuthenticated).toBe(false)
+    expect(useAuthStore.getState().tokens).toBeNull()
+  })
+
+  it('clears malformed token data from localStorage', () => {
+    localStorage.setItem('flowday_tokens', JSON.stringify({ access_token: '' }))
+    useAuthStore.getState().hydrate()
+    expect(localStorage.getItem('flowday_tokens')).toBeNull()
+  })
 })
 
 describe('authStore — login (convenience)', () => {

@@ -79,6 +79,14 @@ describe('ProtectedRoute', () => {
     expect(fetchSpy.mock.calls[0][0]).toContain('/auth/me')
   })
 
+  it('shows loading state instead of children when tokens exist but user is null', () => {
+    useAuthStore.setState({ user: null, tokens: mockTokens, isAuthenticated: true })
+    vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {})) // never resolves
+    renderProtected()
+    expect(screen.getByTestId('auth-loading')).toBeInTheDocument()
+    expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument()
+  })
+
   it('logs out and redirects when /auth/me fetch fails', async () => {
     useAuthStore.setState({ user: null, tokens: mockTokens, isAuthenticated: true })
 
