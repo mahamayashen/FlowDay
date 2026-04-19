@@ -28,7 +28,7 @@ function WeeklyBarChart({ data }: WeeklyBarChartProps): React.JSX.Element {
           <li key={entry.name}>{entry.name}</li>
         ))}
       </ul>
-      <div style={{ width: '100%', height: 300 }}>
+      <div aria-hidden="true" style={{ width: '100%', height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart layout="vertical" data={data}>
             <XAxis type="number" unit="h" />
