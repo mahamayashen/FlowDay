@@ -41,7 +41,12 @@ function renderProtected(initialPath = '/dashboard'): void {
 
 beforeEach(() => {
   localStorage.clear()
-  useAuthStore.setState({ user: null, tokens: null, isAuthenticated: false })
+  useAuthStore.setState({
+    user: null,
+    tokens: null,
+    isAuthenticated: false,
+    isUserLoading: false,
+  })
   vi.restoreAllMocks()
 })
 
@@ -90,9 +95,9 @@ describe('ProtectedRoute', () => {
   it('logs out and redirects when /auth/me fetch fails', async () => {
     useAuthStore.setState({ user: null, tokens: mockTokens, isAuthenticated: true })
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response('{}', { status: 401 }),
-    )
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('{}', { status: 401 })) // /auth/me
+      .mockResolvedValueOnce(new Response('{}', { status: 401 })) // /auth/refresh
 
     renderProtected()
 

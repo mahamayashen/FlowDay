@@ -8,11 +8,13 @@ interface ProtectedRouteProps {
 }
 
 function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
-  const { isAuthenticated, tokens, user, setUser, logout } = useAuthStore()
+  const { isAuthenticated, tokens, user, setUser, setUserLoading, isUserLoading, logout } =
+    useAuthStore()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (tokens && !user) {
+    if (tokens && !user && !isUserLoading) {
+      setUserLoading(true)
       fetchCurrentUser()
         .then(setUser)
         .catch(() => {
@@ -20,10 +22,14 @@ function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
           navigate('/login', { replace: true })
         })
     }
-  }, [tokens, user, setUser, logout, navigate])
+  }, [tokens, user, isUserLoading, setUser, setUserLoading, logout, navigate])
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  if (tokens && !user) {
+    return <div data-testid="auth-loading" />
   }
 
   return <>{children}</>
