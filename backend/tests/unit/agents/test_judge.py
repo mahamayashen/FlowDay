@@ -4,24 +4,29 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
+from typing import Any
 
 import pytest
 
 from app.agents.schemas import (
     GroupAResult,
+    JudgeDeps,
     NarrativeWriterResult,
     PatternDetectorResult,
 )
 
 
-def _make_passing_model():  # type: ignore[return]
+def _make_passing_model() -> Any:
     """Return a FunctionModel that always emits scores above the retry threshold."""
     from pydantic_ai.models.function import FunctionModel
 
     from app.agents.schemas import JudgeResult
 
-    def _model(messages, info):  # type: ignore[return, type-arg]
-        from pydantic_ai.models.function import ModelResponse, TextPart
+    def _model(messages: list[Any], info: Any) -> Any:
+        from pydantic_ai.models.function import (  # type: ignore[attr-defined]
+            ModelResponse,
+            TextPart,
+        )
 
         result = JudgeResult(
             actionability_score=8,
@@ -144,8 +149,11 @@ async def test_judge_raises_model_retry_when_score_below_threshold(
     from app.agents.judge import judge
     from app.agents.schemas import JudgeDeps, JudgeResult
 
-    def low_score_model(messages: list, info: AgentInfo) -> object:  # type: ignore[type-arg]
-        from pydantic_ai.models.function import ModelResponse, TextPart
+    def low_score_model(messages: list[Any], info: AgentInfo) -> Any:
+        from pydantic_ai.models.function import (  # type: ignore[attr-defined]
+            ModelResponse,
+            TextPart,
+        )
 
         # Return scores all at 3 — below the default threshold of 6
         result = JudgeResult(
@@ -182,8 +190,11 @@ async def test_judge_no_retry_when_all_scores_above_threshold(
     from app.agents.judge import judge
     from app.agents.schemas import JudgeDeps, JudgeResult
 
-    def good_score_model(messages: list, info: AgentInfo) -> object:  # type: ignore[type-arg]
-        from pydantic_ai.models.function import ModelResponse, TextPart
+    def good_score_model(messages: list[Any], info: AgentInfo) -> Any:
+        from pydantic_ai.models.function import (  # type: ignore[attr-defined]
+            ModelResponse,
+            TextPart,
+        )
 
         result = JudgeResult(
             actionability_score=8,
@@ -348,6 +359,7 @@ async def test_run_group_d_records_judge_score_metric(
             analysis_date=date(2026, 4, 14),
         )
 
+    assert result is not None
     mock_labels.assert_called_once_with(agent_name="judge")
     mock_histogram.observe.assert_called_once_with(result.overall_score)
 
@@ -588,11 +600,12 @@ async def test_add_evaluation_context_contains_narrative_sections(
 
     # Create a fake RunContext-like object
     class FakeCtx:
-        def __init__(self, deps):  # type: ignore[no-untyped-def]
-            self.deps = deps
+        def __init__(self, d: JudgeDeps) -> None:
+            self.deps = d
 
     ctx = FakeCtx(deps)
     context_str = await judge_mod.add_evaluation_context(ctx)  # type: ignore[arg-type]
+    assert isinstance(context_str, str)
 
     assert "Analysis date: 2026-04-14" in context_str
     assert "--- NARRATIVE TO EVALUATE ---" in context_str
@@ -616,8 +629,8 @@ async def test_validate_scores_exact_threshold_boundary(
     from app.core.config import settings
 
     class FakeCtx:
-        def __init__(self, deps):  # type: ignore[no-untyped-def]
-            self.deps = deps
+        def __init__(self, d: JudgeDeps) -> None:
+            self.deps = d
 
     deps = JudgeDeps(
         user_id=uuid.uuid4(),
