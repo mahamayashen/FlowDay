@@ -5,11 +5,13 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, Text
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
+
+_SCORE_RANGE = "BETWEEN 1 AND 10"
 
 
 class AgentScoreHistory(Base):
@@ -18,6 +20,22 @@ class AgentScoreHistory(Base):
     __tablename__ = "agent_score_history"
     __table_args__ = (
         Index("idx_agent_score_history_user_date", "user_id", "analysis_date"),
+        CheckConstraint(
+            f"actionability_score {_SCORE_RANGE}",
+            name="ck_agent_score_history_actionability",
+        ),
+        CheckConstraint(
+            f"accuracy_score {_SCORE_RANGE}",
+            name="ck_agent_score_history_accuracy",
+        ),
+        CheckConstraint(
+            f"coherence_score {_SCORE_RANGE}",
+            name="ck_agent_score_history_coherence",
+        ),
+        CheckConstraint(
+            f"overall_score {_SCORE_RANGE}",
+            name="ck_agent_score_history_overall",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

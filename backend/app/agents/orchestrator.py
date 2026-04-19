@@ -204,7 +204,6 @@ async def run_group_d(
         pattern_result=pattern_result,
         narrative_result=narrative_result,
     )
-    retry_count = 0
     try:
         result = await run_with_metrics(judge, "judge", deps)
     except UnexpectedModelBehavior as exc:
@@ -213,6 +212,8 @@ async def run_group_d(
 
     judge_score.labels(agent_name="judge").observe(result.overall_score)
 
+    # retry_count defaults to 0; pydantic-ai does not expose per-run retry count
+    # on the result object — retries are tracked via judge_retry_count metric
     record = AgentScoreHistory(
         user_id=user_id,
         analysis_date=analysis_date,
@@ -221,7 +222,6 @@ async def run_group_d(
         coherence_score=result.coherence_score,
         overall_score=result.overall_score,
         feedback=result.feedback,
-        retry_count=retry_count,
     )
     db.add(record)
     await db.flush()

@@ -44,6 +44,22 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("now()"),
         ),
+        sa.CheckConstraint(
+            "actionability_score BETWEEN 1 AND 10",
+            name="ck_agent_score_history_actionability",
+        ),
+        sa.CheckConstraint(
+            "accuracy_score BETWEEN 1 AND 10",
+            name="ck_agent_score_history_accuracy",
+        ),
+        sa.CheckConstraint(
+            "coherence_score BETWEEN 1 AND 10",
+            name="ck_agent_score_history_coherence",
+        ),
+        sa.CheckConstraint(
+            "overall_score BETWEEN 1 AND 10",
+            name="ck_agent_score_history_overall",
+        ),
     )
     op.create_index(
         "idx_agent_score_history_user_date",
