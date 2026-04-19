@@ -9,6 +9,7 @@ from pydantic_ai import Agent, ModelRetry, RunContext
 
 from app.agents.schemas import JudgeDeps, JudgeResult
 from app.core.config import settings
+from app.core.metrics import judge_retry_count
 
 judge: Agent[JudgeDeps, JudgeResult] = Agent(
     model=settings.LLM_JUDGE_MODEL,
@@ -113,6 +114,7 @@ async def validate_scores(ctx: RunContext[JudgeDeps], result: JudgeResult) -> Ju
     """
     threshold = settings.JUDGE_SCORE_THRESHOLD
     if min(result.actionability_score, result.accuracy_score, result.coherence_score) < threshold:
+        judge_retry_count.labels(agent_name="judge").inc()
         raise ModelRetry(
             f"One or more dimension scores are below the threshold of {threshold}. "
             "Please re-evaluate and provide higher-quality scores."
