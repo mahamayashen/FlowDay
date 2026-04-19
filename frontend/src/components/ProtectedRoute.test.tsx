@@ -106,4 +106,20 @@ describe('ProtectedRoute', () => {
     )
     expect(useAuthStore.getState().isAuthenticated).toBe(false)
   })
+
+  it('shows error message and keeps session when /auth/me returns 5xx', async () => {
+    useAuthStore.setState({ user: null, tokens: mockTokens, isAuthenticated: true })
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('{}', { status: 503 }),
+    )
+
+    renderProtected()
+
+    await waitFor(() =>
+      expect(screen.getByTestId('auth-error')).toBeInTheDocument(),
+    )
+    expect(useAuthStore.getState().isAuthenticated).toBe(true)
+    expect(useAuthStore.getState().tokens).toEqual(mockTokens)
+  })
 })
