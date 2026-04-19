@@ -21,10 +21,13 @@ const mockUser: User = {
   created_at: '2026-01-01T00:00:00Z',
 }
 
-function renderCallback(provider: string, code: string): void {
+function renderCallback(provider: string, code: string, state?: string): void {
+  const search = state
+    ? `?code=${code}&state=${state}`
+    : `?code=${code}`
   render(
     <MemoryRouter
-      initialEntries={[`/auth/${provider}/callback?code=${code}`]}
+      initialEntries={[`/auth/${provider}/callback${search}`]}
       future={future}
     >
       <Routes>
@@ -38,6 +41,7 @@ function renderCallback(provider: string, code: string): void {
 
 beforeEach(() => {
   localStorage.clear()
+  sessionStorage.clear()
   useAuthStore.setState({ user: null, tokens: null, isAuthenticated: false })
   vi.restoreAllMocks()
 })
@@ -127,5 +131,47 @@ describe('OAuthCallbackPage', () => {
     await waitFor(() =>
       expect(screen.getByTestId('link-back-to-login')).toBeInTheDocument(),
     )
+  })
+
+  it('shows an error when state param is missing from callback URL', async () => {
+    sessionStorage.setItem('oauth_state', 'expected-state')
+    // mock fetch to succeed so the test validates state, not network
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify(mockTokens), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(mockUser), { status: 200 }))
+    // no state in URL
+    renderCallback('google', 'code-abc')
+
+    await waitFor(() =>
+      expect(screen.getByTestId('oauth-error')).toBeInTheDocument(),
+    )
+  })
+
+  it('shows an error when state param does not match sessionStorage', async () => {
+    sessionStorage.setItem('oauth_state', 'expected-state')
+    // mock fetch to succeed so the test validates state, not network
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify(mockTokens), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(mockUser), { status: 200 }))
+    renderCallback('google', 'code-abc', 'wrong-state')
+
+    await waitFor(() =>
+      expect(screen.getByTestId('oauth-error')).toBeInTheDocument(),
+    )
+  })
+
+  it('clears oauth_state from sessionStorage after successful validation', async () => {
+    const state = 'valid-state-token'
+    sessionStorage.setItem('oauth_state', state)
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify(mockTokens), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(mockUser), { status: 200 }))
+
+    renderCallback('google', 'code-abc', state)
+
+    await waitFor(() =>
+      expect(screen.getByTestId('page-dashboard')).toBeInTheDocument(),
+    )
+    expect(sessionStorage.getItem('oauth_state')).toBeNull()
   })
 })

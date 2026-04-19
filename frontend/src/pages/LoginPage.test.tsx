@@ -65,6 +65,33 @@ describe('LoginPage', () => {
     expect(url.searchParams.get('redirect_uri')).toContain('/auth/github/callback')
   })
 
+  it('stores a state token in sessionStorage when Google button is clicked', async () => {
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'google-client-123')
+    renderLogin()
+    await userEvent.click(screen.getByTestId('btn-google'))
+    expect(sessionStorage.getItem('oauth_state')).not.toBeNull()
+  })
+
+  it('includes the sessionStorage state in the Google OAuth URL', async () => {
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'google-client-123')
+    renderLogin()
+    await userEvent.click(screen.getByTestId('btn-google'))
+    const url = new URL(assignSpy.mock.calls[0][0])
+    const storedState = sessionStorage.getItem('oauth_state')
+    expect(url.searchParams.get('state')).not.toBeNull()
+    expect(url.searchParams.get('state')).toBe(storedState)
+  })
+
+  it('includes the sessionStorage state in the GitHub OAuth URL', async () => {
+    vi.stubEnv('VITE_GITHUB_CLIENT_ID', 'gh-client-456')
+    renderLogin()
+    await userEvent.click(screen.getByTestId('btn-github'))
+    const url = new URL(assignSpy.mock.calls[0][0])
+    const storedState = sessionStorage.getItem('oauth_state')
+    expect(url.searchParams.get('state')).not.toBeNull()
+    expect(url.searchParams.get('state')).toBe(storedState)
+  })
+
   it('Google button is disabled when VITE_GOOGLE_CLIENT_ID is not set', () => {
     vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '')
     renderLogin()
