@@ -37,7 +37,7 @@ function ScheduleBlockItem({
 
   function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>): void {
     e.stopPropagation()
-    e.currentTarget.setPointerCapture(e.pointerId)
+    e.currentTarget.setPointerCapture?.(e.pointerId)
     startYRef.current = e.clientY
     startHeightRef.current = style.height
     setResizeHeight(style.height)
