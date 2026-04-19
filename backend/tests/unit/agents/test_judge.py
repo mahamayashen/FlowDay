@@ -106,6 +106,90 @@ async def test_judge_feedback_is_non_empty_string(
     assert len(result.output.feedback) > 0
 
 
+# ---------------------------------------------------------------------------
+# Cycle 2 — ModelRetry on low scores
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_judge_raises_model_retry_when_score_below_threshold(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """Result validator raises ModelRetry when any dimension score is below threshold."""
+    from pydantic_ai import ModelRetry
+    from pydantic_ai.models.function import AgentInfo, FunctionModel
+
+    from app.agents.judge import judge
+    from app.agents.schemas import JudgeDeps, JudgeResult
+
+    def low_score_model(messages: list, info: AgentInfo) -> object:  # type: ignore[type-arg]
+        from pydantic_ai.models.function import ModelResponse, TextPart
+
+        # Return scores all at 3 — below the default threshold of 6
+        result = JudgeResult(
+            actionability_score=3,
+            accuracy_score=3,
+            coherence_score=3,
+            overall_score=3,
+            feedback="Weak narrative.",
+        )
+        return ModelResponse(parts=[TextPart(result.model_dump_json())])
+
+    deps = JudgeDeps(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        group_a_result=full_group_a_result,
+        pattern_result=sample_pattern_result,
+        narrative_result=sample_narrative_result,
+    )
+
+    with pytest.raises(Exception):  # MaxRetriesExceeded after retries=2
+        with judge.override(model=FunctionModel(low_score_model)):
+            await judge.run("Analyze and produce structured insights.", deps=deps)
+
+
+@pytest.mark.asyncio
+async def test_judge_no_retry_when_all_scores_above_threshold(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """No retry is triggered when all dimension scores meet the threshold."""
+    from pydantic_ai.models.function import AgentInfo, FunctionModel
+
+    from app.agents.judge import judge
+    from app.agents.schemas import JudgeDeps, JudgeResult
+
+    def good_score_model(messages: list, info: AgentInfo) -> object:  # type: ignore[type-arg]
+        from pydantic_ai.models.function import ModelResponse, TextPart
+
+        result = JudgeResult(
+            actionability_score=8,
+            accuracy_score=9,
+            coherence_score=7,
+            overall_score=8,
+            feedback="Strong narrative with clear grounding.",
+        )
+        return ModelResponse(parts=[TextPart(result.model_dump_json())])
+
+    deps = JudgeDeps(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        group_a_result=full_group_a_result,
+        pattern_result=sample_pattern_result,
+        narrative_result=sample_narrative_result,
+    )
+
+    with judge.override(model=FunctionModel(good_score_model)):
+        result = await judge.run("Analyze and produce structured insights.", deps=deps)
+
+    assert result.output.actionability_score >= 6
+    assert result.output.accuracy_score >= 6
+    assert result.output.coherence_score >= 6
+
+
 def test_judge_deps_accepts_full_pipeline_inputs(
     full_group_a_result: GroupAResult,
     sample_pattern_result: PatternDetectorResult,
