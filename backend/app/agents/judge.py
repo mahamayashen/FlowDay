@@ -105,7 +105,12 @@ async def add_evaluation_context(ctx: RunContext[JudgeDeps]) -> str:
 
 @judge.output_validator
 async def validate_scores(ctx: RunContext[JudgeDeps], result: JudgeResult) -> JudgeResult:
-    """Raise ModelRetry if any dimension score is below the configured threshold."""
+    """Raise ModelRetry if any dimension score is below the configured threshold.
+
+    The agent is configured with retries=2, so the LLM will re-evaluate the
+    narrative at most twice before the caller receives UnexpectedModelBehavior.
+    This avoids self-bias by using a different provider (Gemini vs OpenAI).
+    """
     threshold = settings.JUDGE_SCORE_THRESHOLD
     if min(result.actionability_score, result.accuracy_score, result.coherence_score) < threshold:
         raise ModelRetry(
