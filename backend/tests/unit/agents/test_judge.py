@@ -282,6 +282,73 @@ def test_agent_score_history_table_name() -> None:
     assert AgentScoreHistory.__tablename__ == "agent_score_history"
 
 
+# ---------------------------------------------------------------------------
+# Cycle 5 — Orchestrator integration and Prometheus metrics
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_run_group_d_returns_judge_result(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """run_group_d returns a valid JudgeResult."""
+    import app.agents.judge as judge_mod
+    from app.agents.orchestrator import run_group_d
+    from app.agents.schemas import JudgeResult
+
+    with judge_mod.judge.override(model=_make_passing_model()):
+        result = await run_group_d(
+            group_a_result=full_group_a_result,
+            pattern_result=sample_pattern_result,
+            narrative_result=sample_narrative_result,
+            user_id=uuid.uuid4(),
+            analysis_date=date(2026, 4, 14),
+        )
+
+    assert isinstance(result, JudgeResult)
+    assert isinstance(result.feedback, str)
+    assert len(result.feedback) > 0
+
+
+@pytest.mark.asyncio
+async def test_run_group_d_records_judge_score_metric(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """run_group_d observes the overall_score in the judge_score histogram."""
+    from unittest.mock import patch
+
+    import app.agents.judge as judge_mod
+    from app.agents.orchestrator import run_group_d
+    from app.core.metrics import judge_score
+
+    with (
+        judge_mod.judge.override(model=_make_passing_model()),
+        patch.object(judge_score, "labels", wraps=judge_score.labels) as mock_labels,
+    ):
+        result = await run_group_d(
+            group_a_result=full_group_a_result,
+            pattern_result=sample_pattern_result,
+            narrative_result=sample_narrative_result,
+            user_id=uuid.uuid4(),
+            analysis_date=date(2026, 4, 14),
+        )
+
+    mock_labels.assert_called_once_with(agent_name="judge")
+    mock_labels.return_value.observe.assert_called_once_with(result.overall_score)
+
+
+def test_judge_retry_count_metric_exists() -> None:
+    """judge_retry_count Counter is defined in metrics module."""
+    from app.core.metrics import judge_retry_count
+    from prometheus_client import Counter
+
+    assert isinstance(judge_retry_count, Counter)
+
+
 def test_judge_deps_accepts_full_pipeline_inputs(
     full_group_a_result: GroupAResult,
     sample_pattern_result: PatternDetectorResult,
