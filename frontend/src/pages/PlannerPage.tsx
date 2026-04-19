@@ -95,6 +95,7 @@ function PlannerPage(): React.JSX.Element {
     if (!overId.startsWith('hour-slot-')) return
 
     const dropHour = parseInt(overId.replace('hour-slot-', ''), 10)
+    if (isNaN(dropHour)) return
     const activeData = active.data.current
 
     if (activeData?.type === 'task') {
@@ -150,9 +151,9 @@ function PlannerPage(): React.JSX.Element {
           {overlapError}
         </div>
       )}
-      <div className="planner-layout">
-        <TaskPool projects={projects} tasksByProject={tasksByProject} />
-        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <div className="planner-layout">
+          <TaskPool projects={projects} tasksByProject={tasksByProject} />
           <TimelineGrid
             workHoursStart={workHoursStart}
             workHoursEnd={workHoursEnd}
@@ -162,8 +163,8 @@ function PlannerPage(): React.JSX.Element {
             onResizeBlock={handleResizeBlock}
             onDeleteBlock={handleDeleteBlock}
           />
-        </DndContext>
-      </div>
+        </div>
+      </DndContext>
     </main>
   )
 }
