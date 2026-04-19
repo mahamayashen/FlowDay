@@ -9,6 +9,7 @@ from datetime import date
 from typing import Any
 
 from pydantic_ai import Agent
+from pydantic_ai.exceptions import UnexpectedModelBehavior
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.base import (
@@ -39,6 +40,7 @@ from app.agents.schemas import (
 from app.agents.task_analyst import task_analyst
 from app.agents.time_analyst import time_analyst
 from app.core.metrics import judge_score
+from app.models.agent_score_history import AgentScoreHistory
 
 log = logging.getLogger(__name__)
 
@@ -172,15 +174,20 @@ async def run_group_c(
 
 
 async def run_group_d(
+    db: AsyncSession,
     group_a_result: GroupAResult,
     pattern_result: PatternDetectorResult,
     narrative_result: NarrativeWriterResult,
     user_id: uuid.UUID,
     analysis_date: date,
-) -> JudgeResult:
+) -> JudgeResult | None:
     """Run the Judge agent (Group D) to score the Narrative Writer's output.
 
+    Persists the score to agent_score_history and records Prometheus metrics.
+    Returns None if the judge fails after all retries (logged, not raised).
+
     Args:
+        db: Async database session for persisting score history.
         group_a_result: Aggregated output from all Group A analysts.
         pattern_result: Output from the Pattern Detector (Group B).
         narrative_result: Output from the Narrative Writer (Group C).
@@ -188,7 +195,7 @@ async def run_group_d(
         analysis_date: The reference date for the analysis.
 
     Returns:
-        JudgeResult with dimension scores and feedback.
+        JudgeResult with dimension scores and feedback, or None on failure.
     """
     deps = JudgeDeps(
         user_id=user_id,
@@ -197,6 +204,26 @@ async def run_group_d(
         pattern_result=pattern_result,
         narrative_result=narrative_result,
     )
-    result = await run_with_metrics(judge, "judge", deps)
+    retry_count = 0
+    try:
+        result = await run_with_metrics(judge, "judge", deps)
+    except UnexpectedModelBehavior as exc:
+        log.error("Judge agent failed after retries: %s", exc)
+        return None
+
     judge_score.labels(agent_name="judge").observe(result.overall_score)
+
+    record = AgentScoreHistory(
+        user_id=user_id,
+        analysis_date=analysis_date,
+        actionability_score=result.actionability_score,
+        accuracy_score=result.accuracy_score,
+        coherence_score=result.coherence_score,
+        overall_score=result.overall_score,
+        feedback=result.feedback,
+        retry_count=retry_count,
+    )
+    db.add(record)
+    await db.flush()
+
     return result
