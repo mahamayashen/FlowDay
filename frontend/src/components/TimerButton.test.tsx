@@ -63,4 +63,17 @@ describe('TimerButton', () => {
     expect(mm).toBe(1)
     expect(ss).toBeGreaterThanOrEqual(5)
   })
+
+  it('resumes elapsed from started_at on mount (persistence after refresh)', () => {
+    // started_at 30 seconds in the past
+    const entry: TimeEntry = {
+      ...activeEntry,
+      started_at: new Date(Date.now() - 30_000).toISOString(),
+    }
+    render(<TimerButton activeEntry={entry} onStart={vi.fn()} onStop={vi.fn()} />)
+    const elapsed = screen.getByTestId('timer-elapsed').textContent ?? ''
+    expect(elapsed).toMatch(/^\d{2}:\d{2}$/)
+    const totalSeconds = parseInt(elapsed.split(':')[0]) * 60 + parseInt(elapsed.split(':')[1])
+    expect(totalSeconds).toBeGreaterThanOrEqual(30)
+  })
 })
