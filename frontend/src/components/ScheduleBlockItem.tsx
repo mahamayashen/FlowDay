@@ -101,6 +101,7 @@ function ScheduleBlockItem({
             onPointerDown={handleResizePointerDown}
             onPointerMove={handleResizePointerMove}
             onPointerUp={() => handleResizePointerUp()}
+            onPointerCancel={() => setResizeHeight(null)}
           />
         </>
       )}
