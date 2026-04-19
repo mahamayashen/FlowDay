@@ -19,7 +19,12 @@ from app.core.security import (
     encrypt_oauth_token,
 )
 from app.models.user import User
-from app.schemas.user import RefreshRequest, TokenResponse, UserResponse
+from app.schemas.user import (
+    OAuthCallbackRequest,
+    RefreshRequest,
+    TokenResponse,
+    UserResponse,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -79,9 +84,9 @@ async def _handle_oauth_callback(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/google/callback", response_model=TokenResponse)
+@router.post("/google/callback", response_model=TokenResponse)
 async def google_callback(
-    code: str, db: AsyncSession = Depends(get_db)
+    body: OAuthCallbackRequest, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
     """Exchange Google OAuth authorization code for JWT token pair."""
     if settings.GOOGLE_CLIENT_ID is None or settings.GOOGLE_CLIENT_SECRET is None:
@@ -95,7 +100,7 @@ async def google_callback(
         token_resp = await client.post(
             "https://oauth2.googleapis.com/token",
             data={
-                "code": code,
+                "code": body.code,
                 "client_id": settings.GOOGLE_CLIENT_ID,
                 "client_secret": settings.GOOGLE_CLIENT_SECRET,
                 "redirect_uri": settings.GOOGLE_REDIRECT_URI,
@@ -138,9 +143,9 @@ async def google_callback(
     )
 
 
-@router.get("/github/callback", response_model=TokenResponse)
+@router.post("/github/callback", response_model=TokenResponse)
 async def github_callback(
-    code: str, db: AsyncSession = Depends(get_db)
+    body: OAuthCallbackRequest, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
     """Exchange GitHub OAuth authorization code for JWT token pair."""
     if settings.GITHUB_CLIENT_ID is None or settings.GITHUB_CLIENT_SECRET is None:
@@ -154,7 +159,7 @@ async def github_callback(
         token_resp = await client.post(
             "https://github.com/login/oauth/access_token",
             data={
-                "code": code,
+                "code": body.code,
                 "client_id": settings.GITHUB_CLIENT_ID,
                 "client_secret": settings.GITHUB_CLIENT_SECRET,
                 "redirect_uri": settings.GITHUB_REDIRECT_URI,

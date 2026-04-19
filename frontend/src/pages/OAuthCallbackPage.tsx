@@ -11,6 +11,8 @@ function OAuthCallbackPage(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
+
     const code = searchParams.get('code')
     if (!code || !provider) {
       setError('Missing OAuth code or provider.')
@@ -24,17 +26,24 @@ function OAuthCallbackPage(): React.JSX.Element {
 
     exchangeOAuthCode(provider, code)
       .then((tokens) => {
+        if (controller.signal.aborted) return
         setTokens(tokens)
         return fetchCurrentUser()
       })
       .then((user) => {
+        if (controller.signal.aborted || !user) return
         setUser(user)
         navigate('/dashboard', { replace: true })
       })
       .catch((err: unknown) => {
+        if (controller.signal.aborted) return
         const message = err instanceof Error ? err.message : 'Authentication failed.'
         setError(message)
       })
+
+    return () => {
+      controller.abort()
+    }
   }, [navigate, provider, searchParams, setTokens, setUser])
 
   if (error) {

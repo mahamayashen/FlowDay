@@ -5,7 +5,11 @@ export async function exchangeOAuthCode(
   provider: 'google' | 'github',
   code: string,
 ): Promise<TokenPair> {
-  const res = await fetch(`/auth/${provider}/callback?code=${encodeURIComponent(code)}`)
+  const res = await fetch(`/auth/${provider}/callback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error((data as { detail?: string }).detail ?? 'OAuth exchange failed')
