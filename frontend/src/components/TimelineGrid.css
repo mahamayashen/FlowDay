@@ -1,0 +1,43 @@
+.timeline-grid {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  background: #111113;
+}
+
+.timeline-hour-row {
+  display: flex;
+  border-bottom: 1px solid #2a2a2d;
+  box-sizing: border-box;
+}
+
+.timeline-hour-label {
+  width: 72px;
+  flex-shrink: 0;
+  padding: 4px 8px 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.timeline-hour-slot {
+  flex: 1;
+  position: relative;
+  transition: background 0.1s;
+}
+
+.timeline-hour-slot.is-over {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.timeline-blocks-overlay {
+  position: absolute;
+  top: 0;
+  left: 72px;
+  right: 0;
+  pointer-events: none;
+}
+
+.timeline-blocks-overlay > * {
+  pointer-events: auto;
+}
