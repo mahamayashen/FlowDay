@@ -33,6 +33,12 @@ export function formatLocalDate(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+export function addWeeks(weekStart: string, weeks: number): string {
+  const d = new Date(weekStart + 'T00:00:00')
+  d.setDate(d.getDate() + weeks * 7)
+  return formatLocalDate(d)
+}
+
 export function getWeekStart(date: string): string {
   const d = new Date(date + 'T00:00:00')
   const dow = d.getDay()
