@@ -20,11 +20,14 @@ from app.agents.base import (
 )
 from app.agents.code_analyst import code_analyst
 from app.agents.meeting_analyst import meeting_analyst
+from app.agents.narrative_writer import narrative_writer
 from app.agents.pattern_detector import pattern_detector
 from app.agents.schemas import (
     CodeAnalystDeps,
     GroupAResult,
     MeetingAnalystDeps,
+    NarrativeWriterDeps,
+    NarrativeWriterResult,
     PatternDetectorDeps,
     PatternDetectorResult,
     TaskAnalystDeps,
@@ -136,3 +139,29 @@ async def run_group_b(
         group_a_result=group_a_result,
     )
     return await run_with_metrics(pattern_detector, "pattern_detector", deps)
+
+
+async def run_group_c(
+    group_a_result: GroupAResult,
+    pattern_result: PatternDetectorResult,
+    user_id: uuid.UUID,
+    analysis_date: date,
+) -> NarrativeWriterResult:
+    """Run the Narrative Writer agent (Group C) on Group A + B outputs.
+
+    Args:
+        group_a_result: Aggregated output from all Group A analysts.
+        pattern_result: Output from the Pattern Detector (Group B).
+        user_id: The user whose data was analyzed.
+        analysis_date: The reference date for the analysis.
+
+    Returns:
+        NarrativeWriterResult with four narrative sections.
+    """
+    deps = NarrativeWriterDeps(
+        user_id=user_id,
+        analysis_date=analysis_date,
+        group_a_result=group_a_result,
+        pattern_result=pattern_result,
+    )
+    return await run_with_metrics(narrative_writer, "narrative_writer", deps)
