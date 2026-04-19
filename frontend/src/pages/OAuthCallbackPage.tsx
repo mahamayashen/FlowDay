@@ -12,6 +12,7 @@ function OAuthCallbackPage(): React.JSX.Element {
 
   useEffect(() => {
     const controller = new AbortController()
+    const { signal } = controller
 
     const code = searchParams.get('code')
     if (!code || !provider) {
@@ -24,19 +25,27 @@ function OAuthCallbackPage(): React.JSX.Element {
       return
     }
 
-    exchangeOAuthCode(provider, code)
+    const urlState = searchParams.get('state')
+    const storedState = sessionStorage.getItem('oauth_state')
+    if (!urlState || !storedState || urlState !== storedState) {
+      setError('Invalid state parameter. Please try signing in again.')
+      return
+    }
+    sessionStorage.removeItem('oauth_state')
+
+    exchangeOAuthCode(provider, code, signal)
       .then((tokens) => {
-        if (controller.signal.aborted) return
+        if (signal.aborted) return
         setTokens(tokens)
-        return fetchCurrentUser()
+        return fetchCurrentUser(signal)
       })
       .then((user) => {
-        if (controller.signal.aborted || !user) return
+        if (signal.aborted || !user) return
         setUser(user)
         navigate('/dashboard', { replace: true })
       })
       .catch((err: unknown) => {
-        if (controller.signal.aborted) return
+        if (signal.aborted) return
         const message = err instanceof Error ? err.message : 'Authentication failed.'
         setError(message)
       })

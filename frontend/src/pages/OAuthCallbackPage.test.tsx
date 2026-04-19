@@ -52,12 +52,14 @@ afterEach(() => {
 
 describe('OAuthCallbackPage', () => {
   it('shows loading state while exchanging code', () => {
+    sessionStorage.setItem('oauth_state', 'state-token')
     vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {})) // never resolves
-    renderCallback('google', 'code-123')
+    renderCallback('google', 'code-123', 'state-token')
     expect(screen.getByTestId('oauth-loading')).toBeInTheDocument()
   })
 
   it('calls the backend callback endpoint with the code for google', async () => {
+    sessionStorage.setItem('oauth_state', 'state-token')
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
@@ -67,17 +69,16 @@ describe('OAuthCallbackPage', () => {
         new Response(JSON.stringify(mockUser), { status: 200 }),
       )
 
-    renderCallback('google', 'code-abc')
+    renderCallback('google', 'code-abc', 'state-token')
 
     await waitFor(() =>
       expect(fetchSpy.mock.calls[0][0]).toContain('/auth/google/callback'),
     )
-    const requestInit = fetchSpy.mock.calls[0][1] as RequestInit
-    expect(requestInit.method).toBe('POST')
-    expect(JSON.parse(requestInit.body as string)).toEqual({ code: 'code-abc' })
+    expect((fetchSpy.mock.calls[0][0] as string)).toContain('code=code-abc')
   })
 
   it('stores tokens and user in authStore on success', async () => {
+    sessionStorage.setItem('oauth_state', 'state-token')
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
         new Response(JSON.stringify(mockTokens), { status: 200 }),
@@ -86,7 +87,7 @@ describe('OAuthCallbackPage', () => {
         new Response(JSON.stringify(mockUser), { status: 200 }),
       )
 
-    renderCallback('google', 'code-abc')
+    renderCallback('google', 'code-abc', 'state-token')
 
     await waitFor(() => expect(useAuthStore.getState().isAuthenticated).toBe(true))
     expect(useAuthStore.getState().tokens).toEqual(mockTokens)
@@ -94,6 +95,7 @@ describe('OAuthCallbackPage', () => {
   })
 
   it('navigates to /dashboard on success', async () => {
+    sessionStorage.setItem('oauth_state', 'state-token')
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
         new Response(JSON.stringify(mockTokens), { status: 200 }),
@@ -102,7 +104,7 @@ describe('OAuthCallbackPage', () => {
         new Response(JSON.stringify(mockUser), { status: 200 }),
       )
 
-    renderCallback('google', 'code-abc')
+    renderCallback('google', 'code-abc', 'state-token')
 
     await waitFor(() =>
       expect(screen.getByTestId('page-dashboard')).toBeInTheDocument(),
@@ -110,11 +112,12 @@ describe('OAuthCallbackPage', () => {
   })
 
   it('shows an error message when code exchange fails', async () => {
+    sessionStorage.setItem('oauth_state', 'state-token')
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify({ detail: 'Invalid code' }), { status: 401 }),
     )
 
-    renderCallback('google', 'bad-code')
+    renderCallback('google', 'bad-code', 'state-token')
 
     await waitFor(() =>
       expect(screen.getByTestId('oauth-error')).toBeInTheDocument(),
@@ -122,11 +125,12 @@ describe('OAuthCallbackPage', () => {
   })
 
   it('shows a back-to-login link on error', async () => {
+    sessionStorage.setItem('oauth_state', 'state-token')
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response('{}', { status: 500 }),
     )
 
-    renderCallback('github', 'bad-code')
+    renderCallback('github', 'bad-code', 'state-token')
 
     await waitFor(() =>
       expect(screen.getByTestId('link-back-to-login')).toBeInTheDocument(),
