@@ -9,6 +9,10 @@ import pytest
 from pydantic_ai import Agent
 from pydantic_ai.models.test import TestModel
 
+# CONFLICT RESOLUTION NOTE:
+# Option A (chosen): typed fixtures + inline closure (no global state)
+# Option B (incoming): untyped fixtures + module-level wrapper with global counter
+
 
 @pytest.fixture
 def user_id() -> uuid.UUID:
