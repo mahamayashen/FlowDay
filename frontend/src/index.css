@@ -25,3 +25,60 @@ body {
   min-height: 100vh;
   color: var(--text-primary);
 }
+
+/* Shared form-field layout used by ProjectForm and TaskForm */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-field input,
+.form-field select {
+  padding: 8px 10px;
+  background: #1a1a1d;
+  border: 1px solid #2a2a2d;
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-field-error {
+  font-size: 0.78rem;
+  color: #f87171;
+}
+
+/* Shared submit button used by ProjectForm and TaskForm */
+.form-submit-btn {
+  padding: 10px;
+  background: var(--accent);
+  color: #111113;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.form-submit-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.form-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

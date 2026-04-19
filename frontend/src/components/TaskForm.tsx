@@ -124,7 +124,7 @@ function TaskForm({ projectId, initialData, onSuccess }: TaskFormProps): React.J
 
       <button
         type="submit"
-        className="task-form-submit"
+        className="form-submit-btn"
         disabled={createTask.isPending || updateTask.isPending}
       >
         {isEdit ? 'Save changes' : 'Create task'}

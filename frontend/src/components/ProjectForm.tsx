@@ -111,7 +111,7 @@ function ProjectForm({ initialData, onSuccess }: ProjectFormProps): React.JSX.El
 
       <button
         type="submit"
-        className="project-form-submit"
+        className="form-submit-btn"
         disabled={createProject.isPending || updateProject.isPending}
       >
         {isEdit ? 'Save changes' : 'Create project'}
