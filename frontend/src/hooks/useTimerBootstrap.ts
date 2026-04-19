@@ -9,7 +9,7 @@ export function useTimerBootstrap(): void {
 
   useEffect(() => {
     if (activeEntry) {
-      startTick(activeEntry.id, activeEntry.started_at, activeEntry.task_id)
+      startTick(activeEntry.id, activeEntry.task_id)
     } else if (activeEntry === null) {
       stopTick()
     }

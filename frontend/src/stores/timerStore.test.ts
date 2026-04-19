@@ -13,24 +13,24 @@ describe('timerStore', () => {
   })
 
   it('startTick sets activeEntryId', () => {
-    useTimerStore.getState().startTick('entry-1', new Date().toISOString())
+    useTimerStore.getState().startTick('entry-1', undefined)
     expect(useTimerStore.getState().activeEntryId).toBe('entry-1')
   })
 
   it('stopTick clears activeEntryId', () => {
-    useTimerStore.getState().startTick('entry-1', new Date().toISOString())
+    useTimerStore.getState().startTick('entry-1', undefined)
     useTimerStore.getState().stopTick()
     expect(useTimerStore.getState().activeEntryId).toBeNull()
   })
 
   it('startTick replaces previous activeEntryId (single-active constraint)', () => {
-    useTimerStore.getState().startTick('entry-1', new Date().toISOString())
-    useTimerStore.getState().startTick('entry-2', new Date().toISOString())
+    useTimerStore.getState().startTick('entry-1', undefined)
+    useTimerStore.getState().startTick('entry-2', undefined)
     expect(useTimerStore.getState().activeEntryId).toBe('entry-2')
   })
 
   it('useIsTaskTimerActive returns true for active task', () => {
-    useTimerStore.getState().startTick('entry-99', new Date().toISOString())
+    useTimerStore.getState().startTick('entry-99', undefined)
     const active = useTimerStore.getState().isTaskTimerActive('task-with-entry-99')
     // Can't know task_id here — test the selector with the activeEntryId directly
     expect(useTimerStore.getState().activeEntryId).toBe('entry-99')

@@ -5,6 +5,12 @@ import App from './App'
 import { useAuthStore } from './stores/authStore'
 import type { TokenPair, User } from './types/auth'
 
+vi.mock('./api/timeEntries', () => ({
+  useActiveTimer: () => ({ data: null }),
+  useStartTimer: () => ({ mutate: vi.fn() }),
+  useStopTimer: () => ({ mutate: vi.fn() }),
+}))
+
 vi.mock('./api/projects', () => ({
   useProjects: () => ({ data: [], isLoading: false, isError: false }),
   useCreateProject: () => ({ mutate: vi.fn(), isPending: false }),

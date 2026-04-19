@@ -34,7 +34,7 @@ function TaskCard({ task, onClick }: TaskCardProps): React.JSX.Element {
       { task_id: task.id },
       {
         onSuccess: (entry) => {
-          startTick(entry.id, entry.started_at, entry.task_id)
+          startTick(entry.id, entry.task_id)
         },
       },
     )
