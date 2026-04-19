@@ -35,7 +35,7 @@ function OAuthCallbackPage(): React.JSX.Element {
         const message = err instanceof Error ? err.message : 'Authentication failed.'
         setError(message)
       })
-  }, []) // run once on mount
+  }, [navigate, provider, searchParams, setTokens, setUser])
 
   if (error) {
     return (

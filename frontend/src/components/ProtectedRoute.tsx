@@ -20,7 +20,7 @@ function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
           navigate('/login', { replace: true })
         })
     }
-  }, [tokens, user])
+  }, [tokens, user, setUser, logout, navigate])
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
