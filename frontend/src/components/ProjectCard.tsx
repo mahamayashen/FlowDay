@@ -1,3 +1,4 @@
+import React from 'react'
 import './ProjectCard.css'
 import type { Project } from '../types/project'
 
