@@ -350,6 +350,260 @@ def test_judge_retry_count_metric_exists() -> None:
     assert isinstance(judge_retry_count, Counter)
 
 
+# ---------------------------------------------------------------------------
+# Mutation killers — prompt content and agent configuration
+# ---------------------------------------------------------------------------
+
+
+def test_judge_max_retries_is_two() -> None:
+    """Judge agent is configured with exactly 2 retries (max_result_retries)."""
+    from app.agents.judge import judge
+
+    assert judge._max_result_retries == 2
+
+
+def test_judge_system_prompt_covers_all_dimensions() -> None:
+    """System prompt references all three scoring dimensions and overall score."""
+    from app.agents.judge import judge
+
+    prompt = " ".join(judge._system_prompts)
+    assert "actionability_score" in prompt
+    assert "accuracy_score" in prompt
+    assert "coherence_score" in prompt
+    assert "overall_score" in prompt
+    assert "You are an impartial evaluator" in prompt
+    assert "1\u201310" in prompt or "1-10" in prompt  # en-dash or hyphen variant
+    assert "XX" not in prompt
+
+
+@pytest.mark.asyncio
+async def test_serialize_group_a_summary_includes_time_data(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """_serialize_group_a_summary includes tracked hours and utilization."""
+    from app.agents.judge import _serialize_group_a_summary
+    from app.agents.schemas import JudgeDeps
+
+    deps = JudgeDeps(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        group_a_result=full_group_a_result,
+        pattern_result=sample_pattern_result,
+        narrative_result=sample_narrative_result,
+    )
+
+    lines = _serialize_group_a_summary(deps)
+    combined = "\n".join(lines)
+
+    assert any(line.startswith("TIME: tracked") for line in lines)
+    assert "6.50h" in combined
+    assert "81.2%" in combined
+    assert "XX" not in combined
+
+
+@pytest.mark.asyncio
+async def test_serialize_group_a_summary_includes_meeting_data(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """_serialize_group_a_summary includes meeting count and focus hours."""
+    from app.agents.judge import _serialize_group_a_summary
+    from app.agents.schemas import JudgeDeps
+
+    deps = JudgeDeps(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        group_a_result=full_group_a_result,
+        pattern_result=sample_pattern_result,
+        narrative_result=sample_narrative_result,
+    )
+
+    lines = _serialize_group_a_summary(deps)
+    combined = "\n".join(lines)
+
+    assert any(line.startswith("MEETINGS: 3 meetings") for line in lines)
+    assert "focus=5.50h" in combined
+    assert "XX" not in combined
+
+
+@pytest.mark.asyncio
+async def test_serialize_group_a_summary_pattern_line_format(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """Pattern lines include category, pattern text, and confidence value."""
+    from app.agents.judge import _serialize_group_a_summary
+    from app.agents.schemas import JudgeDeps
+
+    deps = JudgeDeps(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        group_a_result=full_group_a_result,
+        pattern_result=sample_pattern_result,
+        narrative_result=sample_narrative_result,
+    )
+
+    lines = _serialize_group_a_summary(deps)
+    combined = "\n".join(lines)
+
+    assert "  - [time-meeting]" in combined
+    assert "confidence=0.85" in combined
+    assert "PATTERNS:\n  - [time-meeting]" in combined
+    assert "XX" not in combined
+
+
+@pytest.mark.asyncio
+async def test_serialize_group_a_summary_includes_code_and_task_data(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """_serialize_group_a_summary includes commit/PR counts and task completion."""
+    from app.agents.judge import _serialize_group_a_summary
+    from app.agents.schemas import JudgeDeps
+
+    deps = JudgeDeps(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        group_a_result=full_group_a_result,
+        pattern_result=sample_pattern_result,
+        narrative_result=sample_narrative_result,
+    )
+
+    lines = _serialize_group_a_summary(deps)
+    combined = "\n".join(lines)
+
+    assert any(line.startswith("CODE: commits=5") for line in lines)
+    assert "prs=2" in combined
+    assert "4/12" in combined
+    assert any(line.startswith("PATTERNS:") for line in lines)
+    assert "XX" not in combined
+
+
+@pytest.mark.asyncio
+async def test_serialize_group_a_summary_unavailable_sections(
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """_serialize_group_a_summary marks missing sections as unavailable."""
+    from app.agents.judge import _serialize_group_a_summary
+    from app.agents.schemas import JudgeDeps
+
+    empty_ga = GroupAResult(
+        time_analysis=None,
+        meeting_analysis=None,
+        code_analysis=None,
+        task_analysis=None,
+        errors={},
+    )
+    empty_pattern = PatternDetectorResult(patterns=[], summary="No patterns.")
+    deps = JudgeDeps(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        group_a_result=empty_ga,
+        pattern_result=empty_pattern,
+        narrative_result=sample_narrative_result,
+    )
+
+    lines = _serialize_group_a_summary(deps)
+    combined = "\n".join(lines)
+
+    assert any(line == "TIME: unavailable" for line in lines)
+    assert any(line == "MEETINGS: unavailable" for line in lines)
+    assert any(line == "CODE: unavailable" for line in lines)
+    assert any(line == "TASKS: unavailable" for line in lines)
+    assert any(line == "PATTERNS: none detected" for line in lines)
+    assert "XX" not in combined
+
+
+@pytest.mark.asyncio
+async def test_add_evaluation_context_contains_narrative_sections(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """add_evaluation_context output contains analysis_date and narrative content."""
+    import app.agents.judge as judge_mod
+    from app.agents.schemas import JudgeDeps
+
+    deps = JudgeDeps(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        group_a_result=full_group_a_result,
+        pattern_result=sample_pattern_result,
+        narrative_result=sample_narrative_result,
+    )
+
+    # Create a fake RunContext-like object
+    class FakeCtx:
+        def __init__(self, deps):  # type: ignore[no-untyped-def]
+            self.deps = deps
+
+    ctx = FakeCtx(deps)
+    context_str = await judge_mod.add_evaluation_context(ctx)  # type: ignore[arg-type]
+
+    assert "Analysis date: 2026-04-14" in context_str
+    assert "--- NARRATIVE TO EVALUATE ---" in context_str
+    assert sample_narrative_result.executive_summary in context_str
+    assert "--- UNDERLYING DATA ---" in context_str
+    assert context_str.count("\n\n") >= 3  # sections joined by double newline
+    assert "XX" not in context_str
+
+
+@pytest.mark.asyncio
+async def test_validate_scores_exact_threshold_boundary(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+    sample_narrative_result: NarrativeWriterResult,
+) -> None:
+    """Score exactly at threshold does not trigger retry; one below does."""
+    from pydantic_ai import ModelRetry
+
+    from app.agents.judge import validate_scores
+    from app.agents.schemas import JudgeDeps, JudgeResult
+    from app.core.config import settings
+
+    class FakeCtx:
+        def __init__(self, deps):  # type: ignore[no-untyped-def]
+            self.deps = deps
+
+    deps = JudgeDeps(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        group_a_result=full_group_a_result,
+        pattern_result=sample_pattern_result,
+        narrative_result=sample_narrative_result,
+    )
+    ctx = FakeCtx(deps)
+    threshold = settings.JUDGE_SCORE_THRESHOLD
+
+    # Exactly at threshold — no retry
+    at_threshold = JudgeResult(
+        actionability_score=threshold,
+        accuracy_score=threshold,
+        coherence_score=threshold,
+        overall_score=threshold,
+        feedback="Meets threshold.",
+    )
+    result = await validate_scores(ctx, at_threshold)  # type: ignore[arg-type]
+    assert result is at_threshold
+
+    # One below threshold — raises ModelRetry
+    below = JudgeResult(
+        actionability_score=threshold - 1,
+        accuracy_score=threshold,
+        coherence_score=threshold,
+        overall_score=threshold - 1,
+        feedback="Below threshold.",
+    )
+    with pytest.raises(ModelRetry):
+        await validate_scores(ctx, below)  # type: ignore[arg-type]
+
+
 def test_judge_deps_accepts_full_pipeline_inputs(
     full_group_a_result: GroupAResult,
     sample_pattern_result: PatternDetectorResult,
