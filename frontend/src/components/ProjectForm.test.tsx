@@ -30,10 +30,10 @@ beforeEach(() => {
 describe('ProjectForm', () => {
   it('renders all fields', () => {
     render(<ProjectForm onSuccess={vi.fn()} />)
-    expect(screen.getByLabelText(/name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/color/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/client/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/hourly rate/i)).toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toBeInTheDocument()
+    expect(screen.getByLabelText('Color')).toBeInTheDocument()
+    expect(screen.getByLabelText('Client name')).toBeInTheDocument()
+    expect(screen.getByLabelText('Hourly rate')).toBeInTheDocument()
   })
 
   it('submit in create mode calls createProject mutation with payload', async () => {
@@ -41,10 +41,10 @@ describe('ProjectForm', () => {
     const onSuccess = vi.fn()
     render(<ProjectForm onSuccess={onSuccess} />)
 
-    await user.clear(screen.getByLabelText(/name/i))
-    await user.type(screen.getByLabelText(/name/i), 'New Project')
-    await user.clear(screen.getByLabelText(/color/i))
-    await user.type(screen.getByLabelText(/color/i), '#f59e0b')
+    await user.clear(screen.getByLabelText('Name'))
+    await user.type(screen.getByLabelText('Name'), 'New Project')
+    await user.clear(screen.getByLabelText('Color'))
+    await user.type(screen.getByLabelText('Color'), '#f59e0b')
 
     fireEvent.submit(screen.getByRole('form'))
 
@@ -61,8 +61,8 @@ describe('ProjectForm', () => {
     const onSuccess = vi.fn()
     render(<ProjectForm initialData={existingProject} onSuccess={onSuccess} />)
 
-    await user.clear(screen.getByLabelText(/name/i))
-    await user.type(screen.getByLabelText(/name/i), 'Updated Name')
+    await user.clear(screen.getByLabelText('Name'))
+    await user.type(screen.getByLabelText('Name'), 'Updated Name')
 
     fireEvent.submit(screen.getByRole('form'))
 
@@ -76,17 +76,16 @@ describe('ProjectForm', () => {
 
   it('pre-fills fields with initialData in edit mode', () => {
     render(<ProjectForm initialData={existingProject} onSuccess={vi.fn()} />)
-    expect(screen.getByLabelText<HTMLInputElement>(/name/i).value).toBe('Old Name')
-    expect(screen.getByLabelText<HTMLInputElement>(/color/i).value).toBe('#3b82f6')
-    expect(screen.getByLabelText<HTMLInputElement>(/client/i).value).toBe('Acme')
-    expect(screen.getByLabelText<HTMLInputElement>(/hourly rate/i).value).toBe('150.00')
+    expect(screen.getByLabelText<HTMLInputElement>('Name').value).toBe('Old Name')
+    expect(screen.getByLabelText<HTMLInputElement>('Color').value).toBe('#3b82f6')
+    expect(screen.getByLabelText<HTMLInputElement>('Client name').value).toBe('Acme')
+    expect(screen.getByLabelText<HTMLInputElement>('Hourly rate').value).toBe('150.00')
   })
 
   it('shows validation error when name is empty', async () => {
     render(<ProjectForm onSuccess={vi.fn()} />)
 
-    // clear the name field and submit
-    const nameInput = screen.getByLabelText(/name/i)
+    const nameInput = screen.getByLabelText('Name')
     fireEvent.change(nameInput, { target: { value: '' } })
     fireEvent.submit(screen.getByRole('form'))
 
@@ -100,10 +99,10 @@ describe('ProjectForm', () => {
     const user = userEvent.setup()
     render(<ProjectForm onSuccess={vi.fn()} />)
 
-    await user.clear(screen.getByLabelText(/name/i))
-    await user.type(screen.getByLabelText(/name/i), 'Test')
-    await user.clear(screen.getByLabelText(/color/i))
-    await user.type(screen.getByLabelText(/color/i), 'notahex')
+    await user.clear(screen.getByLabelText('Name'))
+    await user.type(screen.getByLabelText('Name'), 'Test')
+    await user.clear(screen.getByLabelText('Color'))
+    await user.type(screen.getByLabelText('Color'), 'notahex')
 
     fireEvent.submit(screen.getByRole('form'))
 
