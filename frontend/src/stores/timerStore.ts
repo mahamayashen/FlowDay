@@ -3,7 +3,7 @@ import { create } from 'zustand'
 interface TimerState {
   activeEntryId: string | null
   activeTaskId: string | null
-  startTick: (entryId: string, startedAt: string) => void
+  startTick: (entryId: string, startedAt: string, taskId?: string) => void
   stopTick: () => void
   isTaskTimerActive: (taskId: string) => boolean
 }
@@ -14,13 +14,12 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   activeEntryId: null,
   activeTaskId: null,
 
-  startTick: (entryId, _startedAt) => {
-    // Clear any existing interval before starting a new one
+  startTick: (entryId, _startedAt, taskId) => {
     if (_tickInterval !== null) {
       clearInterval(_tickInterval)
       _tickInterval = null
     }
-    set({ activeEntryId: entryId })
+    set({ activeEntryId: entryId, activeTaskId: taskId ?? null })
   },
 
   stopTick: () => {
