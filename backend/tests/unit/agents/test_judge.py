@@ -245,6 +245,43 @@ def test_narrative_writer_model_is_llm_model_setting() -> None:
     assert settings.LLM_MODEL in str(narrative_writer.model)
 
 
+# ---------------------------------------------------------------------------
+# Cycle 4 — Score history DB model
+# ---------------------------------------------------------------------------
+
+
+def test_agent_score_history_model_has_required_fields() -> None:
+    """AgentScoreHistory ORM model exposes all required columns."""
+    from app.models.agent_score_history import AgentScoreHistory
+
+    record = AgentScoreHistory(
+        user_id=uuid.uuid4(),
+        analysis_date=date(2026, 4, 14),
+        actionability_score=8,
+        accuracy_score=9,
+        coherence_score=7,
+        overall_score=8,
+        feedback="Good narrative.",
+        retry_count=0,
+    )
+
+    assert record.user_id is not None
+    assert record.analysis_date == date(2026, 4, 14)
+    assert record.actionability_score == 8
+    assert record.accuracy_score == 9
+    assert record.coherence_score == 7
+    assert record.overall_score == 8
+    assert record.feedback == "Good narrative."
+    assert record.retry_count == 0
+
+
+def test_agent_score_history_table_name() -> None:
+    """AgentScoreHistory maps to the agent_score_history table."""
+    from app.models.agent_score_history import AgentScoreHistory
+
+    assert AgentScoreHistory.__tablename__ == "agent_score_history"
+
+
 def test_judge_deps_accepts_full_pipeline_inputs(
     full_group_a_result: GroupAResult,
     sample_pattern_result: PatternDetectorResult,
