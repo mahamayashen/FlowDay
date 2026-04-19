@@ -17,7 +17,25 @@ vi.mock('./api/tasks', () => ({
   useCreateTask: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateTask: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteTask: () => ({ mutate: vi.fn() }),
+  fetchProjectTasks: () => Promise.resolve([]),
+  TASK_KEYS: { byProject: (id: string) => ['tasks', id] },
 }))
+
+vi.mock('./api/scheduleBlocks', () => ({
+  useScheduleBlocks: () => ({ data: [], isLoading: false, isError: false }),
+  useCreateScheduleBlock: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateScheduleBlock: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteScheduleBlock: () => ({ mutate: vi.fn() }),
+  SCHEDULE_BLOCK_KEYS: { byDate: (d: string) => ['schedule-blocks', d] },
+}))
+
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>()
+  return {
+    ...actual,
+    useQueries: () => [],
+  }
+})
 
 
 const future = { v7_startTransition: true, v7_relativeSplatPath: true } as const

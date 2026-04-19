@@ -1,0 +1,72 @@
+.schedule-block-item {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  background: #1a1a1d;
+  border-left: 3px solid #6b7280;
+  border-radius: 4px;
+  padding: 4px 24px 12px 8px;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  box-sizing: border-box;
+  transition: opacity 0.1s;
+}
+
+.schedule-block-item:active {
+  cursor: grabbing;
+}
+
+.schedule-block-item.calendar {
+  background: #1e293b;
+  border-left-color: #3b82f6;
+  border-left-style: dashed;
+  cursor: default;
+  opacity: 0.85;
+}
+
+.schedule-block-title {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.schedule-block-delete {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.schedule-block-item:hover .schedule-block-delete {
+  opacity: 1;
+}
+
+.schedule-block-delete:hover {
+  color: #ef4444;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  border-radius: 0 0 4px 4px;
+}
+
+.resize-handle:hover {
+  background: var(--accent);
+  opacity: 0.6;
+}

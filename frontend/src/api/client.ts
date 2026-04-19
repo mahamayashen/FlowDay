@@ -71,5 +71,6 @@ export const apiClient = {
   get: (url: string, signal?: AbortSignal): Promise<Response> => request('GET', url, undefined, signal),
   post: (url: string, body?: unknown, signal?: AbortSignal): Promise<Response> => request('POST', url, body, signal),
   patch: (url: string, body?: unknown, signal?: AbortSignal): Promise<Response> => request('PATCH', url, body, signal),
+  put: (url: string, body?: unknown, signal?: AbortSignal): Promise<Response> => request('PUT', url, body, signal),
   delete: (url: string, signal?: AbortSignal): Promise<Response> => request('DELETE', url, undefined, signal),
 }

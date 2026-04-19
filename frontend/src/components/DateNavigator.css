@@ -1,0 +1,52 @@
+.date-navigator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #1a1a1d;
+  border-bottom: 1px solid #2a2a2d;
+}
+
+.date-nav-btn {
+  background: none;
+  border: 1px solid #2a2a2d;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+}
+
+.date-nav-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.date-nav-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 180px;
+  text-align: center;
+}
+
+.date-nav-picker {
+  background: #111113;
+  border: 1px solid #2a2a2d;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.date-nav-picker:focus {
+  outline: none;
+  border-color: var(--accent);
+}
