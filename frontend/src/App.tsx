@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import PlannerPage from './pages/PlannerPage'
 import ReviewPage from './pages/ReviewPage'
+import WeeklyReviewPage from './pages/WeeklyReviewPage'
 import OAuthCallbackPage from './pages/OAuthCallbackPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import { useTimerBootstrap } from './hooks/useTimerBootstrap'
@@ -37,6 +38,14 @@ function App(): React.JSX.Element {
           element={
             <ProtectedRoute>
               <ReviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/weekly-review"
+          element={
+            <ProtectedRoute>
+              <WeeklyReviewPage />
             </ProtectedRoute>
           }
         />
