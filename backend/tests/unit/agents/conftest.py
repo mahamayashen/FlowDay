@@ -86,10 +86,10 @@ def partial_group_a_result() -> GroupAResult:
 @pytest.fixture
 def sample_narrative_result() -> NarrativeWriterResult:
     return NarrativeWriterResult(
-        executive_summary="A productive week with steady progress across all tracked areas.",
+        executive_summary="A productive week with steady progress across all tracked areas.",  # noqa: E501
         time_analysis="6.5 hours tracked against 8 planned, yielding 81% utilization.",
-        productivity_patterns="Commit activity aligns with high-priority task completion.",
-        areas_of_concern="2 overdue tasks and moderate meeting load may impact next sprint.",
+        productivity_patterns="Commit activity aligns with high-priority task completion.",  # noqa: E501
+        areas_of_concern="2 overdue tasks and moderate meeting load may impact next sprint.",  # noqa: E501
     )
 
 

@@ -138,8 +138,7 @@ async def test_judge_raises_model_retry_when_score_below_threshold(
     sample_pattern_result: PatternDetectorResult,
     sample_narrative_result: NarrativeWriterResult,
 ) -> None:
-    """Result validator raises ModelRetry when any dimension score is below threshold."""
-    from pydantic_ai import ModelRetry
+    """Result validator raises ModelRetry when any dimension score is below threshold."""  # noqa: E501
     from pydantic_ai.models.function import AgentInfo, FunctionModel
 
     from app.agents.judge import judge
@@ -344,8 +343,9 @@ async def test_run_group_d_records_judge_score_metric(
 
 def test_judge_retry_count_metric_exists() -> None:
     """judge_retry_count Counter is defined in metrics module."""
-    from app.core.metrics import judge_retry_count
     from prometheus_client import Counter
+
+    from app.core.metrics import judge_retry_count
 
     assert isinstance(judge_retry_count, Counter)
 

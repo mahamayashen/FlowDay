@@ -19,11 +19,13 @@ judge: Agent[JudgeDeps, JudgeResult] = Agent(
     retries=2,
     system_prompt=(
         "You are an impartial evaluator of weekly productivity review narratives. "
-        "Given a narrative produced by an AI writer and the underlying data it was based on, "
-        "score the narrative on three dimensions (each from 1 to 10): "
-        "1) actionability_score: Are the observations specific and grounded enough to act on? "
-        "2) accuracy_score: Does the narrative accurately reflect the underlying data? "
-        "3) coherence_score: Is the narrative internally consistent and logically structured? "
+        "Given a narrative produced by an AI writer and the underlying data "
+        "it was based on, score the narrative on three dimensions (1–10 each): "
+        "1) actionability_score: Are observations specific and grounded enough "
+        "to act on? "
+        "2) accuracy_score: Does the narrative accurately reflect the data? "
+        "3) coherence_score: Is the narrative internally consistent and "
+        "logically structured? "
         "Then provide an overall_score (1–10) as a holistic assessment. "
         "Finally, provide a brief feedback string explaining the scores. "
         "Be critical but fair. Base scores solely on the data and narrative provided."
@@ -105,7 +107,9 @@ async def add_evaluation_context(ctx: RunContext[JudgeDeps]) -> str:
 
 
 @judge.output_validator
-async def validate_scores(ctx: RunContext[JudgeDeps], result: JudgeResult) -> JudgeResult:
+async def validate_scores(
+    ctx: RunContext[JudgeDeps], result: JudgeResult
+) -> JudgeResult:
     """Raise ModelRetry if any dimension score is below the configured threshold.
 
     The agent is configured with retries=2, so the LLM will re-evaluate the
@@ -113,7 +117,10 @@ async def validate_scores(ctx: RunContext[JudgeDeps], result: JudgeResult) -> Ju
     This avoids self-bias by using a different provider (Gemini vs OpenAI).
     """
     threshold = settings.JUDGE_SCORE_THRESHOLD
-    if min(result.actionability_score, result.accuracy_score, result.coherence_score) < threshold:
+    min_dim = min(
+        result.actionability_score, result.accuracy_score, result.coherence_score
+    )
+    if min_dim < threshold:
         judge_retry_count.labels(agent_name="judge").inc()
         raise ModelRetry(
             f"One or more dimension scores are below the threshold of {threshold}. "
