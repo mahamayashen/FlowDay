@@ -7,8 +7,8 @@ import pytest
 from pydantic_ai.models.test import TestModel
 
 # CONFLICT RESOLUTION NOTE:
-# Option A (chosen): top-level import + typed fixture `list[TaskData]` + `-> None` annotations + `UTC`
-# Option B (incoming): inline import inside fixture + untyped `list` + no return type annotations + `timezone.utc`
+# Option A (chosen): top-level import + typed fixture + `-> None` annotations + `UTC`
+# Option B (incoming): inline import + untyped `list` + no annotations + `timezone.utc`
 from app.agents.schemas import TaskData
 
 

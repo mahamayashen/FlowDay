@@ -10,10 +10,8 @@ from pydantic_ai import Agent
 from pydantic_ai.models.test import TestModel
 
 # CONFLICT RESOLUTION NOTE:
-# Option A (chosen — main): typed fixtures + `Any`/`Agent` imports + inline `selective_failure`
-#   closure (no global state) for the isolation test
-# Option B (incoming): untyped fixtures + module-level `_failing_time_analyst_wrapper`
-#   with `global _call_count` side-effect counter
+# Option A (chosen): typed fixtures + inline closure (no global state)
+# Option B (incoming): untyped fixtures + module-level wrapper with global counter
 
 
 @pytest.fixture
