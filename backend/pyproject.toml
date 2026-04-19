@@ -25,6 +25,7 @@ dependencies = [
     "prometheus-fastapi-instrumentator>=7.0.0",
     "prometheus-client>=0.20.0",
     "pydantic-ai>=0.0.20",
+    "google-genai>=1.0.0",
 ]
 
 [project.optional-dependencies]
