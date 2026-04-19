@@ -171,3 +171,34 @@ class GroupAResult(BaseModel):
     code_analysis: CodeAnalystResult | None = None
     task_analysis: TaskAnalystResult | None = None
     errors: dict[str, str] = Field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
+# Pattern Detector (Group B)
+# ---------------------------------------------------------------------------
+
+
+class CrossPattern(BaseModel):
+    """A single cross-source correlation pattern detected by the Pattern Detector."""
+
+    category: str  # e.g. "time-meeting", "code-task", "time-task", "meeting-task"
+    pattern: str  # human-readable description of the correlation
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence: list[str]  # specific data points from Group A supporting this pattern
+    recommendation: str  # actionable suggestion
+
+
+@dataclass
+class PatternDetectorDeps:
+    """Dependencies injected into the Pattern Detector via RunContext."""
+
+    user_id: uuid.UUID
+    analysis_date: date
+    group_a_result: GroupAResult
+
+
+class PatternDetectorResult(BaseModel):
+    """Structured output produced by the Pattern Detector agent."""
+
+    patterns: list[CrossPattern]
+    summary: str
