@@ -93,4 +93,98 @@ describe('apiClient', () => {
 
     expect(logoutSpy).toHaveBeenCalledOnce()
   })
+
+  it('patch sends PATCH method with serialized body', async () => {
+    const { apiClient } = await import('./client')
+    useAuthStore.getState().setTokens(mockTokens)
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: '1' }), { status: 200 }),
+    )
+
+    await apiClient.patch('/projects/1', { name: 'Updated' })
+
+    const [url, init] = fetchSpy.mock.calls[0]
+    expect(url).toBe('/projects/1')
+    expect(init?.method).toBe('PATCH')
+    expect(init?.body).toBe(JSON.stringify({ name: 'Updated' }))
+  })
+
+  it('patch attaches Authorization header', async () => {
+    const { apiClient } = await import('./client')
+    useAuthStore.getState().setTokens(mockTokens)
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('{}', { status: 200 }),
+    )
+
+    await apiClient.patch('/projects/1', { name: 'X' })
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const headers = new Headers(init?.headers)
+    expect(headers.get('Authorization')).toBe('Bearer access-abc')
+  })
+
+  it('patch retries with new token after 401', async () => {
+    const { apiClient } = await import('./client')
+    useAuthStore.getState().setTokens(mockTokens)
+
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('{}', { status: 401 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(newTokens), { status: 200 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+
+    await apiClient.patch('/projects/1', { name: 'X' })
+
+    expect(fetchSpy).toHaveBeenCalledTimes(3)
+    expect(useAuthStore.getState().tokens?.access_token).toBe('access-new')
+  })
+
+  it('delete sends DELETE method with no body', async () => {
+    const { apiClient } = await import('./client')
+    useAuthStore.getState().setTokens(mockTokens)
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(null, { status: 204 }),
+    )
+
+    await apiClient.delete('/projects/1')
+
+    const [url, init] = fetchSpy.mock.calls[0]
+    expect(url).toBe('/projects/1')
+    expect(init?.method).toBe('DELETE')
+    expect(init?.body).toBeUndefined()
+  })
+
+  it('delete attaches Authorization header', async () => {
+    const { apiClient } = await import('./client')
+    useAuthStore.getState().setTokens(mockTokens)
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(null, { status: 204 }),
+    )
+
+    await apiClient.delete('/projects/1')
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const headers = new Headers(init?.headers)
+    expect(headers.get('Authorization')).toBe('Bearer access-abc')
+  })
+
+  it('delete retries with new token after 401', async () => {
+    const { apiClient } = await import('./client')
+    useAuthStore.getState().setTokens(mockTokens)
+
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('{}', { status: 401 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(newTokens), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    await apiClient.delete('/projects/1')
+
+    expect(fetchSpy).toHaveBeenCalledTimes(3)
+    expect(useAuthStore.getState().tokens?.access_token).toBe('access-new')
+  })
 })
