@@ -211,6 +211,40 @@ async def test_judge_no_retry_when_all_scores_above_threshold(
     assert result.output.coherence_score >= 6
 
 
+# ---------------------------------------------------------------------------
+# Cycle 3 — Provider isolation
+# ---------------------------------------------------------------------------
+
+
+def test_judge_uses_different_model_than_narrative_writer() -> None:
+    """Judge agent's configured model differs from the Narrative Writer's model."""
+    from app.agents.judge import judge
+    from app.agents.narrative_writer import narrative_writer
+
+    judge_model = str(judge.model)
+    writer_model = str(narrative_writer.model)
+    assert judge_model != writer_model, (
+        f"Judge and Narrative Writer must use different providers, "
+        f"but both use: {judge_model}"
+    )
+
+
+def test_judge_model_is_llm_judge_model_setting() -> None:
+    """Judge agent is configured with settings.LLM_JUDGE_MODEL."""
+    from app.agents.judge import judge
+    from app.core.config import settings
+
+    assert settings.LLM_JUDGE_MODEL in str(judge.model)
+
+
+def test_narrative_writer_model_is_llm_model_setting() -> None:
+    """Narrative Writer is configured with settings.LLM_MODEL (not the judge model)."""
+    from app.agents.narrative_writer import narrative_writer
+    from app.core.config import settings
+
+    assert settings.LLM_MODEL in str(narrative_writer.model)
+
+
 def test_judge_deps_accepts_full_pipeline_inputs(
     full_group_a_result: GroupAResult,
     sample_pattern_result: PatternDetectorResult,
