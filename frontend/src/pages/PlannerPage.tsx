@@ -37,7 +37,6 @@ function PlannerPage(): React.JSX.Element {
     queries: projects.map((p: Project) => ({
       queryKey: TASK_KEYS.byProject(p.id),
       queryFn: () => fetchProjectTasks(p.id),
-      enabled: projects.length > 0,
     })),
   })
 
