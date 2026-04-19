@@ -35,6 +35,11 @@ vi.mock('./api/scheduleBlocks', () => ({
   SCHEDULE_BLOCK_KEYS: { byDate: (d: string) => ['schedule-blocks', d] },
 }))
 
+vi.mock('./api/analytics', () => ({
+  usePlannedVsActual: () => ({ data: undefined, isLoading: false }),
+  useWeeklyStats: () => ({ data: undefined, isLoading: false }),
+}))
+
 vi.mock('@tanstack/react-query', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-query')>()
   return {
