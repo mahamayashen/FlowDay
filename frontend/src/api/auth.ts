@@ -38,14 +38,3 @@ export async function fetchCurrentUser(signal?: AbortSignal): Promise<User> {
   return res.json() as Promise<User>
 }
 
-export async function refreshTokens(refreshToken: string): Promise<TokenPair> {
-  const res = await fetch('/auth/refresh', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  })
-  if (!res.ok) {
-    throw new Error('Token refresh failed')
-  }
-  return res.json() as Promise<TokenPair>
-}
