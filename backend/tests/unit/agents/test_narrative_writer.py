@@ -302,3 +302,33 @@ async def test_narrative_writer_metrics_recorded(
         await run_with_metrics(narrative_writer, "narrative_writer", deps)
 
     mock_labels.assert_called_once_with(agent_name="narrative_writer")
+
+
+# ---------------------------------------------------------------------------
+# Cycle 3 — Orchestrator integration
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_run_group_c_returns_narrative_writer_result(
+    full_group_a_result: GroupAResult,
+    sample_pattern_result: PatternDetectorResult,
+) -> None:
+    """run_group_c returns a valid NarrativeWriterResult."""
+    import app.agents.narrative_writer as nw_mod
+    from app.agents.orchestrator import run_group_c
+    from app.agents.schemas import NarrativeWriterResult
+
+    with nw_mod.narrative_writer.override(model=TestModel()):
+        result = await run_group_c(
+            group_a_result=full_group_a_result,
+            pattern_result=sample_pattern_result,
+            user_id=uuid.uuid4(),
+            analysis_date=date(2026, 4, 14),
+        )
+
+    assert isinstance(result, NarrativeWriterResult)
+    assert isinstance(result.executive_summary, str)
+    assert isinstance(result.time_analysis, str)
+    assert isinstance(result.productivity_patterns, str)
+    assert isinstance(result.areas_of_concern, str)
