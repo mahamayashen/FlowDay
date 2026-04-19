@@ -4,14 +4,21 @@ import DailyComparisonView from '../components/DailyComparisonView'
 import WeeklyBarChart from '../components/WeeklyBarChart'
 import { getWeekStart, toWeeklyChartData } from '../utils/reviewUtils'
 
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function addDays(date: string, days: number): string {
   const d = new Date(date + 'T00:00:00')
   d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
+  return formatLocalDate(d)
 }
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10)
+  return formatLocalDate(new Date())
 }
 
 function ReviewPage(): React.JSX.Element {
@@ -22,10 +29,11 @@ function ReviewPage(): React.JSX.Element {
   const weeklyQuery = useWeeklyStats(weekStart)
 
   const isLoading = dailyQuery.isLoading || weeklyQuery.isLoading
+  const hasError = dailyQuery.isError || weeklyQuery.isError
 
   const tasks = dailyQuery.data?.tasks ?? []
   const projects = weeklyQuery.data?.projects ?? []
-  const isEmpty = !isLoading && tasks.length === 0 && projects.length === 0
+  const isEmpty = !isLoading && !hasError && tasks.length === 0 && projects.length === 0
 
   return (
     <main data-testid="page-review">
@@ -52,11 +60,15 @@ function ReviewPage(): React.JSX.Element {
 
       {isLoading && <div data-testid="review-loading">Loading...</div>}
 
+      {hasError && (
+        <div data-testid="review-error">Failed to load data. Please try again.</div>
+      )}
+
       {isEmpty && (
         <div data-testid="review-empty">No data for this period</div>
       )}
 
-      {!isLoading && !isEmpty && (
+      {!isLoading && !hasError && !isEmpty && (
         <>
           <DailyComparisonView tasks={tasks} />
           <WeeklyBarChart data={toWeeklyChartData(projects)} />

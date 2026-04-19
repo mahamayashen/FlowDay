@@ -13,7 +13,17 @@ function WeeklyBarChart({ data }: WeeklyBarChartProps): React.JSX.Element {
 
   return (
     <div data-testid="weekly-bar-chart">
-      <ul aria-label="project list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+      <ul
+        aria-label="project list"
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          overflow: 'hidden',
+          clip: 'rect(0,0,0,0)',
+          whiteSpace: 'nowrap',
+        }}
+      >
         {data.map((entry) => (
           <li key={entry.name}>{entry.name}</li>
         ))}

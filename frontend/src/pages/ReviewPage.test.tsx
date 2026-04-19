@@ -72,6 +72,14 @@ describe('ReviewPage', () => {
     expect(screen.getByTestId('review-empty')).toBeInTheDocument()
   })
 
+  it('shows error state when a query fails', () => {
+    vi.mocked(usePlannedVsActual).mockReturnValue({ data: undefined, isLoading: false, isError: true } as ReturnType<typeof usePlannedVsActual>)
+    vi.mocked(useWeeklyStats).mockReturnValue({ data: undefined, isLoading: false, isError: false } as ReturnType<typeof useWeeklyStats>)
+    render(<ReviewPage />, { wrapper })
+    expect(screen.getByTestId('review-error')).toBeInTheDocument()
+    expect(screen.queryByTestId('review-empty')).not.toBeInTheDocument()
+  })
+
   it('navigates to the next day when next-day button is clicked', async () => {
     const user = userEvent.setup()
     render(<ReviewPage />, { wrapper })
