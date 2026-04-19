@@ -152,7 +152,7 @@ def _mock_db_session() -> AsyncMock:
 async def test_google_callback_creates_user_and_returns_jwt(
     auth_client: AsyncClient,
 ) -> None:
-    """GET /auth/google/callback with valid code returns JWT pair."""
+    """POST /auth/google/callback with valid code returns JWT pair."""
     token_resp = httpx.Response(200, json={"access_token": "google-token-123"})
     userinfo_resp = httpx.Response(
         200, json={"email": "user@gmail.com", "name": "Google User"}
@@ -173,8 +173,8 @@ async def test_google_callback_creates_user_and_returns_jwt(
             mock_settings.GOOGLE_CLIENT_SECRET = "test-secret"
             mock_settings.GOOGLE_REDIRECT_URI = "http://localhost/callback"
 
-            response = await auth_client.get(
-                "/auth/google/callback", params={"code": "auth-code-123"}
+            response = await auth_client.post(
+                "/auth/google/callback", json={"code": "auth-code-123"}
             )
     finally:
         app.dependency_overrides.clear()
@@ -190,7 +190,7 @@ async def test_google_callback_creates_user_and_returns_jwt(
 async def test_github_callback_creates_user_and_returns_jwt(
     auth_client: AsyncClient,
 ) -> None:
-    """GET /auth/github/callback with valid code returns JWT pair."""
+    """POST /auth/github/callback with valid code returns JWT pair."""
     token_resp = httpx.Response(200, json={"access_token": "github-token-456"})
     userinfo_resp = httpx.Response(
         200,
@@ -216,8 +216,8 @@ async def test_github_callback_creates_user_and_returns_jwt(
             mock_settings.GITHUB_CLIENT_SECRET = "test-secret"
             mock_settings.GITHUB_REDIRECT_URI = "http://localhost/callback"
 
-            response = await auth_client.get(
-                "/auth/github/callback", params={"code": "auth-code-456"}
+            response = await auth_client.post(
+                "/auth/github/callback", json={"code": "auth-code-456"}
             )
     finally:
         app.dependency_overrides.clear()
@@ -254,8 +254,8 @@ async def test_oauth_callback_existing_user_updates_token(
             mock_settings.GOOGLE_CLIENT_SECRET = "test-secret"
             mock_settings.GOOGLE_REDIRECT_URI = "http://localhost/callback"
 
-            response = await auth_client.get(
-                "/auth/google/callback", params={"code": "auth-code-second"}
+            response = await auth_client.post(
+                "/auth/google/callback", json={"code": "auth-code-second"}
             )
     finally:
         app.dependency_overrides.clear()
