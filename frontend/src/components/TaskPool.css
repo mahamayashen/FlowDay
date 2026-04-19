@@ -1,0 +1,68 @@
+.task-pool {
+  width: 240px;
+  flex-shrink: 0;
+  background: #111113;
+  border-right: 1px solid #2a2a2d;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.task-pool-header {
+  padding: 12px 12px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid #2a2a2d;
+}
+
+.task-pool-group {
+  padding: 8px 8px 4px;
+}
+
+.task-pool-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.task-pool-color-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.task-pool-item {
+  padding: 7px 10px;
+  margin-bottom: 4px;
+  background: #1a1a1d;
+  border-left: 3px solid #6b7280;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  cursor: grab;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: border-color 0.1s;
+}
+
+.task-pool-item:hover {
+  background: #222226;
+}
+
+.task-pool-item:active,
+.task-pool-item.dragging {
+  cursor: grabbing;
+  opacity: 0.5;
+}
