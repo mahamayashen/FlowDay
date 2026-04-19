@@ -1,9 +1,30 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import App from './App'
+import { useAuthStore } from './stores/authStore'
+import type { TokenPair, User } from './types/auth'
 
 const future = { v7_startTransition: true, v7_relativeSplatPath: true } as const
+
+const mockTokens: TokenPair = {
+  access_token: 'access-abc',
+  refresh_token: 'refresh-xyz',
+  token_type: 'bearer',
+}
+
+const mockUser: User = {
+  id: 'usr-1',
+  email: 'alice@example.com',
+  name: 'Alice',
+  settings_json: {},
+  created_at: '2026-01-01T00:00:00Z',
+}
+
+beforeEach(() => {
+  localStorage.clear()
+  useAuthStore.setState({ user: null, tokens: null, isAuthenticated: false })
+})
 
 describe('App', () => {
   it('renders without crashing', () => {
@@ -29,7 +50,7 @@ describe('App', () => {
   it('provides QueryClient to the component tree without error', () => {
     expect(() =>
       render(
-        <MemoryRouter initialEntries={['/dashboard']} future={future}>
+        <MemoryRouter initialEntries={['/login']} future={future}>
           <App />
         </MemoryRouter>,
       ),
@@ -37,7 +58,7 @@ describe('App', () => {
   })
 })
 
-describe('Routing', () => {
+describe('Routing — unauthenticated', () => {
   it('renders login page at /login', () => {
     render(
       <MemoryRouter initialEntries={['/login']} future={future}>
@@ -47,7 +68,50 @@ describe('Routing', () => {
     expect(screen.getByTestId('page-login')).toBeInTheDocument()
   })
 
-  it('renders dashboard page at /dashboard', () => {
+  it('redirects /dashboard to /login when not authenticated', () => {
+    render(
+      <MemoryRouter initialEntries={['/dashboard']} future={future}>
+        <App />
+      </MemoryRouter>,
+    )
+    expect(screen.getByTestId('page-login')).toBeInTheDocument()
+    expect(screen.queryByTestId('page-dashboard')).not.toBeInTheDocument()
+  })
+
+  it('redirects /planner to /login when not authenticated', () => {
+    render(
+      <MemoryRouter initialEntries={['/planner']} future={future}>
+        <App />
+      </MemoryRouter>,
+    )
+    expect(screen.getByTestId('page-login')).toBeInTheDocument()
+  })
+
+  it('redirects /review to /login when not authenticated', () => {
+    render(
+      <MemoryRouter initialEntries={['/review']} future={future}>
+        <App />
+      </MemoryRouter>,
+    )
+    expect(screen.getByTestId('page-login')).toBeInTheDocument()
+  })
+
+  it('redirects unknown routes to /login', () => {
+    render(
+      <MemoryRouter initialEntries={['/unknown-path']} future={future}>
+        <App />
+      </MemoryRouter>,
+    )
+    expect(screen.getByTestId('page-login')).toBeInTheDocument()
+  })
+})
+
+describe('Routing — authenticated', () => {
+  beforeEach(() => {
+    useAuthStore.setState({ user: mockUser, tokens: mockTokens, isAuthenticated: true })
+  })
+
+  it('renders dashboard page at /dashboard when authenticated', () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']} future={future}>
         <App />
@@ -56,7 +120,7 @@ describe('Routing', () => {
     expect(screen.getByTestId('page-dashboard')).toBeInTheDocument()
   })
 
-  it('renders planner page at /planner', () => {
+  it('renders planner page at /planner when authenticated', () => {
     render(
       <MemoryRouter initialEntries={['/planner']} future={future}>
         <App />
@@ -65,21 +129,12 @@ describe('Routing', () => {
     expect(screen.getByTestId('page-planner')).toBeInTheDocument()
   })
 
-  it('renders review page at /review', () => {
+  it('renders review page at /review when authenticated', () => {
     render(
       <MemoryRouter initialEntries={['/review']} future={future}>
         <App />
       </MemoryRouter>,
     )
     expect(screen.getByTestId('page-review')).toBeInTheDocument()
-  })
-
-  it('redirects unknown routes to login', () => {
-    render(
-      <MemoryRouter initialEntries={['/unknown-path']} future={future}>
-        <App />
-      </MemoryRouter>,
-    )
-    expect(screen.getByTestId('page-login')).toBeInTheDocument()
   })
 })
