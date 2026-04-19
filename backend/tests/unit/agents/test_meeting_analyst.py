@@ -6,11 +6,11 @@ from datetime import date
 import pytest
 from pydantic_ai.models.test import TestModel
 
+from app.agents.schemas import ScheduleBlockData
+
 
 @pytest.fixture
-def sample_calendar_blocks() -> list:
-    from app.agents.schemas import ScheduleBlockData
-
+def sample_calendar_blocks() -> list[ScheduleBlockData]:
     return [
         ScheduleBlockData(
             task_id=uuid.uuid4(),
@@ -32,7 +32,9 @@ def sample_calendar_blocks() -> list:
 
 
 @pytest.mark.asyncio
-async def test_meeting_analyst_result_conforms_to_schema(sample_calendar_blocks):
+async def test_meeting_analyst_result_conforms_to_schema(
+    sample_calendar_blocks: list[ScheduleBlockData],
+) -> None:
     """Agent with TestModel returns a valid MeetingAnalystResult schema."""
     from app.agents.meeting_analyst import meeting_analyst
     from app.agents.schemas import MeetingAnalystDeps, MeetingAnalystResult
@@ -57,7 +59,7 @@ async def test_meeting_analyst_result_conforms_to_schema(sample_calendar_blocks)
 
 
 @pytest.mark.asyncio
-async def test_meeting_analyst_no_calendar_blocks():
+async def test_meeting_analyst_no_calendar_blocks() -> None:
     """Agent handles empty calendar blocks without error."""
     from app.agents.meeting_analyst import meeting_analyst
     from app.agents.schemas import MeetingAnalystDeps, MeetingAnalystResult

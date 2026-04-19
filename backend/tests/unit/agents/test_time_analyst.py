@@ -6,11 +6,11 @@ from datetime import UTC, date, datetime
 import pytest
 from pydantic_ai.models.test import TestModel
 
+from app.agents.schemas import ScheduleBlockData, TimeEntryData
+
 
 @pytest.fixture
-def sample_time_entries() -> list:
-    from app.agents.schemas import TimeEntryData
-
+def sample_time_entries() -> list[TimeEntryData]:
     task_id = uuid.uuid4()
     return [
         TimeEntryData(
@@ -33,9 +33,7 @@ def sample_time_entries() -> list:
 
 
 @pytest.fixture
-def sample_schedule_blocks() -> list:
-    from app.agents.schemas import ScheduleBlockData
-
+def sample_schedule_blocks() -> list[ScheduleBlockData]:
     return [
         ScheduleBlockData(
             task_id=uuid.uuid4(),
@@ -50,8 +48,9 @@ def sample_schedule_blocks() -> list:
 
 @pytest.mark.asyncio
 async def test_time_analyst_result_conforms_to_schema(
-    sample_time_entries, sample_schedule_blocks
-):
+    sample_time_entries: list[TimeEntryData],
+    sample_schedule_blocks: list[ScheduleBlockData],
+) -> None:
     """Agent with TestModel returns a valid TimeAnalystResult schema."""
     from app.agents.schemas import TimeAnalystDeps, TimeAnalystResult
     from app.agents.time_analyst import time_analyst
@@ -76,7 +75,7 @@ async def test_time_analyst_result_conforms_to_schema(
 
 
 @pytest.mark.asyncio
-async def test_time_analyst_empty_time_entries():
+async def test_time_analyst_empty_time_entries() -> None:
     """Agent handles empty time entries without error."""
     from app.agents.schemas import TimeAnalystDeps, TimeAnalystResult
     from app.agents.time_analyst import time_analyst

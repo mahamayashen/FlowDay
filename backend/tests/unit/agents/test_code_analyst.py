@@ -6,11 +6,11 @@ from datetime import UTC, date, datetime
 import pytest
 from pydantic_ai.models.test import TestModel
 
+from app.agents.schemas import GitHubSyncData
+
 
 @pytest.fixture
-def sample_github_sync():
-    from app.agents.schemas import GitHubSyncData
-
+def sample_github_sync() -> GitHubSyncData:
     return GitHubSyncData(
         last_synced_at=datetime(2026, 4, 14, 8, 0, tzinfo=UTC),
         sync_config={"repo_count": 3, "most_active_repo": "FlowDay"},
@@ -18,7 +18,9 @@ def sample_github_sync():
 
 
 @pytest.mark.asyncio
-async def test_code_analyst_result_conforms_to_schema(sample_github_sync):
+async def test_code_analyst_result_conforms_to_schema(
+    sample_github_sync: GitHubSyncData,
+) -> None:
     """Agent with TestModel returns a valid CodeAnalystResult schema."""
     from app.agents.code_analyst import code_analyst
     from app.agents.schemas import CodeAnalystDeps, CodeAnalystResult
@@ -41,7 +43,7 @@ async def test_code_analyst_result_conforms_to_schema(sample_github_sync):
 
 
 @pytest.mark.asyncio
-async def test_code_analyst_no_github_sync():
+async def test_code_analyst_no_github_sync() -> None:
     """Agent returns data_available=False when github_sync is None."""
     from app.agents.code_analyst import code_analyst
     from app.agents.schemas import CodeAnalystDeps, CodeAnalystResult
