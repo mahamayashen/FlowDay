@@ -20,10 +20,20 @@ export async function exchangeOAuthCode(
   return res.json() as Promise<TokenPair>
 }
 
+export class AuthError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message)
+    this.name = 'AuthError'
+  }
+}
+
 export async function fetchCurrentUser(signal?: AbortSignal): Promise<User> {
   const res = await apiClient.get('/auth/me', signal)
   if (!res.ok) {
-    throw new Error('Failed to fetch current user')
+    throw new AuthError('Failed to fetch current user', res.status)
   }
   return res.json() as Promise<User>
 }
