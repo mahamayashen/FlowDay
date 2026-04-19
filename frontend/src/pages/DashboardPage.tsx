@@ -28,7 +28,7 @@ function DashboardPage(): React.JSX.Element {
   const [filter, setFilter] = useState<TaskFilterState>(DEFAULT_FILTER)
 
   const { data: projects, isLoading: projectsLoading, isError: projectsError } = useProjects()
-  const { data: rawTasks, isError: tasksError } = useProjectTasks(selectedProjectId ?? '')
+  const { data: rawTasks, isLoading: tasksLoading, isError: tasksError } = useProjectTasks(selectedProjectId ?? '')
 
   const visibleTasks = selectedProjectId
     ? sortTasks(
@@ -137,16 +137,24 @@ function DashboardPage(): React.JSX.Element {
       <section className="dashboard-main">
         {selectedProjectId ? (
           <>
-            <div className="task-toolbar">
-              <TaskFilter value={filter} onChange={setFilter} />
-              <button
-                data-testid="btn-new-task"
-                className="btn-icon"
-                onClick={openCreateTask}
-              >
-                + New task
-              </button>
-            </div>
+            {tasksError && (
+              <span data-testid="tasks-error" className="error-text">
+                Failed to load tasks.
+              </span>
+            )}
+
+            {!tasksError && (
+              <div className="task-toolbar">
+                <TaskFilter value={filter} onChange={setFilter} />
+                <button
+                  data-testid="btn-new-task"
+                  className="btn-icon"
+                  onClick={openCreateTask}
+                >
+                  + New task
+                </button>
+              </div>
+            )}
 
             {taskFormVisible && (
               <div data-testid="task-form-panel" className="form-panel">
@@ -158,9 +166,9 @@ function DashboardPage(): React.JSX.Element {
               </div>
             )}
 
-            {tasksError && (
-              <span data-testid="tasks-error" className="error-text">
-                Failed to load tasks.
+            {tasksLoading && (
+              <span data-testid="tasks-loading" className="loading-text">
+                Loading…
               </span>
             )}
 

@@ -186,5 +186,18 @@ describe('DashboardPage', () => {
     renderDashboard()
     fireEvent.click(screen.getAllByTestId('project-card')[0])
     expect(screen.getByTestId('tasks-error')).toBeInTheDocument()
+    expect(screen.queryByTestId('task-filter')).not.toBeInTheDocument()
+  })
+
+  it('shows loading indicator while tasks are loading', () => {
+    mockUseProjectTasks.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    } as ReturnType<typeof useProjectTasks>)
+
+    renderDashboard()
+    fireEvent.click(screen.getAllByTestId('project-card')[0])
+    expect(screen.getByTestId('tasks-loading')).toBeInTheDocument()
   })
 })
