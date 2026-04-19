@@ -1,15 +1,12 @@
 import React, { useState } from 'react'
 import './ProjectForm.css'
 import { useCreateProject, useUpdateProject } from '../api/projects'
+import { isValidHex } from '../utils/validation'
 import type { Project } from '../types/project'
 
 interface ProjectFormProps {
   initialData?: Project
   onSuccess: () => void
-}
-
-function isValidHex(value: string): boolean {
-  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value)
 }
 
 function ProjectForm({ initialData, onSuccess }: ProjectFormProps): React.JSX.Element {
