@@ -14,7 +14,8 @@ pattern_detector: Agent[PatternDetectorDeps, PatternDetectorResult] = Agent(
     defer_model_check=True,
     system_prompt=(
         "You are a cross-source pattern detector. "
-        "Given structured outputs from four analyst agents (time, meeting, code, task), "
+        "Given structured outputs from four analyst agents "
+        "(time, meeting, code, task), "
         "identify correlations and patterns across data sources. "
         "Each pattern must have a category indicating which sources it correlates "
         "(e.g. 'time-meeting', 'code-task', 'time-task', 'meeting-task'). "
