@@ -14,8 +14,8 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, onClick }: TaskCardProps): React.JSX.Element {
-  const isOverdue =
-    task.due_date !== null && new Date(task.due_date) < new Date(new Date().toDateString())
+  const today = new Date(new Date().toDateString()) // midnight local time, no time component
+  const isOverdue = task.due_date !== null && new Date(task.due_date) < today
 
   return (
     <div className="task-card" data-testid="task-card" onClick={onClick}>
