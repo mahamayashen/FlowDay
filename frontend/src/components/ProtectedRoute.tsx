@@ -19,7 +19,10 @@ function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
       fetchCurrentUser()
         .then(setUser)
         .catch((err: unknown) => {
-          if (err instanceof AuthError && (err.status === 401 || err.status === 403)) {
+          if (err instanceof AuthError && err.status >= 500) {
+            // Server error — don't destroy the session, just stop loading
+            setUserLoading(false)
+          } else {
             logout()
             navigate('/login', { replace: true })
           }
