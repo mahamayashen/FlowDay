@@ -58,11 +58,15 @@ const mockTasks: Task[] = [
 
 vi.mock('../api/projects', () => ({
   useProjects: vi.fn(),
+  useCreateProject: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateProject: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteProject: () => ({ mutate: vi.fn() }),
 }))
 
 vi.mock('../api/tasks', () => ({
   useProjectTasks: vi.fn(),
+  useCreateTask: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateTask: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteTask: () => ({ mutate: vi.fn() }),
 }))
 
