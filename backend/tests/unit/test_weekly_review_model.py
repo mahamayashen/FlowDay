@@ -165,3 +165,41 @@ def test_review_status_enum_values() -> None:
     assert ReviewStatus.GENERATING.value == "generating"
     assert ReviewStatus.COMPLETE.value == "complete"
     assert ReviewStatus.FAILED.value == "failed"
+
+
+# ---------------------------------------------------------------------------
+# Cycle 2 — Migration tests
+# ---------------------------------------------------------------------------
+
+
+def test_migration_0009_file_exists() -> None:
+    """Migration file 0009_add_weekly_reviews_table.py must exist."""
+    import os
+
+    migration_path = os.path.join(
+        os.path.dirname(__file__),
+        "../../alembic/versions/0009_add_weekly_reviews_table.py",
+    )
+    assert os.path.exists(os.path.normpath(migration_path)), (
+        "Migration 0009_add_weekly_reviews_table.py not found"
+    )
+
+
+def test_migration_0009_down_revision_is_0008() -> None:
+    """Migration 0009 must chain from revision 0008."""
+    import importlib.util
+    import os
+
+    migration_path = os.path.normpath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "../../alembic/versions/0009_add_weekly_reviews_table.py",
+        )
+    )
+    spec = importlib.util.spec_from_file_location("migration_0009", migration_path)
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    assert module.down_revision == "0008"
+    assert module.revision == "0009"
