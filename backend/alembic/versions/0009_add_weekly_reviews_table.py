@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -32,12 +33,12 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("week_start", sa.Date(), nullable=False),
-        sa.Column("raw_data_json", sa.dialects.postgresql.JSONB(), nullable=False),
-        sa.Column("insights_json", sa.dialects.postgresql.JSONB(), nullable=True),
+        sa.Column("raw_data_json", postgresql.JSONB(), nullable=False),
+        sa.Column("insights_json", postgresql.JSONB(), nullable=True),
         sa.Column("narrative", sa.Text(), nullable=True),
-        sa.Column("scores_json", sa.dialects.postgresql.JSONB(), nullable=True),
+        sa.Column("scores_json", postgresql.JSONB(), nullable=True),
         sa.Column(
-            "agent_metadata_json", sa.dialects.postgresql.JSONB(), nullable=True
+            "agent_metadata_json", postgresql.JSONB(), nullable=True
         ),
         sa.Column(
             "status",
