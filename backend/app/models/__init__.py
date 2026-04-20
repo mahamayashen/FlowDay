@@ -5,6 +5,7 @@ from app.models.schedule_block import ScheduleBlock
 from app.models.task import Task
 from app.models.time_entry import TimeEntry
 from app.models.user import User
+from app.models.weekly_review import WeeklyReview
 
 __all__ = [
     "AgentScoreHistory",
@@ -14,4 +15,5 @@ __all__ = [
     "Task",
     "TimeEntry",
     "User",
+    "WeeklyReview",
 ]
