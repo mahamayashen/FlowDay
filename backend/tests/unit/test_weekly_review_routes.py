@@ -108,7 +108,15 @@ async def test_post_weekly_review_triggers_generation_and_returns_response(
 @pytest.mark.asyncio
 async def test_post_weekly_review_requires_auth(client: AsyncClient) -> None:
     """POST /weekly-reviews without auth returns 401."""
-    resp = await client.post("/weekly-reviews", params={"week_start": "2026-04-13"})
+
+    async def override_db() -> AsyncMock:  # type: ignore[misc]
+        yield AsyncMock()
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        resp = await client.post("/weekly-reviews", params={"week_start": "2026-04-13"})
+    finally:
+        app.dependency_overrides.clear()
     assert resp.status_code == 401
 
 
@@ -193,5 +201,13 @@ async def test_get_weekly_review_returns_404_when_not_found(
 @pytest.mark.asyncio
 async def test_get_weekly_review_requires_auth(client: AsyncClient) -> None:
     """GET /weekly-reviews/{week_start} without auth returns 401."""
-    resp = await client.get("/weekly-reviews/2026-04-13")
+
+    async def override_db() -> AsyncMock:  # type: ignore[misc]
+        yield AsyncMock()
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        resp = await client.get("/weekly-reviews/2026-04-13")
+    finally:
+        app.dependency_overrides.clear()
     assert resp.status_code == 401

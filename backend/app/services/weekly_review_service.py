@@ -54,6 +54,31 @@ async def get_or_create_review(
     return review
 
 
+async def get_review(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    week_start: date,
+) -> WeeklyReview | None:
+    """Return the WeeklyReview for this user/week, or None if it doesn't exist.
+
+    Args:
+        db: Async database session.
+        user_id: Owner of the review.
+        week_start: Any date in the target week — clamped to Monday automatically.
+
+    Returns:
+        Existing WeeklyReview or None.
+    """
+    monday = _align_to_monday(week_start)
+    result = await db.execute(
+        select(WeeklyReview).where(
+            WeeklyReview.user_id == user_id,
+            WeeklyReview.week_start == monday,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
 async def generate_review(
     db: AsyncSession,
     review: WeeklyReview,

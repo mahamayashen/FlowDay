@@ -65,6 +65,7 @@ class WeeklyReview(Base):
 
     def __init__(self, **kwargs: Any) -> None:
         kwargs.setdefault("status", ReviewStatus.PENDING)
+        kwargs.setdefault("created_at", datetime.now(UTC))
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:
