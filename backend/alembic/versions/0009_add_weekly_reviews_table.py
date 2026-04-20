@@ -37,9 +37,7 @@ def upgrade() -> None:
         sa.Column("insights_json", postgresql.JSONB(), nullable=True),
         sa.Column("narrative", sa.Text(), nullable=True),
         sa.Column("scores_json", postgresql.JSONB(), nullable=True),
-        sa.Column(
-            "agent_metadata_json", postgresql.JSONB(), nullable=True
-        ),
+        sa.Column("agent_metadata_json", postgresql.JSONB(), nullable=True),
         sa.Column(
             "status",
             sa.String(20),

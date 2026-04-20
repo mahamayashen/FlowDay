@@ -119,6 +119,7 @@ async def test_generate_review_sets_generating_before_pipeline() -> None:
     async def fake_run_group_a(*args, **kwargs):  # type: ignore[no-untyped-def]
         status_at_call.append(review.status)
         from app.agents.schemas import GroupAResult
+
         return GroupAResult()
 
     with (

@@ -103,12 +103,19 @@ async def generate_review(
 
     try:
         group_a_result = await run_group_a(db, review.user_id, analysis_date)
-        pattern_result = await run_group_b(group_a_result, review.user_id, analysis_date)
+        pattern_result = await run_group_b(
+            group_a_result, review.user_id, analysis_date
+        )
         narrative_result = await run_group_c(
             group_a_result, pattern_result, review.user_id, analysis_date
         )
         judge_result = await run_group_d(
-            db, group_a_result, pattern_result, narrative_result, review.user_id, analysis_date
+            db,
+            group_a_result,
+            pattern_result,
+            narrative_result,
+            review.user_id,
+            analysis_date,
         )
     except Exception:
         review.status = ReviewStatus.FAILED
@@ -122,9 +129,7 @@ async def generate_review(
         f"{narrative_result.productivity_patterns}\n\n"
         f"{narrative_result.areas_of_concern}"
     )
-    review.scores_json = (
-        judge_result.model_dump() if judge_result is not None else None
-    )
+    review.scores_json = judge_result.model_dump() if judge_result is not None else None
     review.agent_metadata_json = {
         "analysis_date": analysis_date.isoformat(),
         "patterns_detected": len(pattern_result.patterns),

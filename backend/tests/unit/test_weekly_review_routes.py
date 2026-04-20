@@ -145,13 +145,11 @@ async def test_post_weekly_review_accepts_week_start_query_param(
                 return_value=review,
             ),
         ):
-            await client.post(
-                "/weekly-reviews", params={"week_start": "2026-04-15"}
-            )
+            await client.post("/weekly-reviews", params={"week_start": "2026-04-15"})
     finally:
         _clear_overrides()
 
-    # week_start 2026-04-15 (Wednesday) → service receives Wednesday; service normalizes to Monday
+    # Wednesday 2026-04-15 → passed as-is; service normalizes to Monday
     assert captured[0] == date(2026, 4, 15)
 
 
