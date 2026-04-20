@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
+import { CaretLeft, CaretRight, Brain, Sparkle } from '@phosphor-icons/react'
 import { useWeeklyReview, useWeeklyReviewHistory, useGenerateWeeklyReview } from '../api/weeklyReviews'
 import NarrativeSection from '../components/NarrativeSection'
 import JudgeScoreCard from '../components/JudgeScoreCard'
 import ScoreTrendChart from '../components/ScoreTrendChart'
 import ReviewHistoryList from '../components/ReviewHistoryList'
 import { getWeekStart, formatLocalDate, addWeeks } from '../utils/reviewUtils'
+import './WeeklyReviewPage.css'
 
 function WeeklyReviewPage(): React.JSX.Element {
   const [selectedWeekStart, setSelectedWeekStart] = useState<string>(() =>
@@ -23,54 +25,101 @@ function WeeklyReviewPage(): React.JSX.Element {
     !review || review.status === 'pending' ? 'Generate Review' : 'Regenerate'
 
   return (
-    <main data-testid="page-weekly-review">
-      <section>
-        <button
-          data-testid="prev-week"
-          onClick={() => setSelectedWeekStart((w) => addWeeks(w, -1))}
-        >
-          {'<<'}
-        </button>
-        <span data-testid="selected-week">{selectedWeekStart}</span>
-        <button
-          data-testid="next-week"
-          onClick={() => setSelectedWeekStart((w) => addWeeks(w, 1))}
-        >
-          {'>>'}
-        </button>
-      </section>
+    <main data-testid="page-weekly-review" className="weekly-review-page">
+      {/* Header */}
+      <div className="weekly-review-header">
+        <div className="weekly-review-title-row">
+          <div className="weekly-review-title">
+            <Brain size={18} color="var(--cyan)" weight="fill" />
+            AI Weekly Review
+          </div>
 
-      {reviewQuery.isLoading && (
-        <div data-testid="weekly-review-loading">Loading...</div>
-      )}
+          <div className="weekly-review-nav">
+            <button
+              data-testid="prev-week"
+              className="date-nav-btn"
+              onClick={() => setSelectedWeekStart((w) => addWeeks(w, -1))}
+              aria-label="Previous week"
+            >
+              <CaretLeft size={14} />
+            </button>
+            <span data-testid="selected-week" className="weekly-nav-date">
+              {selectedWeekStart}
+            </span>
+            <button
+              data-testid="next-week"
+              className="date-nav-btn"
+              onClick={() => setSelectedWeekStart((w) => addWeeks(w, 1))}
+              aria-label="Next week"
+            >
+              <CaretRight size={14} />
+            </button>
+          </div>
 
-      {reviewQuery.isError && (
-        <div data-testid="weekly-review-error">Failed to load review. Please try again.</div>
-      )}
+          {!reviewQuery.isLoading && !reviewQuery.isError && (
+            <button
+              data-testid="generate-review-btn"
+              className={`btn btn-primary weekly-generate-btn${isGenerating ? ' generating' : ''}`}
+              disabled={isGenerating}
+              onClick={() => generateMutation.mutate(selectedWeekStart)}
+            >
+              <Sparkle size={14} weight="fill" />
+              {isGenerating ? 'Generating…' : buttonLabel}
+            </button>
+          )}
+        </div>
+      </div>
 
-      {!reviewQuery.isLoading && !reviewQuery.isError && (
-        <>
-          <button
-            data-testid="generate-review-btn"
-            disabled={isGenerating}
-            onClick={() => generateMutation.mutate(selectedWeekStart)}
-          >
-            {buttonLabel}
-          </button>
-          <NarrativeSection
-            narrative={review?.narrative ?? null}
-            status={review?.status ?? 'pending'}
-          />
-          <JudgeScoreCard scores={review?.scores_json ?? null} />
-        </>
-      )}
+      {/* Body */}
+      <div className="weekly-review-body">
+        {reviewQuery.isLoading && (
+          <p data-testid="weekly-review-loading" className="loading-text">
+            Loading…
+          </p>
+        )}
 
-      <ScoreTrendChart reviews={history} />
-      <ReviewHistoryList
-        reviews={history}
-        selectedWeekStart={selectedWeekStart}
-        onSelectWeek={setSelectedWeekStart}
-      />
+        {reviewQuery.isError && (
+          <p data-testid="weekly-review-error" className="error-text">
+            Failed to load review. Please try again.
+          </p>
+        )}
+
+        {!reviewQuery.isLoading && !reviewQuery.isError && (
+          <div className="weekly-review-grid">
+            {/* Left column: narrative */}
+            <div className="weekly-col-main">
+              <NarrativeSection
+                narrative={review?.narrative ?? null}
+                status={review?.status ?? 'pending'}
+              />
+            </div>
+
+            {/* Right column: scores */}
+            <div className="weekly-col-side">
+              <JudgeScoreCard scores={review?.scores_json ?? null} />
+              <div className="weekly-trend-card">
+                <div className="ai-label">
+                  <Sparkle size={11} weight="fill" />
+                  Score Trend
+                </div>
+                <ScoreTrendChart reviews={history} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* History */}
+        {history.length > 0 && (
+          <div className="weekly-history-section">
+            <div className="review-section-title">Review History</div>
+            <ReviewHistoryList
+              reviews={history}
+              selectedWeekStart={selectedWeekStart}
+              onSelectWeek={setSelectedWeekStart}
+            />
+          </div>
+        )}
+      </div>
     </main>
   )
 }
