@@ -28,7 +28,7 @@ function OAuthCallbackPage(): React.JSX.Element {
     }
 
     const urlState = searchParams.get('state')
-    const storedState = localStorage.getItem('oauth_state')
+    const storedState = sessionStorage.getItem('oauth_state')
     if (!urlState || !storedState || urlState !== storedState) {
       setError('Invalid state parameter. Please try signing in again.')
       return
@@ -38,14 +38,14 @@ function OAuthCallbackPage(): React.JSX.Element {
     // request and we'd lose the server's 200 OK. hasRunRef prevents double-fire.
     exchangeOAuthCode(provider, code)
       .then((tokens) => {
-        localStorage.removeItem('oauth_state')
+        sessionStorage.removeItem('oauth_state')
         setTokens(tokens)
         return fetchCurrentUser()
       })
       .then((user) => {
         if (!user) return
         setUser(user)
-        navigate('/dashboard', { replace: true })
+        navigate('/', { replace: true })
       })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Authentication failed.'

@@ -40,6 +40,13 @@ vi.mock('./api/analytics', () => ({
   useWeeklyStats: () => ({ data: undefined, isLoading: false }),
 }))
 
+vi.mock('./api/weeklyReviews', () => ({
+  useWeeklyReview: () => ({ data: undefined, isLoading: false, isError: false }),
+  useWeeklyReviewHistory: () => ({ data: [], isLoading: false, isError: false }),
+  useGenerateWeeklyReview: () => ({ mutate: vi.fn(), isPending: false }),
+  WEEKLY_REVIEW_KEYS: { byWeek: (w: string) => ['weekly-review', w], history: () => ['weekly-reviews'] },
+}))
+
 vi.mock('@tanstack/react-query', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-query')>()
   return {
