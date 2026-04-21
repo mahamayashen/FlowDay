@@ -200,6 +200,6 @@ def test_migration_0009_down_revision_is_0008() -> None:
     assert spec is not None
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
-    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    spec.loader.exec_module(module)
     assert module.down_revision == "0008"
     assert module.revision == "0009"
