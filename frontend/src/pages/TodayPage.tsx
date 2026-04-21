@@ -157,11 +157,11 @@ function TodayPage(): React.JSX.Element {
             {Array.from({ length: WORK_END - WORK_START + 1 }, (_, i) => WORK_START + i).map((h) => (
               <div
                 key={h}
-                className="timeline-row"
+                className="today-timeline-row"
                 style={{ top: (h - WORK_START) * HOUR_PX }}
               >
-                <span className="timeline-hour-label">{formatHour(h)}</span>
-                <div className="timeline-hour-line" />
+                <span className="today-timeline-hour-label">{formatHour(h)}</span>
+                <div className="today-timeline-hour-line" />
               </div>
             ))}
 

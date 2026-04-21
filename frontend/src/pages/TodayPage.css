@@ -99,14 +99,14 @@
   width: 100%;
 }
 
-.timeline-row {
+.today-timeline-row {
   position: absolute;
   left: -68px;
   right: 0;
   height: 1px;
 }
 
-.timeline-hour-label {
+.today-timeline-hour-label {
   position: absolute;
   left: 0;
   top: -7px;
@@ -117,7 +117,7 @@
   text-align: right;
 }
 
-.timeline-hour-line {
+.today-timeline-hour-line {
   margin-left: 68px;
   height: 1px;
   background: var(--border);
