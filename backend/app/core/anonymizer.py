@@ -56,17 +56,17 @@ class AnonymizationRecord:
 # PIIDetector
 # ---------------------------------------------------------------------------
 
-_EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
-_FINANCIAL_RE = re.compile(r"\$\d[\d,]*\.?\d*")
+_EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+_FINANCIAL_RE = re.compile(r"\$\d[\d,]*(?:\.\d{1,2})?(?!\d)")
 
 
 class PIIDetector:
     """Detects PII in text using compiled regex patterns."""
 
-    _patterns: list[tuple[re.Pattern[str], str]] = [
+    _patterns: tuple[tuple[re.Pattern[str], str], ...] = (
         (_EMAIL_RE, "email"),
         (_FINANCIAL_RE, "financial"),
-    ]
+    )
 
     def detect(self, text: str) -> list[PIIMatch]:
         """Return all PII matches in *text*, sorted by start position."""
@@ -234,7 +234,7 @@ def _anonymize_model(
     for name in type(model).model_fields:
         value = getattr(model, name)
         new_value = _anonymize_value_by_field(name, value, anonymizer, parent_path)
-        if new_value is not value:
+        if new_value != value:
             updates[name] = new_value
     if updates:
         return model.model_copy(update=updates)

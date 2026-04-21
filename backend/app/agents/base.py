@@ -39,30 +39,29 @@ async def run_with_metrics[T](
     When PII anonymization is enabled, deps are anonymized before the LLM call
     and the output is de-anonymized before returning.
     """
+    anonymizer = None
+    if settings.PII_ANONYMIZATION_ENABLED:
+        from app.core.anonymizer import (
+            PIIAnonymizer,
+            anonymize_deps,
+            deanonymize_output,
+        )
+
+        anonymizer = PIIAnonymizer()
+        deps = anonymize_deps(deps, anonymizer)
+
     start = time.perf_counter()
     try:
-        if settings.PII_ANONYMIZATION_ENABLED:
-            from app.core.anonymizer import (
-                PIIAnonymizer,
-                anonymize_deps,
-                deanonymize_output,
-            )
+        result = await agent.run("Analyze and produce structured insights.", deps=deps)
+        output = result.output
 
-            anonymizer = PIIAnonymizer()
-            safe_deps = anonymize_deps(deps, anonymizer)
-            result = await agent.run(
-                "Analyze and produce structured insights.", deps=safe_deps
-            )
-            output = deanonymize_output(result.output, anonymizer)  # type: ignore[type-var]
+        if anonymizer is not None:
+            output = deanonymize_output(output, anonymizer)  # type: ignore[type-var]
             summary = anonymizer.get_audit_summary()
             if summary:
                 log.info("PII anonymized for agent=%s: %s", name, summary)
-            return output
-        else:
-            result = await agent.run(
-                "Analyze and produce structured insights.", deps=deps
-            )
-            return result.output
+
+        return output
     finally:
         elapsed = time.perf_counter() - start
         agent_latency_seconds.labels(agent_name=name).observe(elapsed)
