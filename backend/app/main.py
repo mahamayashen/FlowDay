@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+# Stage 6 OIDC verification — safe to remove
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
