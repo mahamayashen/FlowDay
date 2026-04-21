@@ -79,6 +79,37 @@ async def get_review(
     return result.scalar_one_or_none()
 
 
+async def get_review_by_id(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    review_id: uuid.UUID,
+) -> WeeklyReview | None:
+    """Return a WeeklyReview by id, scoped to the current user.
+
+    Returns None if no review matches or the review belongs to another user.
+    """
+    result = await db.execute(
+        select(WeeklyReview).where(
+            WeeklyReview.id == review_id,
+            WeeklyReview.user_id == user_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_reviews(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> list[WeeklyReview]:
+    """Return all WeeklyReviews owned by *user_id*, most recent week first."""
+    result = await db.execute(
+        select(WeeklyReview)
+        .where(WeeklyReview.user_id == user_id)
+        .order_by(WeeklyReview.week_start.desc())
+    )
+    return list(result.scalars().all())
+
+
 async def generate_review(
     db: AsyncSession,
     review: WeeklyReview,
