@@ -13,6 +13,7 @@ from app.api.schedule_blocks import router as schedule_blocks_router
 from app.api.sync import router as sync_router
 from app.api.tasks import router as tasks_router
 from app.api.time_entries import router as time_entries_router
+from app.api.weekly_reviews import router as weekly_reviews_router
 from app.core.config import settings
 from app.core.database import dispose_engine, init_engine
 from app.core.metrics import configure_metrics
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
     app.include_router(schedule_blocks_router)
     app.include_router(sync_router)
     app.include_router(time_entries_router)
+    app.include_router(weekly_reviews_router)
 
     return app
 
