@@ -213,7 +213,7 @@ jobs:
       - name: Claude PR Review
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.JINYU_FLOWDAY_API_KEY }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
             Review this PR for FlowDay. Check:
             1. Security: OAuth token handling, PII exposure, prompt injection risks
