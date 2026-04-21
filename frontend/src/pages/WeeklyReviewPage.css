@@ -187,6 +187,13 @@
   margin: 0;
 }
 
+.weekly-narrative-empty {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-2);
+  max-width: 62ch;
+}
+
 /* Skeleton placeholder while generating */
 .weekly-narrative-placeholder {
   display: flex;
