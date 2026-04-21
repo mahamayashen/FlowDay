@@ -202,7 +202,12 @@ jobs:
   # ──────────────────────────────────────────────
   ai-review:
     name: "Stage 6: Claude AI Review"
-    if: github.event_name == 'pull_request'
+    # Opt-in: only runs when the PR is labelled `ai-review`. Each run
+    # consumes Anthropic API credit, so it's off by default. Add the
+    # label on PRs where a Claude review would be useful.
+    if: >-
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.labels.*.name, 'ai-review')
     needs: [backend-tests, frontend-tests, e2e-tests, security-gates]
     runs-on: ubuntu-latest
     permissions:
