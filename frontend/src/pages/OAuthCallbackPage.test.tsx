@@ -32,7 +32,7 @@ function renderCallback(provider: string, code: string, state?: string): void {
     >
       <Routes>
         <Route path="/auth/:provider/callback" element={<OAuthCallbackPage />} />
-        <Route path="/dashboard" element={<div data-testid="page-dashboard" />} />
+        <Route path="/" element={<div data-testid="page-home" />} />
         <Route path="/login" element={<div data-testid="page-login" />} />
       </Routes>
     </MemoryRouter>,
@@ -96,7 +96,7 @@ describe('OAuthCallbackPage', () => {
     expect(useAuthStore.getState().user).toEqual(mockUser)
   })
 
-  it('navigates to /dashboard on success', async () => {
+  it('navigates to / (home) on success', async () => {
     sessionStorage.setItem('oauth_state', 'state-token')
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
@@ -109,7 +109,7 @@ describe('OAuthCallbackPage', () => {
     renderCallback('google', 'code-abc', 'state-token')
 
     await waitFor(() =>
-      expect(screen.getByTestId('page-dashboard')).toBeInTheDocument(),
+      expect(screen.getByTestId('page-home')).toBeInTheDocument(),
     )
   })
 
@@ -176,7 +176,7 @@ describe('OAuthCallbackPage', () => {
     renderCallback('google', 'code-abc', state)
 
     await waitFor(() =>
-      expect(screen.getByTestId('page-dashboard')).toBeInTheDocument(),
+      expect(screen.getByTestId('page-home')).toBeInTheDocument(),
     )
     expect(sessionStorage.getItem('oauth_state')).toBeNull()
   })

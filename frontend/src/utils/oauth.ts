@@ -3,6 +3,8 @@ export function buildOAuthUrl(provider: 'google' | 'github'): string {
   const redirectUri = `${origin}/auth/${provider}/callback`
 
   const state = crypto.randomUUID()
+  // sessionStorage: tab-scoped, cleared when tab closes. OAuth state tokens
+  // should never outlive the sign-in attempt, so localStorage would be unsafe.
   sessionStorage.setItem('oauth_state', state)
 
   if (provider === 'google') {

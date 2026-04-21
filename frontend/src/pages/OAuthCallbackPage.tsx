@@ -9,12 +9,13 @@ function OAuthCallbackPage(): React.JSX.Element {
   const navigate = useNavigate()
   const { setTokens, setUser } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
-  const exchangedRef = useRef(false)
+  const hasRunRef = useRef(false)
 
   useEffect(() => {
-    // Guard against StrictMode double-execution — OAuth codes are single-use
-    if (exchangedRef.current) return
-    exchangedRef.current = true
+    // Guard against React StrictMode double-invocation in dev — OAuth codes
+    // are single-use, so a second exchange attempt would always 400.
+    if (hasRunRef.current) return
+    hasRunRef.current = true
 
     const code = searchParams.get('code')
     if (!code || !provider) {
@@ -33,22 +34,22 @@ function OAuthCallbackPage(): React.JSX.Element {
       setError('OAuth state validation failed. Please try signing in again.')
       return
     }
-    sessionStorage.removeItem('oauth_state')
 
+    // No abort controller: StrictMode cleanup would cancel our in-flight
+    // request and we'd lose the server's 200 OK. hasRunRef prevents double-fire.
     exchangeOAuthCode(provider, code)
       .then((tokens) => {
-        console.log('[OAuth] tokens received', tokens)
+        sessionStorage.removeItem('oauth_state')
         setTokens(tokens)
         return fetchCurrentUser()
       })
       .then((user) => {
-        console.log('[OAuth] user received', user)
         if (!user) return
         setUser(user)
-        navigate('/dashboard', { replace: true })
+        navigate('/', { replace: true })
       })
       .catch((err: unknown) => {
-        console.error('[OAuth] error', err)
+        console.error('[OAuth] exchange failed', err)
         const message = err instanceof Error ? err.message : 'Authentication failed.'
         setError(message)
       })

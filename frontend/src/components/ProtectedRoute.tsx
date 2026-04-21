@@ -21,7 +21,6 @@ function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
         .then(setUser)
         .catch((err: unknown) => {
           if (err instanceof AuthError && err.status >= 500) {
-            // Server error — don't destroy the session, show retry message
             setUserLoading(false)
             setFetchError('Unable to reach the server. Please refresh the page.')
           } else {
