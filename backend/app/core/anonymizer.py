@@ -291,4 +291,4 @@ def deanonymize_output[T: BaseModel](output: T, anonymizer: PIIAnonymizer) -> T:
             updates[name] = deanonymize_output(value, anonymizer)
         else:
             updates[name] = value
-    return output.model_copy(update=updates)  # type: ignore[return-value]
+    return output.model_copy(update=updates)

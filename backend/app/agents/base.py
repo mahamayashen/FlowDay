@@ -53,7 +53,7 @@ async def run_with_metrics[T](
             result = await agent.run(
                 "Analyze and produce structured insights.", deps=safe_deps
             )
-            output = deanonymize_output(result.output, anonymizer)
+            output = deanonymize_output(result.output, anonymizer)  # type: ignore[type-var]
             summary = anonymizer.get_audit_summary()
             if summary:
                 log.info("PII anonymized for agent=%s: %s", name, summary)

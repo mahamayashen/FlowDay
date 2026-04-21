@@ -425,12 +425,11 @@ class TestRunWithMetricsAnonymization:
         mock_agent = AsyncMock()
         mock_agent.run = AsyncMock(return_value=mock_result)
 
+        result: TimeAnalystResult
         with patch("app.agents.base.agent_latency_seconds") as mock_metric:
             mock_metric.labels.return_value.observe = lambda _: None
             result = await run_with_metrics(mock_agent, "time_analyst", deps)
 
-        # run_with_metrics currently does not integrate anonymization directly,
-        # so the output is passed through as-is from the agent
         assert result.total_tracked_hours == 1.0
         mock_agent.run.assert_called_once()
 
@@ -461,6 +460,7 @@ class TestRunWithMetricsAnonymization:
         mock_agent = AsyncMock()
         mock_agent.run = AsyncMock(return_value=mock_result)
 
+        result: TimeAnalystResult
         with patch("app.agents.base.agent_latency_seconds") as mock_metric:
             mock_metric.labels.return_value.observe = lambda _: None
             result = await run_with_metrics(mock_agent, "time_analyst", deps)
