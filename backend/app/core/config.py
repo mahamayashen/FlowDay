@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     SENTRY_DSN: str | None = None
     PROMETHEUS_ENABLED: bool = True
 
+    # Feature flags
+    PII_ANONYMIZATION_ENABLED: bool = True
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def _coerce_asyncpg_scheme(cls, v: str) -> str:

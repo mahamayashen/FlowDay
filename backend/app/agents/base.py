@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 import uuid
 from datetime import UTC, date, datetime, timedelta
@@ -17,12 +18,15 @@ from app.agents.schemas import (
     TaskData,
     TimeEntryData,
 )
+from app.core.config import settings
 from app.core.metrics import agent_latency_seconds
 from app.models.external_sync import ExternalSync, SyncProvider
 from app.models.project import Project
 from app.models.schedule_block import ScheduleBlock
 from app.models.task import Task
 from app.models.time_entry import TimeEntry
+
+log = logging.getLogger(__name__)
 
 
 async def run_with_metrics[T](
@@ -32,18 +36,33 @@ async def run_with_metrics[T](
 ) -> T:
     """Run an agent and record its wall-clock latency in Prometheus.
 
-    Args:
-        agent: The Pydantic AI agent to run.
-        name: Label value for the agent_latency_seconds metric.
-        deps: Typed deps dataclass to inject via RunContext.
-
-    Returns:
-        The agent's structured output.
+    When PII anonymization is enabled, deps are anonymized before the LLM call
+    and the output is de-anonymized before returning.
     """
     start = time.perf_counter()
     try:
-        result = await agent.run("Analyze and produce structured insights.", deps=deps)
-        return result.output
+        if settings.PII_ANONYMIZATION_ENABLED:
+            from app.core.anonymizer import (
+                PIIAnonymizer,
+                anonymize_deps,
+                deanonymize_output,
+            )
+
+            anonymizer = PIIAnonymizer()
+            safe_deps = anonymize_deps(deps, anonymizer)
+            result = await agent.run(
+                "Analyze and produce structured insights.", deps=safe_deps
+            )
+            output = deanonymize_output(result.output, anonymizer)
+            summary = anonymizer.get_audit_summary()
+            if summary:
+                log.info("PII anonymized for agent=%s: %s", name, summary)
+            return output
+        else:
+            result = await agent.run(
+                "Analyze and produce structured insights.", deps=deps
+            )
+            return result.output
     finally:
         elapsed = time.perf_counter() - start
         agent_latency_seconds.labels(agent_name=name).observe(elapsed)
