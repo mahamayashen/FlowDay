@@ -1,0 +1,9 @@
+### Bandit configuration for FlowDay backend
+skips:
+  # B101: assert used — acceptable in test files (bandit auto-excludes tests/)
+  - B101
+
+exclude_dirs:
+  - tests
+  - migrations
+  - mutants

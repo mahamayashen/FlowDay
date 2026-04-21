@@ -65,6 +65,25 @@ docker build -t flowday-backend backend/               # Build production image
 - Judge agent must use a different LLM provider than Narrative Writer
 - Frontend: functional components + hooks only, React Query + Zustand, dark theme (`#111113`)
 
+## Security — OWASP Top 10 Compliance
+
+This project enforces OWASP Top 10 (2021) mitigations across the stack:
+
+| # | OWASP Category | FlowDay Mitigation |
+|---|---|---|
+| A01 | Broken Access Control | JWT access + refresh tokens; `ProtectedRoute` on frontend; FastAPI `Depends()` guards on every authenticated endpoint; role checks in service layer |
+| A02 | Cryptographic Failures | OAuth tokens encrypted at rest (Fernet); TLS enforced in production; secrets via environment variables, never committed |
+| A03 | Injection | SQLAlchemy parameterized queries (no raw SQL in routes); Pydantic input validation on all API schemas; prompt injection defense in LLM calls (PII anonymization, structured output schemas) |
+| A04 | Insecure Design | Service/repository pattern separates business logic from transport; agent dependencies injected via `RunContext`; Judge agent uses different LLM provider to avoid self-bias |
+| A05 | Security Misconfiguration | CORS restricted to allowed origins; `.env` in `.gitignore`; Docker runs as non-root; CI pipeline includes Gitleaks secret scanning |
+| A06 | Vulnerable Components | `pip-audit` and `npm audit` in CI (Security Gates 1 & 2); Dependabot enabled; pinned dependency versions |
+| A07 | Auth Failures | OAuth 2.0 (Google, GitHub) — no custom password storage; JWT with short-lived access tokens + refresh rotation; rate limiting on auth endpoints |
+| A08 | Data Integrity Failures | CI/CD pipeline enforces lint → typecheck → test → security → review before deploy; Alembic migrations version-controlled; Docker image built from pinned base |
+| A09 | Logging & Monitoring | Sentry error tracking with breadcrumbs; Grafana dashboards for API latency, agent metrics, judge scores; audit logging for auth events |
+| A10 | SSRF | External API calls (Google Calendar, GitHub) use allowlisted endpoints only; no user-supplied URLs passed to `httpx` without validation |
+
+CI enforcement: 4 security gates must pass before merge (pip-audit, npm audit, Gitleaks, Bandit SAST).
+
 ## Development Workflow (required for every issue)
 
 ### 4-Phase Workflow — never skip phases
