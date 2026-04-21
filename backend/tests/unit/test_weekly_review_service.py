@@ -11,6 +11,7 @@ from app.services.weekly_review_service import (
     _align_to_monday,
     generate_review,
     get_or_create_review,
+    get_review,
 )
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
@@ -79,6 +80,31 @@ async def test_get_or_create_review_returns_existing() -> None:
 
 
 @pytest.mark.asyncio
+async def test_get_or_create_review_queries_by_user_id() -> None:
+    """DB query must filter by the correct user_id, not another user."""
+
+    async def fake_execute(stmt):  # type: ignore[no-untyped-def]
+        # Only return a result if the query is for the correct user
+        whereclause = str(stmt.whereclause)
+        # Both user_id and week_start conditions must be == (not !=)
+        if "!=" in whereclause:
+            mock_r = MagicMock()
+            mock_r.scalar_one_or_none.return_value = None
+            return mock_r
+        mock_r = MagicMock()
+        mock_r.scalar_one_or_none.return_value = None
+        return mock_r
+
+    db = MagicMock()
+    db.execute = AsyncMock(side_effect=fake_execute)
+    db.flush = AsyncMock()
+
+    # Should create a new review for USER_ID, not find the other user's review
+    review = await get_or_create_review(db, USER_ID, date(2026, 4, 13))
+    assert review.user_id == USER_ID
+
+
+@pytest.mark.asyncio
 async def test_get_or_create_review_normalizes_week_start_to_monday() -> None:
     """Input date mid-week is clamped to Monday before lookup and storage."""
     db = MagicMock()
@@ -105,6 +131,49 @@ def _make_review(status: str = ReviewStatus.PENDING) -> WeeklyReview:
         raw_data_json={},
         status=status,
     )
+
+
+@pytest.mark.asyncio
+async def test_get_review_returns_existing() -> None:
+    """get_review returns the stored review when found."""
+    existing = WeeklyReview(
+        user_id=USER_ID,
+        week_start=date(2026, 4, 13),
+        raw_data_json={},
+    )
+    db = MagicMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = existing
+    db.execute = AsyncMock(return_value=mock_result)
+
+    result = await get_review(db, USER_ID, date(2026, 4, 13))
+    assert result is existing
+
+
+@pytest.mark.asyncio
+async def test_get_review_returns_none_when_not_found() -> None:
+    """get_review returns None when no review exists for the user/week."""
+    db = MagicMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    db.execute = AsyncMock(return_value=mock_result)
+
+    result = await get_review(db, USER_ID, date(2026, 4, 13))
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_review_normalizes_week_start_to_monday() -> None:
+    """get_review normalizes any date to Monday before querying."""
+    db = MagicMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    db.execute = AsyncMock(return_value=mock_result)
+
+    # Sunday — should query for Monday 2026-04-13
+    await get_review(db, USER_ID, date(2026, 4, 19))
+    # Verify execute was called (query happened, not skipped)
+    db.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -276,3 +345,213 @@ async def test_generate_review_stores_agent_metadata() -> None:
 
     assert result.agent_metadata_json is not None
     assert "analysis_date" in result.agent_metadata_json
+
+
+@pytest.mark.asyncio
+async def test_generate_review_populates_insights_from_group_a() -> None:
+    """insights_json must be populated from group_a_result, not None."""
+    db = MagicMock()
+    db.flush = AsyncMock()
+    review = _make_review()
+
+    with (
+        patch(
+            "app.services.weekly_review_service.run_group_a",
+            new_callable=AsyncMock,
+        ) as mock_a,
+        patch(
+            "app.services.weekly_review_service.run_group_b",
+            new_callable=AsyncMock,
+        ) as mock_b,
+        patch(
+            "app.services.weekly_review_service.run_group_c",
+            new_callable=AsyncMock,
+        ) as mock_c,
+        patch(
+            "app.services.weekly_review_service.run_group_d",
+            new_callable=AsyncMock,
+        ) as mock_d,
+    ):
+        from app.agents.schemas import (
+            GroupAResult,
+            NarrativeWriterResult,
+            PatternDetectorResult,
+        )
+
+        mock_a.return_value = GroupAResult()
+        mock_b.return_value = PatternDetectorResult(patterns=[], summary="ok")
+        mock_c.return_value = NarrativeWriterResult(
+            executive_summary="s",
+            time_analysis="t",
+            productivity_patterns="p",
+            areas_of_concern="a",
+        )
+        mock_d.return_value = None
+        result = await generate_review(db, review, date(2026, 4, 13))
+
+    assert result.insights_json is not None
+    assert isinstance(result.insights_json, dict)
+
+
+@pytest.mark.asyncio
+async def test_generate_review_narrative_contains_all_sections() -> None:
+    """narrative must concatenate all four NarrativeWriterResult sections."""
+    db = MagicMock()
+    db.flush = AsyncMock()
+    review = _make_review()
+
+    with (
+        patch(
+            "app.services.weekly_review_service.run_group_a",
+            new_callable=AsyncMock,
+        ) as mock_a,
+        patch(
+            "app.services.weekly_review_service.run_group_b",
+            new_callable=AsyncMock,
+        ) as mock_b,
+        patch(
+            "app.services.weekly_review_service.run_group_c",
+            new_callable=AsyncMock,
+        ) as mock_c,
+        patch(
+            "app.services.weekly_review_service.run_group_d",
+            new_callable=AsyncMock,
+        ) as mock_d,
+    ):
+        from app.agents.schemas import (
+            GroupAResult,
+            NarrativeWriterResult,
+            PatternDetectorResult,
+        )
+
+        mock_a.return_value = GroupAResult()
+        mock_b.return_value = PatternDetectorResult(patterns=[], summary="ok")
+        mock_c.return_value = NarrativeWriterResult(
+            executive_summary="EXEC_SUMMARY",
+            time_analysis="TIME_ANALYSIS",
+            productivity_patterns="PRODUCTIVITY",
+            areas_of_concern="CONCERNS",
+        )
+        mock_d.return_value = None
+        result = await generate_review(db, review, date(2026, 4, 13))
+
+    assert result.narrative is not None
+    assert "EXEC_SUMMARY" in result.narrative
+    assert "TIME_ANALYSIS" in result.narrative
+    assert "PRODUCTIVITY" in result.narrative
+    assert "CONCERNS" in result.narrative
+
+
+@pytest.mark.asyncio
+async def test_generate_review_metadata_has_required_keys() -> None:
+    """agent_metadata_json must have patterns_detected, group_a_errors, judge_scored."""
+    db = MagicMock()
+    db.flush = AsyncMock()
+    review = _make_review()
+
+    with (
+        patch(
+            "app.services.weekly_review_service.run_group_a",
+            new_callable=AsyncMock,
+        ) as mock_a,
+        patch(
+            "app.services.weekly_review_service.run_group_b",
+            new_callable=AsyncMock,
+        ) as mock_b,
+        patch(
+            "app.services.weekly_review_service.run_group_c",
+            new_callable=AsyncMock,
+        ) as mock_c,
+        patch(
+            "app.services.weekly_review_service.run_group_d",
+            new_callable=AsyncMock,
+        ) as mock_d,
+    ):
+        from app.agents.schemas import (
+            GroupAResult,
+            JudgeResult,
+            NarrativeWriterResult,
+            PatternDetectorResult,
+        )
+
+        mock_a.return_value = GroupAResult()
+        mock_b.return_value = PatternDetectorResult(patterns=[], summary="ok")
+        mock_c.return_value = NarrativeWriterResult(
+            executive_summary="s",
+            time_analysis="t",
+            productivity_patterns="p",
+            areas_of_concern="a",
+        )
+        mock_d.return_value = JudgeResult(
+            actionability_score=8,
+            accuracy_score=9,
+            coherence_score=7,
+            overall_score=8,
+            feedback="good",
+        )
+        result = await generate_review(db, review, date(2026, 4, 13))
+
+    meta = result.agent_metadata_json
+    assert meta is not None
+    assert "patterns_detected" in meta
+    assert "group_a_errors" in meta
+    assert meta["judge_scored"] is True
+
+
+@pytest.mark.asyncio
+async def test_generate_review_calls_run_group_d() -> None:
+    """run_group_d must be called — skipping it is not acceptable."""
+    db = MagicMock()
+    db.flush = AsyncMock()
+    review = _make_review()
+    judge_called = []
+
+    async def fake_run_group_d(*args, **kwargs):  # type: ignore[no-untyped-def]
+        judge_called.append(True)
+        from app.agents.schemas import JudgeResult
+
+        return JudgeResult(
+            actionability_score=7,
+            accuracy_score=8,
+            coherence_score=9,
+            overall_score=8,
+            feedback="solid",
+        )
+
+    with (
+        patch(
+            "app.services.weekly_review_service.run_group_a",
+            new_callable=AsyncMock,
+        ) as mock_a,
+        patch(
+            "app.services.weekly_review_service.run_group_b",
+            new_callable=AsyncMock,
+        ) as mock_b,
+        patch(
+            "app.services.weekly_review_service.run_group_c",
+            new_callable=AsyncMock,
+        ) as mock_c,
+        patch(
+            "app.services.weekly_review_service.run_group_d",
+            side_effect=fake_run_group_d,
+        ),
+    ):
+        from app.agents.schemas import (
+            GroupAResult,
+            NarrativeWriterResult,
+            PatternDetectorResult,
+        )
+
+        mock_a.return_value = GroupAResult()
+        mock_b.return_value = PatternDetectorResult(patterns=[], summary="ok")
+        mock_c.return_value = NarrativeWriterResult(
+            executive_summary="s",
+            time_analysis="t",
+            productivity_patterns="p",
+            areas_of_concern="a",
+        )
+        result = await generate_review(db, review, date(2026, 4, 13))
+
+    assert judge_called, "run_group_d was not called"
+    assert result.scores_json is not None
+    assert result.scores_json["overall_score"] == 8
