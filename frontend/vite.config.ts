@@ -22,8 +22,14 @@ export default defineConfig({
         target: 'http://localhost:5060',
         changeOrigin: true,
         bypass(req) {
-          // OAuth providers redirect here via GET — let React Router handle it
-          if (req.method === 'GET' && req.url?.match(/^\/auth\/[^/]+\/callback/)) {
+          // OAuth providers redirect here via GET — let React Router render the
+          // callback page. POST /auth/<provider>/callback (code exchange) still
+          // proxies through to the backend. Whitelist providers so a typo in
+          // the URL doesn't silently become a client-side route.
+          if (
+            req.method === 'GET' &&
+            req.url?.match(/^\/auth\/(google|github)\/callback/)
+          ) {
             return req.url
           }
         },
@@ -34,5 +40,6 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/setupTests.ts'],
+    exclude: ['e2e/**', 'node_modules/**'],
   },
 })

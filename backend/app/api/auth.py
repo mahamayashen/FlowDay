@@ -108,9 +108,19 @@ async def google_callback(
             },
         )
         if token_resp.status_code != 200:
+            import logging
+
+            logging.error(
+                "Google token exchange failed: status=%s body=%s redirect_uri=%s",
+                token_resp.status_code,
+                token_resp.text,
+                settings.GOOGLE_REDIRECT_URI,
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Failed to exchange Google authorization code",
+                detail=(
+                    f"Failed to exchange Google authorization code: {token_resp.text}"
+                ),
             )
         token_data = token_resp.json()
 
@@ -173,6 +183,14 @@ async def github_callback(
             )
         token_data = token_resp.json()
 
+        import logging
+
+        logging.error(
+            "GitHub token exchange: status=%s body=%s redirect_uri=%s",
+            token_resp.status_code,
+            token_resp.text,
+            settings.GITHUB_REDIRECT_URI,
+        )
         # GitHub can return 200 with an error field (e.g. bad_verification_code)
         if "error" in token_data:
             raise HTTPException(

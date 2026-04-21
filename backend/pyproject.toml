@@ -38,6 +38,7 @@ dev = [
     "mutmut>=2.4.0,<3",
     "pytest-cov>=5.0.0",
     "pip-audit>=2.7.0",
+    "bandit>=1.7.0",
 ]
 
 [tool.ruff]

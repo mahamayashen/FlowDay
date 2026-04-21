@@ -12,7 +12,8 @@ function OAuthCallbackPage(): React.JSX.Element {
   const hasRunRef = useRef(false)
 
   useEffect(() => {
-    // Guard against React StrictMode double-invocation in dev
+    // Guard against React StrictMode double-invocation in dev — OAuth codes
+    // are single-use, so a second exchange attempt would always 400.
     if (hasRunRef.current) return
     hasRunRef.current = true
 
@@ -30,7 +31,7 @@ function OAuthCallbackPage(): React.JSX.Element {
     const urlState = searchParams.get('state')
     const storedState = sessionStorage.getItem('oauth_state')
     if (!urlState || !storedState || urlState !== storedState) {
-      setError('Invalid state parameter. Please try signing in again.')
+      setError('OAuth state validation failed. Please try signing in again.')
       return
     }
 
@@ -48,6 +49,7 @@ function OAuthCallbackPage(): React.JSX.Element {
         navigate('/', { replace: true })
       })
       .catch((err: unknown) => {
+        console.error('[OAuth] exchange failed', err)
         const message = err instanceof Error ? err.message : 'Authentication failed.'
         setError(message)
       })
