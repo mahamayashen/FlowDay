@@ -19,9 +19,5 @@
       "Bash(python3.12 -m mutmut run --paths-to-mutate=app/core/security.py)",
       "Bash(python3.12 -m mutmut run --paths-to-mutate=app/core/deps.py)"
     ]
-  },
-  "enabledMcpjsonServers": [
-    "github"
-  ],
-  "enableAllProjectMcpServers": true
+  }
 }

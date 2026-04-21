@@ -6,22 +6,43 @@ export const SCHEDULE_BLOCK_KEYS = {
   byDate: (date: string) => ['schedule-blocks', date] as const,
 }
 
+// Backend stores start_hour / end_hour as Decimal. Pydantic v2 serializes
+// Decimal as a JSON string (e.g. "9.5") to preserve precision, but the
+// frontend treats these as numbers for arithmetic (drag/resize math in
+// ScheduleBlockItem would otherwise do string concat — "9.0" + 0.25 = "9.00.25").
+// Coerce at the edge so downstream code can trust the types.
+interface RawScheduleBlock extends Omit<ScheduleBlock, 'start_hour' | 'end_hour'> {
+  start_hour: number | string
+  end_hour: number | string
+}
+
+function normalizeBlock(raw: RawScheduleBlock): ScheduleBlock {
+  return {
+    ...raw,
+    start_hour: typeof raw.start_hour === 'string' ? parseFloat(raw.start_hour) : raw.start_hour,
+    end_hour: typeof raw.end_hour === 'string' ? parseFloat(raw.end_hour) : raw.end_hour,
+  }
+}
+
 async function fetchScheduleBlocks(date: string): Promise<ScheduleBlock[]> {
   const res = await apiClient.get(`/schedule-blocks?date=${date}`)
   if (!res.ok) throw new Error('Failed to fetch schedule blocks')
-  return res.json() as Promise<ScheduleBlock[]>
+  const list = (await res.json()) as RawScheduleBlock[]
+  return list.map(normalizeBlock)
 }
 
 async function createScheduleBlock(data: ScheduleBlockCreate): Promise<ScheduleBlock> {
   const res = await apiClient.post('/schedule-blocks', data)
   if (!res.ok) throw new Error('Failed to create schedule block')
-  return res.json() as Promise<ScheduleBlock>
+  const raw = (await res.json()) as RawScheduleBlock
+  return normalizeBlock(raw)
 }
 
 async function updateScheduleBlock(blockId: string, data: ScheduleBlockUpdate): Promise<ScheduleBlock> {
   const res = await apiClient.put(`/schedule-blocks/${blockId}`, data)
   if (!res.ok) throw new Error('Failed to update schedule block')
-  return res.json() as Promise<ScheduleBlock>
+  const raw = (await res.json()) as RawScheduleBlock
+  return normalizeBlock(raw)
 }
 
 async function deleteScheduleBlock(blockId: string): Promise<void> {

@@ -1,41 +1,131 @@
 import React from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts'
 import type { WeeklyChartEntry } from '../types/analytics'
+import './WeeklyBarChart.css'
 
 interface WeeklyBarChartProps {
   data: WeeklyChartEntry[]
 }
 
+// Design tokens (kept as literals because recharts consumes strings synchronously)
+const COLOR_PLANNED = '#5478FF'
+const COLOR_ACTUAL = '#FFDE42'
+const COLOR_GRID = 'rgba(255, 255, 255, 0.06)'
+const COLOR_AXIS = 'rgba(255, 255, 255, 0.45)'
+
+interface TooltipPayload {
+  name?: string
+  value?: number | string
+  color?: string
+  dataKey?: string
+}
+
+interface TooltipProps {
+  active?: boolean
+  payload?: TooltipPayload[]
+  label?: string
+}
+
+function ChartTooltip({ active, payload, label }: TooltipProps): React.JSX.Element | null {
+  if (!active || !payload || payload.length === 0) return null
+  return (
+    <div className="weekly-tooltip">
+      <div className="weekly-tooltip-label">{label}</div>
+      {payload.map((entry) => (
+        <div key={entry.dataKey} className="weekly-tooltip-row">
+          <span className="weekly-tooltip-dot" style={{ background: entry.color }} />
+          <span className="weekly-tooltip-key">{entry.name}</span>
+          <span className="weekly-tooltip-value">
+            {typeof entry.value === 'number' ? `${entry.value}h` : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function WeeklyBarChart({ data }: WeeklyBarChartProps): React.JSX.Element {
   if (data.length === 0) {
-    return <p>No project data for this week</p>
+    return <p className="weekly-empty">No project data for this week</p>
   }
 
+  // Keep a visually-hidden project list for a11y + tests
   return (
-    <div data-testid="weekly-bar-chart">
-      <ul
-        aria-label="project list"
-        style={{
-          position: 'absolute',
-          width: 1,
-          height: 1,
-          overflow: 'hidden',
-          clip: 'rect(0,0,0,0)',
-          whiteSpace: 'nowrap',
-        }}
-      >
+    <div data-testid="weekly-bar-chart" className="weekly-bar-chart">
+      <ul aria-label="project list" className="weekly-a11y-list">
         {data.map((entry) => (
           <li key={entry.name}>{entry.name}</li>
         ))}
       </ul>
-      <div aria-hidden="true" style={{ width: '100%', height: 300 }}>
+
+      <div className="weekly-legend">
+        <span className="weekly-legend-item">
+          <span className="weekly-legend-dot weekly-legend-dot--planned" />
+          Planned
+        </span>
+        <span className="weekly-legend-item">
+          <span className="weekly-legend-dot weekly-legend-dot--actual" />
+          Actual
+        </span>
+      </div>
+
+      <div aria-hidden="true" className="weekly-chart-canvas">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart layout="vertical" data={data}>
-            <XAxis type="number" unit="h" />
-            <YAxis type="category" dataKey="name" width={100} />
-            <Tooltip formatter={(value) => (typeof value === 'number' ? `${value}h` : value)} />
-            <Bar dataKey="planned" name="Planned" fill="#f59e0b" />
-            <Bar dataKey="actual" name="Actual" fill="#22c55e" />
+          <BarChart
+            layout="vertical"
+            data={data}
+            margin={{ top: 6, right: 16, left: 0, bottom: 0 }}
+            barCategoryGap={14}
+            barGap={4}
+          >
+            <CartesianGrid
+              stroke={COLOR_GRID}
+              horizontal={false}
+              strokeDasharray="3 3"
+            />
+            <XAxis
+              type="number"
+              unit="h"
+              stroke={COLOR_AXIS}
+              tick={{ fill: COLOR_AXIS, fontSize: 10, fontFamily: 'var(--font-mono)' }}
+              tickLine={false}
+              axisLine={{ stroke: COLOR_GRID }}
+            />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={110}
+              stroke={COLOR_AXIS}
+              tick={{ fill: 'rgba(255,255,255,0.72)', fontSize: 11 }}
+              tickLine={false}
+              axisLine={{ stroke: COLOR_GRID }}
+            />
+            <Tooltip
+              content={<ChartTooltip />}
+              cursor={{ fill: 'rgba(84, 120, 255, 0.06)' }}
+            />
+            <Legend content={() => null} />
+            <Bar
+              dataKey="planned"
+              name="Planned"
+              fill={COLOR_PLANNED}
+              radius={[0, 4, 4, 0]}
+            />
+            <Bar
+              dataKey="actual"
+              name="Actual"
+              fill={COLOR_ACTUAL}
+              radius={[0, 4, 4, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>

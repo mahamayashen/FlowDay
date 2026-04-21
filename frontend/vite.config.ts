@@ -11,7 +11,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': {
+      // Backend exposes routes at the root (no /api prefix). Proxy every
+      // resource the SPA calls. Without these entries Vite falls back to
+      // serving index.html, which breaks JSON parsing in React Query.
+      '^/(api|projects|tasks|time-entries|schedule-blocks|analytics|weekly-reviews|sync|health|metrics)(/.*|\\?.*)?$': {
         target: 'http://localhost:5060',
         changeOrigin: true,
       },
@@ -19,40 +22,17 @@ export default defineConfig({
         target: 'http://localhost:5060',
         changeOrigin: true,
         bypass(req) {
-          // Let the frontend handle OAuth callback GET redirects from providers
-          // but proxy POST requests (code exchange) to the backend
-          if (req.method === 'GET' && req.url?.match(/^\/auth\/(google|github)\/callback/)) {
+          // OAuth providers redirect here via GET — let React Router render the
+          // callback page. POST /auth/<provider>/callback (code exchange) still
+          // proxies through to the backend. Whitelist providers so a typo in
+          // the URL doesn't silently become a client-side route.
+          if (
+            req.method === 'GET' &&
+            req.url?.match(/^\/auth\/(google|github)\/callback/)
+          ) {
             return req.url
           }
         },
-      },
-      '/projects': {
-        target: 'http://localhost:5060',
-        changeOrigin: true,
-      },
-      '/analytics': {
-        target: 'http://localhost:5060',
-        changeOrigin: true,
-      },
-      '/schedule-blocks': {
-        target: 'http://localhost:5060',
-        changeOrigin: true,
-      },
-      '/time-entries': {
-        target: 'http://localhost:5060',
-        changeOrigin: true,
-      },
-      '/sync': {
-        target: 'http://localhost:5060',
-        changeOrigin: true,
-      },
-      '/health': {
-        target: 'http://localhost:5060',
-        changeOrigin: true,
-      },
-      '/metrics': {
-        target: 'http://localhost:5060',
-        changeOrigin: true,
       },
     },
   },

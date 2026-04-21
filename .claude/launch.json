@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Frontend (Vite)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "Backend (FastAPI)",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd backend && conda run -n vibing uvicorn app.main:app --reload --port 5060"],
+      "port": 5060
+    },
+    {
+      "name": "Infrastructure (Docker)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "-f", "docker/docker-compose.yml", "up"],
+      "port": 5432
+    }
+  ]
+}
