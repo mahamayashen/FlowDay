@@ -80,6 +80,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PROTECTED=('.env' '.env.local' '.env.production' '.env.staging' 'secrets.json'); for p in \"${PROTECTED[@]}\"; do if [[ \"$CLAUDE_FILE_PATH\" == *\"$p\"* ]]; then echo \"BLOCKED: Cannot edit $p. Revert any changes to this file before finishing.\"; exit 2; fi; done; exit 0"
+          }
+        ]
+      }
     ]
   }
 }
