@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -56,6 +57,25 @@ class Settings(BaseSettings):
     # Monitoring (optional — silently disabled when absent)
     SENTRY_DSN: str | None = None
     PROMETHEUS_ENABLED: bool = True
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _coerce_asyncpg_scheme(cls, v: str) -> str:
+        """Rewrite `postgresql://` → `postgresql+asyncpg://`.
+
+        Managed Postgres providers (Railway, Heroku, Supabase, …) inject a
+        connection string with the bare `postgresql://` scheme, but our
+        SQLAlchemy engine is async and requires the `asyncpg` driver. Doing
+        this at config-load time means the rest of the codebase can stay
+        driver-agnostic and there's no env-var-rewriting step to remember
+        on every deploy.
+        """
+        if v.startswith("postgresql://"):
+            return "postgresql+asyncpg://" + v[len("postgresql://") :]
+        if v.startswith("postgres://"):
+            # Heroku-style shorthand, same fix
+            return "postgresql+asyncpg://" + v[len("postgres://") :]
+        return v
 
     @property
     def backend_cors_origins(self) -> list[str]:
