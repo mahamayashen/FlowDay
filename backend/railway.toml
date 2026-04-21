@@ -1,6 +1,10 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "backend/Dockerfile"
+# Paths are relative to the service's Root Directory (`backend`).
+# Set Root Directory = `backend` in Railway → Service → Settings → Source.
+# Otherwise Railway treats the repo root as the build context and the
+# Dockerfile's `COPY pyproject.toml ./` fails with "file not found".
+dockerfilePath = "Dockerfile"
 
 [deploy]
 # Apply pending migrations, then start the FastAPI app.
