@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
@@ -50,6 +51,18 @@ def create_app() -> FastAPI:
 
     configure_metrics(app, enabled=settings.PROMETHEUS_ENABLED)
     app.add_middleware(SentryBreadcrumbMiddleware)  # type: ignore[arg-type]
+
+    # Allow the Vercel-hosted frontend (and any other configured origin) to
+    # call the API from the browser. Empty list in dev = no cross-origin
+    # allowlist needed because Vite proxies through the same origin.
+    if settings.backend_cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.backend_cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     app.include_router(health_router)
     app.include_router(auth_router)
