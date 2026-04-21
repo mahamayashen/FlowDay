@@ -1,6 +1,13 @@
 import { useAuthStore } from '../stores/authStore'
 import type { TokenPair } from '../types/auth'
 
+const API_BASE: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
+
+export function buildUrl(path: string): string {
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `${API_BASE}${path}`
+}
+
 let refreshPromise: Promise<TokenPair | null> | null = null
 
 async function attemptRefresh(): Promise<TokenPair | null> {
@@ -10,7 +17,7 @@ async function attemptRefresh(): Promise<TokenPair | null> {
     const tokens = useAuthStore.getState().tokens
     if (!tokens) return null
 
-    const res = await fetch('/auth/refresh', {
+    const res = await fetch(buildUrl('/auth/refresh'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: tokens.refresh_token }),
@@ -51,14 +58,14 @@ async function request(
     init.body = JSON.stringify(body)
   }
 
-  const res = await fetch(url, init)
+  const res = await fetch(buildUrl(url), init)
 
   if (res.status === 401 && tokens) {
     const newTokens = await attemptRefresh()
     if (!newTokens) return res
 
     // Retry with new access token
-    return fetch(url, {
+    return fetch(buildUrl(url), {
       ...init,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${newTokens.access_token}` },
     })
