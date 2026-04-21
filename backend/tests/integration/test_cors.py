@@ -8,17 +8,20 @@ the module-level `app` singleton.
 from __future__ import annotations
 
 import importlib
-from collections.abc import AsyncGenerator
+from collections.abc import Callable, Generator
 
 import pytest
+from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 
 @pytest.fixture
-def rebuild_app_with_cors(monkeypatch: pytest.MonkeyPatch):
+def rebuild_app_with_cors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[Callable[[str], FastAPI], None, None]:
     """Return a factory that rebuilds the app with a specific CORS allowlist."""
 
-    def _factory(origins: str):
+    def _factory(origins: str) -> FastAPI:
         # Reload config module so `settings = Settings()` re-reads env.
         monkeypatch.setenv("BACKEND_CORS_ORIGINS", origins)
         import app.core.config as config_module
@@ -40,16 +43,9 @@ def rebuild_app_with_cors(monkeypatch: pytest.MonkeyPatch):
     importlib.reload(main_module)
 
 
-async def _client(app) -> AsyncGenerator[AsyncClient, None]:
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
-        yield ac
-
-
 @pytest.mark.asyncio
 async def test_preflight_from_allowed_origin_gets_cors_headers(
-    rebuild_app_with_cors,
+    rebuild_app_with_cors: Callable[[str], FastAPI],
 ) -> None:
     app = rebuild_app_with_cors("https://flow-day.vercel.app")
 
@@ -74,7 +70,7 @@ async def test_preflight_from_allowed_origin_gets_cors_headers(
 
 @pytest.mark.asyncio
 async def test_preflight_from_disallowed_origin_gets_no_cors_headers(
-    rebuild_app_with_cors,
+    rebuild_app_with_cors: Callable[[str], FastAPI],
 ) -> None:
     app = rebuild_app_with_cors("https://flow-day.vercel.app")
 
@@ -98,7 +94,7 @@ async def test_preflight_from_disallowed_origin_gets_no_cors_headers(
 
 @pytest.mark.asyncio
 async def test_no_cors_middleware_when_origins_empty(
-    rebuild_app_with_cors,
+    rebuild_app_with_cors: Callable[[str], FastAPI],
 ) -> None:
     """Default prod posture: empty allowlist → no CORS middleware at all."""
     app = rebuild_app_with_cors("")
