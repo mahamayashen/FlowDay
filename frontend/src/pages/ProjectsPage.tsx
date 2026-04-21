@@ -1,27 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, FolderOpen, Clock, Flag } from '@phosphor-icons/react'
-import { mockProjects, mockTasks } from '../mocks/data'
+import { useProjects } from '../api/projects'
+import { useProjectTasks } from '../api/tasks'
+import TaskCard from '../components/TaskCard'
 import type { Project } from '../types/project'
-import type { Task, TaskPriority, TaskStatus } from '../types/task'
 import './ProjectsPage.css'
 
-const PRIORITY_COLORS: Record<TaskPriority, string> = {
-  low: 'var(--text-3)',
-  medium: 'var(--blue)',
-  high: 'var(--yellow)',
-  urgent: 'var(--danger)',
-}
-
-const STATUS_LABELS: Record<TaskStatus, string> = {
-  todo: 'TO DO',
-  in_progress: 'IN PROGRESS',
-  done: 'DONE',
-}
-
 function ProjectsPage(): React.JSX.Element {
-  const [selectedId, setSelectedId] = useState<string>(mockProjects[0]?.id ?? '')
-  const selected: Project | undefined = mockProjects.find((p) => p.id === selectedId)
-  const tasks: Task[] = mockTasks.filter((t) => t.project_id === selectedId)
+  const { data: projects = [], isLoading: projectsLoading } = useProjects()
+  const [selectedId, setSelectedId] = useState<string>('')
+
+  // Select the first project once the list lands.
+  useEffect(() => {
+    if (!selectedId && projects.length > 0) {
+      setSelectedId(projects[0].id)
+    }
+  }, [projects, selectedId])
+
+  const { data: tasks = [], isLoading: tasksLoading } = useProjectTasks(selectedId)
+  const selected: Project | undefined = projects.find((p) => p.id === selectedId)
+
+  const totalEstimateHours =
+    tasks.reduce((s, t) => s + (t.estimate_minutes ?? 0), 0) / 60
+  const urgentCount = tasks.filter(
+    (t) => t.priority === 'urgent' || t.priority === 'high',
+  ).length
 
   return (
     <main className="projects-page" data-testid="page-projects">
@@ -33,31 +36,39 @@ function ProjectsPage(): React.JSX.Element {
           </button>
         </div>
 
-        <ul className="projects-list">
-          {mockProjects.map((p) => {
-            const taskCount = mockTasks.filter((t) => t.project_id === p.id).length
-            const active = p.id === selectedId
-            return (
-              <li key={p.id}>
-                <button
-                  className={`project-row${active ? ' project-row--active' : ''}`}
-                  onClick={() => setSelectedId(p.id)}
-                >
-                  <span className="project-row-dot" style={{ background: p.color }} />
-                  <span className="project-row-info">
-                    <span className="project-row-name">{p.name}</span>
-                    <span className="project-row-meta">
-                      {p.client_name ?? 'Personal'} · {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
+        {projectsLoading ? (
+          <p className="projects-loading">Loading…</p>
+        ) : projects.length === 0 ? (
+          <p className="projects-empty">
+            No projects yet. Create one to get started.
+          </p>
+        ) : (
+          <ul className="projects-list">
+            {projects.map((p) => {
+              const active = p.id === selectedId
+              return (
+                <li key={p.id}>
+                  <button
+                    className={`project-row${active ? ' project-row--active' : ''}`}
+                    onClick={() => setSelectedId(p.id)}
+                    data-testid="project-row"
+                  >
+                    <span className="project-row-dot" style={{ background: p.color }} />
+                    <span className="project-row-info">
+                      <span className="project-row-name">{p.name}</span>
+                      <span className="project-row-meta">
+                        {p.client_name ?? 'Personal'}
+                      </span>
                     </span>
-                  </span>
-                  {p.hourly_rate && (
-                    <span className="project-row-rate">${p.hourly_rate}/hr</span>
-                  )}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+                    {p.hourly_rate && (
+                      <span className="project-row-rate">${p.hourly_rate}/hr</span>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </aside>
 
       <section className="projects-main">
@@ -65,9 +76,14 @@ function ProjectsPage(): React.JSX.Element {
           <>
             <header className="projects-main-head">
               <div className="projects-main-title-row">
-                <span className="projects-color-swatch" style={{ background: selected.color }} />
+                <span
+                  className="projects-color-swatch"
+                  style={{ background: selected.color }}
+                />
                 <div>
-                  <p className="projects-eyebrow">{selected.client_name ?? 'PERSONAL'}</p>
+                  <p className="projects-eyebrow">
+                    {selected.client_name ?? 'PERSONAL'}
+                  </p>
                   <h1 className="projects-main-title">{selected.name}</h1>
                 </div>
               </div>
@@ -87,56 +103,40 @@ function ProjectsPage(): React.JSX.Element {
                 <Clock size={14} color="var(--text-3)" />
                 <span className="project-stat-label">Est</span>
                 <span className="project-stat-value">
-                  {(tasks.reduce((s, t) => s + (t.estimate_minutes ?? 0), 0) / 60).toFixed(1)}h
+                  {totalEstimateHours.toFixed(1)}h
                 </span>
               </div>
               <div className="project-stat">
                 <Flag size={14} color="var(--text-3)" />
                 <span className="project-stat-label">Urgent</span>
-                <span className="project-stat-value">
-                  {tasks.filter((t) => t.priority === 'urgent' || t.priority === 'high').length}
-                </span>
+                <span className="project-stat-value">{urgentCount}</span>
               </div>
             </div>
 
-            <ul className="tasks-list">
-              {tasks.length === 0 ? (
-                <li className="tasks-empty">No tasks yet. Click "New task" to add one.</li>
-              ) : (
-                tasks.map((task) => (
-                  <li key={task.id} className="task-card-v2">
-                    <span
-                      className="task-priority-bar"
-                      style={{ background: PRIORITY_COLORS[task.priority] }}
-                    />
-                    <div className="task-card-v2-main">
-                      <div className="task-card-v2-head">
-                        <span
-                          className={`task-status task-status--${task.status}`}
-                        >
-                          {STATUS_LABELS[task.status]}
-                        </span>
-                        {task.due_date && (
-                          <span className="task-due">due {task.due_date.slice(5)}</span>
-                        )}
-                      </div>
-                      <h3 className="task-card-v2-title">{task.title}</h3>
-                      {task.description && (
-                        <p className="task-card-v2-desc">{task.description}</p>
-                      )}
-                    </div>
-                    <div className="task-card-v2-aside">
-                      {task.estimate_minutes && (
-                        <span className="task-estimate">
-                          {(task.estimate_minutes / 60).toFixed(1)}h
-                        </span>
-                      )}
-                    </div>
+            {tasksLoading ? (
+              <p className="projects-loading">Loading tasks…</p>
+            ) : (
+              <ul className="tasks-list">
+                {tasks.length === 0 ? (
+                  <li className="tasks-empty">
+                    No tasks yet. Click "New task" to add one.
                   </li>
-                ))
-              )}
-            </ul>
+                ) : (
+                  tasks.map((task) => (
+                    <li key={task.id} className="tasks-list-item">
+                      <TaskCard task={task} />
+                    </li>
+                  ))
+                )}
+              </ul>
+            )}
           </>
+        )}
+
+        {!selected && !projectsLoading && (
+          <div className="projects-main-empty">
+            Select a project from the sidebar.
+          </div>
         )}
       </section>
     </main>

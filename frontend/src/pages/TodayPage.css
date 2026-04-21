@@ -396,6 +396,30 @@
   border-color: var(--blue);
 }
 
+/* Empty timeline */
+.today-empty-timeline {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-3);
+  font-size: 14px;
+  text-align: center;
+  padding: 40px;
+}
+
+.today-empty-timeline a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+.today-empty-timeline a:hover {
+  color: var(--yellow);
+}
+
 /* Responsive */
 @media (max-width: 960px) {
   .today-body {

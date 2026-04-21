@@ -333,3 +333,28 @@
   border-radius: var(--r-xs);
   font-weight: 500;
 }
+
+/* Real-API additions */
+.projects-loading,
+.projects-empty {
+  padding: 16px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.projects-main-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-3);
+  font-size: 14px;
+}
+
+.tasks-list-item {
+  list-style: none;
+}
+
+.tasks-list-item + .tasks-list-item {
+  margin-top: 8px;
+}

@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
-import { CaretLeft, CaretRight, Sparkle, ArrowClockwise } from '@phosphor-icons/react'
+import { Link } from 'react-router-dom'
+import { CaretLeft, CaretRight, Sparkle } from '@phosphor-icons/react'
 import { usePlannedVsActual, useWeeklyStats } from '../api/analytics'
 import DailyComparisonView from '../components/DailyComparisonView'
 import WeeklyBarChart from '../components/WeeklyBarChart'
 import { getWeekStart, toWeeklyChartData, formatLocalDate } from '../utils/reviewUtils'
-import { mockDailyNarrative } from '../mocks/data'
 import './ReviewPage.css'
 
 function addDays(date: string, days: number): string {
@@ -94,20 +94,22 @@ function ReviewPage(): React.JSX.Element {
 
       {/* Body */}
       <div className="review-body">
-        {/* AI daily summary — always visible at the top */}
+        {/* AI summary pointer — FlowDay's AI review is weekly, not daily */}
         <section className="review-ai-card" data-testid="review-ai-summary">
           <div className="review-ai-head">
             <div className="review-ai-title-group">
               <Sparkle size={16} color="var(--cyan)" weight="fill" />
-              <h2 className="review-ai-title">AI daily summary</h2>
-              <span className="review-ai-tag">Narrative Writer · Judge 89/100</span>
+              <h2 className="review-ai-title">AI review</h2>
+              <span className="review-ai-tag">Weekly narrative + Judge scores</span>
             </div>
-            <button className="review-ai-regen" type="button">
-              <ArrowClockwise size={12} />
-              Regenerate
-            </button>
           </div>
-          <p className="review-ai-body">{mockDailyNarrative}</p>
+          <p className="review-ai-body">
+            FlowDay's AI digests your whole week at once — patterns, drift, estimation
+            accuracy — instead of a daily rehash. Head to the weekly view to generate one.
+          </p>
+          <Link to="/weekly" className="review-ai-link">
+            Open weekly review →
+          </Link>
         </section>
 
         {isLoading && (

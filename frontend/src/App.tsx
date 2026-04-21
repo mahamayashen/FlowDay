@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import TodayPage from './pages/TodayPage'
@@ -8,11 +8,8 @@ import ReviewPage from './pages/ReviewPage'
 import WeeklyReviewPage from './pages/WeeklyReviewPage'
 import OAuthCallbackPage from './pages/OAuthCallbackPage'
 import NavBar from './components/NavBar'
+import { useAuthStore } from './stores/authStore'
 import './index.css'
-
-// Mock-shell mode: skip auth guard so the redesign is immediately viewable.
-// Flip to `false` (or delete this flag) when reconnecting real API.
-const MOCK_SHELL = true
 
 function AppShell({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
@@ -23,36 +20,31 @@ function AppShell({ children }: { children: React.ReactNode }): React.JSX.Elemen
   )
 }
 
+function RequireAuth({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <AppShell>{children}</AppShell>
+}
+
 function App(): React.JSX.Element {
-  // Mock shell: every route renders with the nav shell, no auth check.
-  if (MOCK_SHELL) {
-    return (
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/auth/:provider/callback" element={<OAuthCallbackPage />} />
+  const hydrate = useAuthStore((s) => s.hydrate)
 
-        <Route path="/"         element={<AppShell><TodayPage /></AppShell>} />
-        <Route path="/plan"     element={<AppShell><PlannerPage /></AppShell>} />
-        <Route path="/projects" element={<AppShell><ProjectsPage /></AppShell>} />
-        <Route path="/review"   element={<AppShell><ReviewPage /></AppShell>} />
-        <Route path="/weekly"   element={<AppShell><WeeklyReviewPage /></AppShell>} />
+  // Rehydrate tokens from localStorage on mount so a page reload doesn't
+  // kick the user back to /login while they still have a valid refresh token.
+  useEffect(() => {
+    hydrate()
+  }, [hydrate])
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    )
-  }
-
-  // Real-auth mode (kept for reference; toggle MOCK_SHELL to re-enable)
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/:provider/callback" element={<OAuthCallbackPage />} />
 
-      <Route path="/"         element={<AppShell><TodayPage /></AppShell>} />
-      <Route path="/plan"     element={<AppShell><PlannerPage /></AppShell>} />
-      <Route path="/projects" element={<AppShell><ProjectsPage /></AppShell>} />
-      <Route path="/review"   element={<AppShell><ReviewPage /></AppShell>} />
-      <Route path="/weekly"   element={<AppShell><WeeklyReviewPage /></AppShell>} />
+      <Route path="/"         element={<RequireAuth><TodayPage /></RequireAuth>} />
+      <Route path="/plan"     element={<RequireAuth><PlannerPage /></RequireAuth>} />
+      <Route path="/projects" element={<RequireAuth><ProjectsPage /></RequireAuth>} />
+      <Route path="/review"   element={<RequireAuth><ReviewPage /></RequireAuth>} />
+      <Route path="/weekly"   element={<RequireAuth><WeeklyReviewPage /></RequireAuth>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

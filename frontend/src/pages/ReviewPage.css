@@ -169,6 +169,22 @@
   background: var(--cyan-dim);
 }
 
+.review-ai-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+
+.review-ai-link:hover {
+  color: var(--yellow);
+}
+
 .review-ai-body {
   font-size: 13px;
   line-height: 1.7;
