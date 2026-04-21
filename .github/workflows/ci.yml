@@ -176,10 +176,6 @@ jobs:
       group: vercel-preview-${{ github.ref }}
       cancel-in-progress: true
 
-    defaults:
-      run:
-        working-directory: frontend
-
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -193,6 +189,10 @@ jobs:
         with:
           node-version: "20"
 
+      # Vercel CLI commands run from the repo root. The project on Vercel's
+      # side is configured with Root Directory = frontend, so `vercel build`
+      # enters frontend/ automatically. Running from frontend/ instead causes
+      # a double-root confusion and breaks with "spawn sh ENOENT".
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
@@ -228,10 +228,6 @@ jobs:
     concurrency:
       group: vercel-prod
       cancel-in-progress: false
-
-    defaults:
-      run:
-        working-directory: frontend
 
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
