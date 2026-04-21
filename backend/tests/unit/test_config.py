@@ -29,9 +29,7 @@ class TestBackendCorsOrigins:
 
     def test_whitespace_around_origins_is_trimmed(self) -> None:
         s = Settings(
-            BACKEND_CORS_ORIGINS=(
-                "  https://a.com  ,  https://b.com  ,https://c.com"
-            )
+            BACKEND_CORS_ORIGINS=("  https://a.com  ,  https://b.com  ,https://c.com")
         )
         assert s.backend_cors_origins == [
             "https://a.com",
@@ -49,4 +47,3 @@ def test_default_backend_cors_origins_is_empty() -> None:
     """With no env var set, production is locked down by default."""
     s = Settings()
     assert s.backend_cors_origins == []
-

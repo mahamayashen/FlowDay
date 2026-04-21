@@ -47,9 +47,25 @@ class Settings(BaseSettings):
     # Judge agent — minimum acceptable score per dimension (1–10); triggers retry below
     JUDGE_SCORE_THRESHOLD: int = 6
 
+    # CORS — comma-separated list of origins allowed to call the API from
+    # the browser. Empty by default so production is locked down unless
+    # explicitly configured. In dev it's unnecessary because Vite proxies
+    # all API calls through the same origin.
+    BACKEND_CORS_ORIGINS: str = ""
+
     # Monitoring (optional — silently disabled when absent)
     SENTRY_DSN: str | None = None
     PROMETHEUS_ENABLED: bool = True
+
+    @property
+    def backend_cors_origins(self) -> list[str]:
+        """Parse BACKEND_CORS_ORIGINS into a whitespace-trimmed list,
+        dropping empty items."""
+        return [
+            origin.strip()
+            for origin in self.BACKEND_CORS_ORIGINS.split(",")
+            if origin.strip()
+        ]
 
 
 settings = Settings()
