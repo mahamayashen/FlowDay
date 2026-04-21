@@ -68,15 +68,15 @@ def _clear_overrides() -> None:
 
 
 # ---------------------------------------------------------------------------
-# POST /weekly-reviews
+# POST /weekly-reviews/generate
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_post_weekly_review_triggers_generation_and_returns_response(
+async def test_post_generate_triggers_generation_and_returns_response(
     client: AsyncClient,
 ) -> None:
-    """POST /weekly-reviews returns 200 with review fields populated."""
+    """POST /weekly-reviews/generate returns 200 with review fields populated."""
     _setup_overrides()
     review = _make_review()
     try:
@@ -93,7 +93,7 @@ async def test_post_weekly_review_triggers_generation_and_returns_response(
             ),
         ):
             resp = await client.post(
-                "/weekly-reviews", params={"week_start": "2026-04-13"}
+                "/weekly-reviews/generate", params={"week_start": "2026-04-13"}
             )
     finally:
         _clear_overrides()
@@ -106,25 +106,27 @@ async def test_post_weekly_review_triggers_generation_and_returns_response(
 
 
 @pytest.mark.asyncio
-async def test_post_weekly_review_requires_auth(client: AsyncClient) -> None:
-    """POST /weekly-reviews without auth returns 401."""
+async def test_post_generate_requires_auth(client: AsyncClient) -> None:
+    """POST /weekly-reviews/generate without auth returns 401."""
 
     async def override_db() -> AsyncMock:  # type: ignore[misc]
         yield AsyncMock()
 
     app.dependency_overrides[get_db] = override_db
     try:
-        resp = await client.post("/weekly-reviews", params={"week_start": "2026-04-13"})
+        resp = await client.post(
+            "/weekly-reviews/generate", params={"week_start": "2026-04-13"}
+        )
     finally:
         app.dependency_overrides.clear()
     assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
-async def test_post_weekly_review_accepts_week_start_query_param(
+async def test_post_generate_accepts_week_start_query_param(
     client: AsyncClient,
 ) -> None:
-    """POST /weekly-reviews passes the correct week_start date to the service."""
+    """POST /weekly-reviews/generate passes week_start to the service."""
     _setup_overrides()
     review = _make_review()
     captured: list[date] = []
@@ -145,7 +147,9 @@ async def test_post_weekly_review_accepts_week_start_query_param(
                 return_value=review,
             ),
         ):
-            await client.post("/weekly-reviews", params={"week_start": "2026-04-15"})
+            await client.post(
+                "/weekly-reviews/generate", params={"week_start": "2026-04-15"}
+            )
     finally:
         _clear_overrides()
 
@@ -154,42 +158,106 @@ async def test_post_weekly_review_accepts_week_start_query_param(
 
 
 # ---------------------------------------------------------------------------
-# GET /weekly-reviews/{week_start}
+# GET /weekly-reviews (list)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_get_weekly_review_returns_stored_review(client: AsyncClient) -> None:
-    """GET /weekly-reviews/{week_start} returns 200 with the stored review."""
+async def test_list_weekly_reviews_returns_user_reviews(client: AsyncClient) -> None:
+    """GET /weekly-reviews returns a list of the current user's reviews."""
     _setup_overrides()
-    review = _make_review()
+    reviews = [_make_review()]
     try:
         with patch(
-            "app.api.weekly_reviews.get_review",
+            "app.api.weekly_reviews.list_reviews",
             new_callable=AsyncMock,
-            return_value=review,
+            return_value=reviews,
         ):
-            resp = await client.get("/weekly-reviews/2026-04-13")
+            resp = await client.get("/weekly-reviews")
     finally:
         _clear_overrides()
 
     assert resp.status_code == 200
-    assert resp.json()["week_start"] == "2026-04-13"
+    data = resp.json()
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["id"] == str(REVIEW_ID)
 
 
 @pytest.mark.asyncio
-async def test_get_weekly_review_returns_404_when_not_found(
-    client: AsyncClient,
-) -> None:
-    """GET /weekly-reviews/{week_start} returns 404 when no review exists."""
+async def test_list_weekly_reviews_returns_empty_when_none(client: AsyncClient) -> None:
+    """GET /weekly-reviews returns [] when the user has no reviews."""
     _setup_overrides()
     try:
         with patch(
-            "app.api.weekly_reviews.get_review",
+            "app.api.weekly_reviews.list_reviews",
+            new_callable=AsyncMock,
+            return_value=[],
+        ):
+            resp = await client.get("/weekly-reviews")
+    finally:
+        _clear_overrides()
+
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+@pytest.mark.asyncio
+async def test_list_weekly_reviews_requires_auth(client: AsyncClient) -> None:
+    """GET /weekly-reviews without auth returns 401."""
+
+    async def override_db() -> AsyncMock:  # type: ignore[misc]
+        yield AsyncMock()
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        resp = await client.get("/weekly-reviews")
+    finally:
+        app.dependency_overrides.clear()
+    assert resp.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# GET /weekly-reviews/{review_id}
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_weekly_review_by_id_returns_stored_review(
+    client: AsyncClient,
+) -> None:
+    """GET /weekly-reviews/{id} returns 200 with the stored review."""
+    _setup_overrides()
+    review = _make_review()
+    try:
+        with patch(
+            "app.api.weekly_reviews.get_review_by_id",
+            new_callable=AsyncMock,
+            return_value=review,
+        ):
+            resp = await client.get(f"/weekly-reviews/{REVIEW_ID}")
+    finally:
+        _clear_overrides()
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == str(REVIEW_ID)
+    assert data["scores_json"]["overall_score"] == 8
+
+
+@pytest.mark.asyncio
+async def test_get_weekly_review_by_id_returns_404_when_not_found(
+    client: AsyncClient,
+) -> None:
+    """GET /weekly-reviews/{id} returns 404 when no review exists."""
+    _setup_overrides()
+    try:
+        with patch(
+            "app.api.weekly_reviews.get_review_by_id",
             new_callable=AsyncMock,
             return_value=None,
         ):
-            resp = await client.get("/weekly-reviews/2026-04-13")
+            resp = await client.get(f"/weekly-reviews/{REVIEW_ID}")
     finally:
         _clear_overrides()
 
@@ -197,15 +265,15 @@ async def test_get_weekly_review_returns_404_when_not_found(
 
 
 @pytest.mark.asyncio
-async def test_get_weekly_review_requires_auth(client: AsyncClient) -> None:
-    """GET /weekly-reviews/{week_start} without auth returns 401."""
+async def test_get_weekly_review_by_id_requires_auth(client: AsyncClient) -> None:
+    """GET /weekly-reviews/{id} without auth returns 401."""
 
     async def override_db() -> AsyncMock:  # type: ignore[misc]
         yield AsyncMock()
 
     app.dependency_overrides[get_db] = override_db
     try:
-        resp = await client.get("/weekly-reviews/2026-04-13")
+        resp = await client.get(f"/weekly-reviews/{REVIEW_ID}")
     finally:
         app.dependency_overrides.clear()
     assert resp.status_code == 401
