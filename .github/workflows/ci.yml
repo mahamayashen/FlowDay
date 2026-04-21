@@ -234,6 +234,10 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: [backend-tests, frontend-tests, e2e-tests, security-gates]
     runs-on: ubuntu-latest
+    # sticky-pull-request-comment needs write access to post/update the URL
+    permissions:
+      contents: read
+      pull-requests: write
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
