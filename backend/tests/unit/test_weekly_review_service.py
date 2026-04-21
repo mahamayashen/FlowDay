@@ -555,3 +555,150 @@ async def test_generate_review_calls_run_group_d() -> None:
     assert judge_called, "run_group_d was not called"
     assert result.scores_json is not None
     assert result.scores_json["overall_score"] == 8
+
+
+# ---------------------------------------------------------------------------
+# Cycle — per-stage observability (latency + Sentry breadcrumbs)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_generate_review_records_per_stage_latency() -> None:
+    """agent_metadata_json.stages must include latency_ms for each pipeline stage."""
+    db = MagicMock()
+    db.flush = AsyncMock()
+    review = _make_review()
+
+    with (
+        patch(
+            "app.services.weekly_review_service.run_group_a",
+            new_callable=AsyncMock,
+        ) as mock_a,
+        patch(
+            "app.services.weekly_review_service.run_group_b",
+            new_callable=AsyncMock,
+        ) as mock_b,
+        patch(
+            "app.services.weekly_review_service.run_group_c",
+            new_callable=AsyncMock,
+        ) as mock_c,
+        patch(
+            "app.services.weekly_review_service.run_group_d",
+            new_callable=AsyncMock,
+        ) as mock_d,
+    ):
+        from app.agents.schemas import (
+            GroupAResult,
+            JudgeResult,
+            NarrativeWriterResult,
+            PatternDetectorResult,
+        )
+
+        mock_a.return_value = GroupAResult()
+        mock_b.return_value = PatternDetectorResult(patterns=[], summary="ok")
+        mock_c.return_value = NarrativeWriterResult(
+            executive_summary="s",
+            time_analysis="t",
+            productivity_patterns="p",
+            areas_of_concern="a",
+        )
+        mock_d.return_value = JudgeResult(
+            actionability_score=8,
+            accuracy_score=9,
+            coherence_score=7,
+            overall_score=8,
+            feedback="good",
+        )
+        result = await generate_review(db, review, date(2026, 4, 13))
+
+    meta = result.agent_metadata_json
+    assert meta is not None
+    stages = meta.get("stages")
+    assert stages is not None, "agent_metadata_json must include a 'stages' mapping"
+    for name in ("group_a", "group_b", "group_c", "group_d"):
+        assert name in stages, f"missing stage entry for {name}"
+        assert "latency_ms" in stages[name], f"{name} missing latency_ms"
+        assert isinstance(stages[name]["latency_ms"], int | float)
+        assert stages[name]["latency_ms"] >= 0
+
+
+@pytest.mark.asyncio
+async def test_generate_review_emits_sentry_breadcrumb_per_stage() -> None:
+    """Each pipeline stage must emit a Sentry breadcrumb tagged with its name."""
+    db = MagicMock()
+    db.flush = AsyncMock()
+    review = _make_review()
+
+    with (
+        patch(
+            "app.services.weekly_review_service.run_group_a",
+            new_callable=AsyncMock,
+        ) as mock_a,
+        patch(
+            "app.services.weekly_review_service.run_group_b",
+            new_callable=AsyncMock,
+        ) as mock_b,
+        patch(
+            "app.services.weekly_review_service.run_group_c",
+            new_callable=AsyncMock,
+        ) as mock_c,
+        patch(
+            "app.services.weekly_review_service.run_group_d",
+            new_callable=AsyncMock,
+        ) as mock_d,
+        patch(
+            "app.services.weekly_review_service.sentry_sdk.add_breadcrumb"
+        ) as mock_crumb,
+    ):
+        from app.agents.schemas import (
+            GroupAResult,
+            JudgeResult,
+            NarrativeWriterResult,
+            PatternDetectorResult,
+        )
+
+        mock_a.return_value = GroupAResult()
+        mock_b.return_value = PatternDetectorResult(patterns=[], summary="ok")
+        mock_c.return_value = NarrativeWriterResult(
+            executive_summary="s",
+            time_analysis="t",
+            productivity_patterns="p",
+            areas_of_concern="a",
+        )
+        mock_d.return_value = JudgeResult(
+            actionability_score=8,
+            accuracy_score=9,
+            coherence_score=7,
+            overall_score=8,
+            feedback="good",
+        )
+        await generate_review(db, review, date(2026, 4, 13))
+
+    messages = [c.kwargs.get("message", "") for c in mock_crumb.call_args_list]
+    joined = " | ".join(messages)
+    for name in ("group_a", "group_b", "group_c", "group_d"):
+        assert name in joined, f"no breadcrumb emitted for {name} (got: {joined!r})"
+
+
+@pytest.mark.asyncio
+async def test_generate_review_emits_failed_breadcrumb_on_exception() -> None:
+    """On pipeline failure a breadcrumb with level=error must be emitted."""
+    db = MagicMock()
+    db.flush = AsyncMock()
+    review = _make_review()
+
+    with (
+        patch(
+            "app.services.weekly_review_service.run_group_a",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("boom"),
+        ),
+        patch(
+            "app.services.weekly_review_service.sentry_sdk.add_breadcrumb"
+        ) as mock_crumb,
+    ):
+        with pytest.raises(RuntimeError):
+            await generate_review(db, review, date(2026, 4, 13))
+
+    levels = [c.kwargs.get("level") for c in mock_crumb.call_args_list]
+    assert "error" in levels, f"expected an error-level breadcrumb, got {levels!r}"
