@@ -2,14 +2,50 @@
 
 from __future__ import annotations
 
+import time
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import date, timedelta
 
+import sentry_sdk
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.orchestrator import run_group_a, run_group_b, run_group_c, run_group_d
 from app.models.weekly_review import ReviewStatus, WeeklyReview
+
+
+async def _run_stage[T](
+    name: str,
+    stages: dict[str, dict[str, float]],
+    coro_factory: Callable[[], Awaitable[T]],
+) -> T:
+    """Run one pipeline stage, recording latency_ms and emitting a breadcrumb."""
+    sentry_sdk.add_breadcrumb(
+        category="weekly_review.pipeline",
+        message=f"{name} start",
+        level="info",
+    )
+    start = time.perf_counter()
+    try:
+        result = await coro_factory()
+    except Exception as exc:
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        stages[name] = {"latency_ms": elapsed_ms}
+        sentry_sdk.add_breadcrumb(
+            category="weekly_review.pipeline",
+            message=f"{name} failed: {exc}",
+            level="error",
+        )
+        raise
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    stages[name] = {"latency_ms": elapsed_ms}
+    sentry_sdk.add_breadcrumb(
+        category="weekly_review.pipeline",
+        message=f"{name} complete in {elapsed_ms:.1f}ms",
+        level="info",
+    )
+    return result
 
 
 def _align_to_monday(d: date) -> date:
@@ -132,24 +168,44 @@ async def generate_review(
     review.status = ReviewStatus.GENERATING
     await db.flush()
 
+    stages: dict[str, dict[str, float]] = {}
+
     try:
-        group_a_result = await run_group_a(db, review.user_id, analysis_date)
-        pattern_result = await run_group_b(
-            group_a_result, review.user_id, analysis_date
+        group_a_result = await _run_stage(
+            "group_a",
+            stages,
+            lambda: run_group_a(db, review.user_id, analysis_date),
         )
-        narrative_result = await run_group_c(
-            group_a_result, pattern_result, review.user_id, analysis_date
+        pattern_result = await _run_stage(
+            "group_b",
+            stages,
+            lambda: run_group_b(group_a_result, review.user_id, analysis_date),
         )
-        judge_result = await run_group_d(
-            db,
-            group_a_result,
-            pattern_result,
-            narrative_result,
-            review.user_id,
-            analysis_date,
+        narrative_result = await _run_stage(
+            "group_c",
+            stages,
+            lambda: run_group_c(
+                group_a_result, pattern_result, review.user_id, analysis_date
+            ),
+        )
+        judge_result = await _run_stage(
+            "group_d",
+            stages,
+            lambda: run_group_d(
+                db,
+                group_a_result,
+                pattern_result,
+                narrative_result,
+                review.user_id,
+                analysis_date,
+            ),
         )
     except Exception:
         review.status = ReviewStatus.FAILED
+        review.agent_metadata_json = {
+            "analysis_date": analysis_date.isoformat(),
+            "stages": stages,
+        }
         await db.flush()
         raise
 
@@ -166,6 +222,7 @@ async def generate_review(
         "patterns_detected": len(pattern_result.patterns),
         "group_a_errors": group_a_result.errors,
         "judge_scored": judge_result is not None,
+        "stages": stages,
     }
     review.status = ReviewStatus.COMPLETE
     await db.flush()
