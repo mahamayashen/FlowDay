@@ -2,6 +2,8 @@
 skips:
   # B101: assert used — acceptable in test files (bandit auto-excludes tests/)
   - B101
+  # B105: false positive on API endpoint URL constants (e.g. GOOGLE_TOKEN_URL)
+  - B105
 
 exclude_dirs:
   - tests
