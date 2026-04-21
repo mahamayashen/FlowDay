@@ -1,0 +1,30 @@
+# FlowDay code owners
+#
+# GitHub auto-requests review from the matched owners when a PR touches
+# these paths. Last matching pattern wins — put more specific rules below
+# broader ones.
+#
+# Reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# Default — every path needs review from one of the listed owners.
+*                           @mahamayashen @EvanjyChen
+
+# Infra & CI — one owner per change is enough, changes here are fast-moving.
+/.github/                   @mahamayashen
+/docker/                    @mahamayashen
+/backend/alembic/           @mahamayashen @EvanjyChen
+
+# Backend core: routes, services, schemas, models.
+/backend/app/api/           @mahamayashen @EvanjyChen
+/backend/app/services/      @mahamayashen @EvanjyChen
+/backend/app/schemas/       @mahamayashen @EvanjyChen
+/backend/app/models/        @mahamayashen @EvanjyChen
+
+# AI agent pipeline — Judge provider / retries / LLM-as-Judge invariants.
+/backend/app/agents/        @mahamayashen @EvanjyChen
+
+# Frontend.
+/frontend/                  @mahamayashen @EvanjyChen
+
+# Docs and plans.
+/docs/                      @mahamayashen @EvanjyChen
