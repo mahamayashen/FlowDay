@@ -4,6 +4,8 @@ skips:
   - B101
   # B105: false positive on API endpoint URL constants (e.g. GOOGLE_TOKEN_URL)
   - B105
+  # B106: false positive on token_type="bearer" keyword argument
+  - B106
 
 exclude_dirs:
   - tests
