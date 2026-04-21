@@ -3,7 +3,7 @@ export function buildOAuthUrl(provider: 'google' | 'github'): string {
   const redirectUri = `${origin}/auth/${provider}/callback`
 
   const state = crypto.randomUUID()
-  sessionStorage.setItem('oauth_state', state)
+  localStorage.setItem('oauth_state', state)
 
   if (provider === 'google') {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID

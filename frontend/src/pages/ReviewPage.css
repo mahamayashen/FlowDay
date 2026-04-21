@@ -90,3 +90,90 @@
   border-radius: var(--r-lg);
   padding: 20px;
 }
+
+/* ── AI daily summary card ────────────────────── */
+.review-ai-card {
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, var(--cyan-dim), var(--bg-1));
+  border: 1px solid rgba(83, 203, 243, 0.28);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.review-ai-card::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  right: -20%;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, var(--cyan-glow), transparent 70%);
+  pointer-events: none;
+}
+
+.review-ai-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.review-ai-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-ai-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.review-ai-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--cyan);
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  background: var(--cyan-dim);
+  border: 1px solid rgba(83, 203, 243, 0.3);
+  border-radius: var(--r-full);
+}
+
+.review-ai-regen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+
+.review-ai-regen:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.review-ai-body {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-1);
+  max-width: 72ch;
+  position: relative;
+  z-index: 1;
+}

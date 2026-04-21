@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { exchangeOAuthCode, fetchCurrentUser } from '../api/auth'
 import { useAuthStore } from '../stores/authStore'
@@ -9,10 +9,12 @@ function OAuthCallbackPage(): React.JSX.Element {
   const navigate = useNavigate()
   const { setTokens, setUser } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
+  const hasRunRef = useRef(false)
 
   useEffect(() => {
-    const controller = new AbortController()
-    const { signal } = controller
+    // Guard against React StrictMode double-invocation in dev
+    if (hasRunRef.current) return
+    hasRunRef.current = true
 
     const code = searchParams.get('code')
     if (!code || !provider) {
@@ -26,33 +28,29 @@ function OAuthCallbackPage(): React.JSX.Element {
     }
 
     const urlState = searchParams.get('state')
-    const storedState = sessionStorage.getItem('oauth_state')
+    const storedState = localStorage.getItem('oauth_state')
     if (!urlState || !storedState || urlState !== storedState) {
       setError('Invalid state parameter. Please try signing in again.')
       return
     }
-    sessionStorage.removeItem('oauth_state')
 
-    exchangeOAuthCode(provider, code, signal)
+    // No abort controller: StrictMode cleanup would cancel our in-flight
+    // request and we'd lose the server's 200 OK. hasRunRef prevents double-fire.
+    exchangeOAuthCode(provider, code)
       .then((tokens) => {
-        if (signal.aborted) return
+        localStorage.removeItem('oauth_state')
         setTokens(tokens)
-        return fetchCurrentUser(signal)
+        return fetchCurrentUser()
       })
       .then((user) => {
-        if (signal.aborted || !user) return
+        if (!user) return
         setUser(user)
         navigate('/dashboard', { replace: true })
       })
       .catch((err: unknown) => {
-        if (signal.aborted) return
         const message = err instanceof Error ? err.message : 'Authentication failed.'
         setError(message)
       })
-
-    return () => {
-      controller.abort()
-    }
   }, [navigate, provider, searchParams, setTokens, setUser])
 
   if (error) {

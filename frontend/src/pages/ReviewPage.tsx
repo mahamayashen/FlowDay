@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { CaretLeft, CaretRight } from '@phosphor-icons/react'
+import { CaretLeft, CaretRight, Sparkle, ArrowClockwise } from '@phosphor-icons/react'
 import { usePlannedVsActual, useWeeklyStats } from '../api/analytics'
 import DailyComparisonView from '../components/DailyComparisonView'
 import WeeklyBarChart from '../components/WeeklyBarChart'
 import { getWeekStart, toWeeklyChartData, formatLocalDate } from '../utils/reviewUtils'
+import { mockDailyNarrative } from '../mocks/data'
 import './ReviewPage.css'
 
 function addDays(date: string, days: number): string {
@@ -93,6 +94,22 @@ function ReviewPage(): React.JSX.Element {
 
       {/* Body */}
       <div className="review-body">
+        {/* AI daily summary — always visible at the top */}
+        <section className="review-ai-card" data-testid="review-ai-summary">
+          <div className="review-ai-head">
+            <div className="review-ai-title-group">
+              <Sparkle size={16} color="var(--cyan)" weight="fill" />
+              <h2 className="review-ai-title">AI daily summary</h2>
+              <span className="review-ai-tag">Narrative Writer · Judge 89/100</span>
+            </div>
+            <button className="review-ai-regen" type="button">
+              <ArrowClockwise size={12} />
+              Regenerate
+            </button>
+          </div>
+          <p className="review-ai-body">{mockDailyNarrative}</p>
+        </section>
+
         {isLoading && (
           <p data-testid="review-loading" className="loading-text">Loading...</p>
         )}
@@ -105,20 +122,20 @@ function ReviewPage(): React.JSX.Element {
 
         {isEmpty && (
           <div data-testid="review-empty" className="empty-state">
-            No data for this period.<br />
-            <span>Start tracking tasks to see your review here.</span>
+            No tracked data for this period yet.<br />
+            <span>Start a timer from Today to see planned-vs-actual here.</span>
           </div>
         )}
 
         {!isLoading && !hasError && !isEmpty && (
           <div className="review-content">
             <section className="review-section">
-              <h2 className="review-section-title">Daily Comparison</h2>
+              <h2 className="review-section-title">Planned vs actual</h2>
               <DailyComparisonView tasks={tasks} />
             </section>
 
             <section className="review-section">
-              <h2 className="review-section-title">Weekly by Project</h2>
+              <h2 className="review-section-title">Weekly by project</h2>
               <div className="review-chart-card">
                 <WeeklyBarChart data={toWeeklyChartData(projects)} />
               </div>

@@ -1,0 +1,197 @@
+/* ── Agent Pipeline Indicator ───────────────────────────────── */
+.agent-pipeline {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, var(--cyan-dim), transparent 60%), var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-pipeline::before {
+  content: '';
+  position: absolute;
+  inset: -40% -10% auto auto;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, var(--cyan-glow), transparent 70%);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.agent-pipeline-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.agent-pipeline-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  text-transform: uppercase;
+}
+
+.agent-pipeline-sublabel {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  text-transform: none;
+  font-weight: 400;
+}
+
+.agent-pipeline-parallel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.agent-pipeline-sequential {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.agent-pipeline-seq-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.agent-pipeline-seq-arrow,
+.agent-pipeline-arrow {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-3);
+  line-height: 1;
+}
+
+.agent-pipeline-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  font-size: 18px;
+  color: var(--blue);
+  opacity: 0.6;
+}
+
+/* ── Chip ──────────────────────────────────────────────────── */
+.agent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition: all var(--t-mid);
+  min-width: 0;
+}
+
+.agent-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.agent-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* pending */
+.agent-chip--pending {
+  opacity: 0.55;
+}
+.agent-chip--pending .agent-chip-icon {
+  background: var(--bg-3);
+  border: 1px dashed var(--text-3);
+}
+
+/* running */
+.agent-chip--running {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+  box-shadow: 0 0 12px var(--cyan-glow);
+  animation: chip-pulse 1.6s ease-in-out infinite;
+}
+.agent-chip--running .agent-chip-icon {
+  color: var(--cyan);
+}
+
+/* done */
+.agent-chip--done {
+  color: var(--success);
+  border-color: rgba(52, 211, 153, 0.35);
+  background: var(--success-dim);
+}
+.agent-chip--done .agent-chip-icon {
+  background: var(--success);
+  color: #061b12;
+}
+
+@keyframes chip-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--cyan-glow); }
+  50%      { box-shadow: 0 0 22px rgba(83, 203, 243, 0.5); }
+}
+
+.spin {
+  animation: chip-spin 1s linear infinite;
+}
+
+@keyframes chip-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .agent-pipeline {
+    flex-direction: column;
+  }
+  .agent-pipeline-arrow {
+    transform: rotate(90deg);
+    padding: 2px 0;
+  }
+  .agent-pipeline-parallel {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .agent-pipeline-parallel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .agent-pipeline-sequential {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .agent-pipeline-seq-item {
+    justify-content: space-between;
+  }
+  .agent-pipeline-seq-arrow {
+    display: none;
+  }
+}

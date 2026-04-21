@@ -1,0 +1,335 @@
+.projects-page {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 0;
+  height: 100%;
+  min-height: calc(100vh - 40px);
+  color: var(--text-1);
+}
+
+/* ── Sidebar ────────────────────────────────────────────────── */
+.projects-sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--bg-1);
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+
+.projects-sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 0 8px;
+}
+
+.projects-sidebar-title {
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+
+.btn-ghost:hover {
+  color: var(--yellow);
+  border-color: var(--yellow);
+  background: var(--yellow-dim);
+}
+
+.projects-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.project-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--t-fast);
+}
+
+.project-row:hover {
+  background: var(--bg-2);
+  border-color: var(--border);
+}
+
+.project-row--active {
+  background: var(--bg-2);
+  border-color: var(--border-hover);
+  box-shadow: inset 2px 0 0 var(--yellow);
+}
+
+.project-row-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.project-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.project-row-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-row-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+.project-row-rate {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cyan);
+  font-weight: 500;
+}
+
+/* ── Main area ──────────────────────────────────────────────── */
+.projects-main {
+  padding: 32px 40px;
+  overflow-y: auto;
+}
+
+.projects-main-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.projects-main-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.projects-color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.projects-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  margin-bottom: 2px;
+}
+
+.projects-main-title {
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--yellow);
+  color: #0a0a0a;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform var(--t-fast);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-yellow);
+}
+
+/* ── Stats row ──────────────────────────────────────────────── */
+.projects-stats-row {
+  display: flex;
+  gap: 20px;
+  padding: 14px 18px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin-bottom: 18px;
+}
+
+.project-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-stat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+.project-stat-value {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+/* ── Task cards ─────────────────────────────────────────────── */
+.tasks-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tasks-empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 13px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-md);
+}
+
+.task-card-v2 {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  transition: all var(--t-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card-v2:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.task-priority-bar {
+  width: 3px;
+  border-radius: 2px;
+  align-self: stretch;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.task-card-v2-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-card-v2-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.task-status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  padding: 2px 7px;
+  border-radius: var(--r-xs);
+  font-weight: 600;
+}
+
+.task-status--todo {
+  background: var(--bg-3);
+  color: var(--text-2);
+}
+
+.task-status--in_progress {
+  background: var(--yellow-dim);
+  color: var(--yellow);
+}
+
+.task-status--done {
+  background: var(--success-dim);
+  color: var(--success);
+}
+
+.task-due {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.task-card-v2-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-1);
+  margin-bottom: 2px;
+}
+
+.task-card-v2-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.task-card-v2-aside {
+  display: flex;
+  align-items: center;
+}
+
+.task-estimate {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cyan);
+  padding: 4px 10px;
+  background: var(--cyan-dim);
+  border-radius: var(--r-xs);
+  font-weight: 500;
+}

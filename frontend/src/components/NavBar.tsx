@@ -1,8 +1,9 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-  SquaresFour,
+  Lightning,
   CalendarBlank,
+  FolderOpen,
   ChartBar,
   Brain,
   SignOut,
@@ -19,6 +20,7 @@ function NavItem({ to, icon, label }: NavItemProps): React.JSX.Element {
   return (
     <NavLink
       to={to}
+      end
       className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
       title={label}
       aria-label={label}
@@ -35,10 +37,11 @@ function NavBar(): React.JSX.Element {
     <nav className="navbar" aria-label="Main navigation">
       <span className="navbar-logo" aria-label="FlowDay">F</span>
 
-      <NavItem to="/dashboard"     icon={<SquaresFour  size={20} />} label="Dashboard" />
-      <NavItem to="/planner"       icon={<CalendarBlank size={20} />} label="Planner" />
-      <NavItem to="/review"        icon={<ChartBar      size={20} />} label="Review" />
-      <NavItem to="/weekly-review" icon={<Brain         size={20} />} label="AI Weekly Review" />
+      <NavItem to="/"         icon={<Lightning    size={20} weight="fill" />} label="Today" />
+      <NavItem to="/plan"     icon={<CalendarBlank size={20} />}              label="Plan" />
+      <NavItem to="/projects" icon={<FolderOpen    size={20} />}              label="Projects" />
+      <NavItem to="/review"   icon={<ChartBar      size={20} />}              label="Review" />
+      <NavItem to="/weekly"   icon={<Brain         size={20} />}              label="Weekly AI Review" />
 
       <span className="nav-spacer" />
 

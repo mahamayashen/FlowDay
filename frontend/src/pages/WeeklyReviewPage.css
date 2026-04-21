@@ -112,3 +112,229 @@
   letter-spacing: 0.10em;
   color: var(--text-3);
 }
+
+/* ── Narrative card ──────────────────────────────── */
+.weekly-narrative-card {
+  position: relative;
+  background:
+    radial-gradient(600px 200px at 0% 0%, var(--cyan-dim), transparent 60%),
+    var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 22px 26px;
+  overflow: hidden;
+}
+
+.weekly-narrative-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--cyan) 20%,
+    var(--blue) 60%,
+    transparent
+  );
+  opacity: 0.5;
+}
+
+.weekly-narrative-head {
+  margin-bottom: 14px;
+}
+
+.weekly-narrative-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.weekly-narrative-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+
+.weekly-narrative-tag {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: var(--r-full);
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid rgba(83, 203, 243, 0.22);
+  text-transform: uppercase;
+}
+
+.weekly-narrative-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--text-1);
+  max-width: 68ch;
+}
+
+.weekly-narrative-body p {
+  margin: 0;
+}
+
+/* Skeleton placeholder while generating */
+.weekly-narrative-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: var(--r-xs);
+  background: linear-gradient(
+    90deg,
+    var(--bg-2) 0%,
+    var(--bg-3) 50%,
+    var(--bg-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Date nav buttons on this page (match other pages) */
+.date-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+
+.date-nav-btn:hover {
+  color: var(--yellow);
+  border-color: var(--yellow);
+  background: var(--yellow-dim);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--yellow);
+  color: #0a0a0a;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-yellow);
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+}
+
+/* AI label helper (mirrors pattern elsewhere) */
+.ai-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.ai-block {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+}
+
+.judge-scores-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.judge-score-pill,
+.judge-avg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  flex: 1;
+  min-width: 60px;
+}
+
+.judge-avg {
+  background: var(--cyan-dim);
+  border-color: var(--cyan);
+}
+
+.judge-score-value {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.judge-avg-value {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.judge-score-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .weekly-review-grid {
+    grid-template-columns: 1fr;
+  }
+  .weekly-col-side {
+    position: static;
+  }
+}

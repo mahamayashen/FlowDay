@@ -1,0 +1,407 @@
+.today-page {
+  padding: 28px 36px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: var(--text-1);
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.today-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.today-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--cyan);
+  margin-bottom: 6px;
+}
+
+.today-title {
+  font-family: var(--font-head);
+  font-size: clamp(1.4rem, 2.2vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.today-stats {
+  display: flex;
+  gap: 10px;
+}
+
+.stat-pill {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 16px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  min-width: 90px;
+}
+
+.stat-pill-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  margin-bottom: 2px;
+}
+
+.stat-pill-value {
+  font-family: var(--font-head);
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.stat-pill-value--accent {
+  color: var(--yellow);
+}
+
+/* ── Progress bar ───────────────────────────────────────────── */
+.today-progress-bar {
+  height: 4px;
+  background: var(--bg-1);
+  border-radius: var(--r-full);
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.today-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--yellow));
+  transition: width var(--t-mid);
+  box-shadow: 0 0 12px var(--yellow-glow);
+}
+
+/* ── Body layout ────────────────────────────────────────────── */
+.today-body {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 28px;
+}
+
+/* ── Timeline ───────────────────────────────────────────────── */
+.today-timeline-wrap {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 20px 28px 88px;
+  position: relative;
+}
+
+.today-timeline {
+  position: relative;
+  width: 100%;
+}
+
+.timeline-row {
+  position: absolute;
+  left: -68px;
+  right: 0;
+  height: 1px;
+}
+
+.timeline-hour-label {
+  position: absolute;
+  left: 0;
+  top: -7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  width: 60px;
+  text-align: right;
+}
+
+.timeline-hour-line {
+  margin-left: 68px;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Now indicator */
+.now-indicator {
+  position: absolute;
+  left: -68px;
+  right: 0;
+  height: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.now-label {
+  position: absolute;
+  left: 0;
+  top: -8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--yellow);
+  font-weight: 600;
+  width: 60px;
+  text-align: right;
+  text-shadow: 0 0 8px var(--yellow-glow);
+}
+
+.now-line {
+  position: absolute;
+  left: 68px;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--yellow);
+  box-shadow: 0 0 10px var(--yellow-glow), 0 0 20px var(--yellow-glow);
+}
+
+.now-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--yellow);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--yellow);
+}
+
+/* ── Today blocks ───────────────────────────────────────────── */
+.today-block {
+  position: absolute;
+  left: 4px;
+  right: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--blue);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
+  overflow: hidden;
+}
+
+.today-block:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.today-block--past {
+  opacity: 0.5;
+}
+
+.today-block--now {
+  background: linear-gradient(135deg, var(--yellow-dim), transparent);
+  border-color: var(--yellow);
+  box-shadow: var(--shadow-yellow);
+}
+
+.today-block--active {
+  border-color: var(--yellow);
+  box-shadow: var(--shadow-yellow);
+  animation: pulse-active 2s ease-in-out infinite;
+}
+
+@keyframes pulse-active {
+  0%, 100% { box-shadow: 0 0 16px var(--yellow-glow); }
+  50%      { box-shadow: 0 0 28px var(--yellow-glow), 0 0 44px var(--yellow-dim); }
+}
+
+.today-block--calendar {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--bg-2),
+    var(--bg-2) 8px,
+    var(--bg-1) 8px,
+    var(--bg-1) 16px
+  );
+}
+
+.today-block-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.today-block-project {
+  font-weight: 600;
+}
+
+.today-block-time {
+  color: var(--text-3);
+}
+
+.today-block-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-1);
+  margin-top: 2px;
+}
+
+.today-block-start {
+  margin-top: auto;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--yellow);
+  color: #0a0a0a;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform var(--t-fast);
+}
+
+.today-block-start:hover {
+  transform: translateY(-1px);
+}
+
+.today-block-start--running {
+  background: var(--cyan);
+}
+
+.today-block-done {
+  margin-top: auto;
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--success);
+  padding: 3px 8px;
+  background: var(--success-dim);
+  border-radius: var(--r-sm);
+}
+
+/* ── Sidebar ────────────────────────────────────────────────── */
+.today-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-blurb {
+  background: linear-gradient(135deg, var(--cyan-dim), var(--bg-1));
+  border: 1px solid rgba(83, 203, 243, 0.3);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-blurb::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -40%;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, var(--cyan-glow), transparent 70%);
+  pointer-events: none;
+}
+
+.ai-blurb-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--cyan);
+  margin-bottom: 10px;
+}
+
+.ai-blurb-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-1);
+  margin-bottom: 12px;
+}
+
+.ai-blurb-link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--cyan);
+  padding-bottom: 1px;
+}
+
+.ai-blurb-link:hover {
+  color: var(--text-1);
+}
+
+.today-quickstart {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+}
+
+.qs-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.qs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+  padding: 10px 14px;
+  background: var(--blue);
+  color: var(--text-1);
+  border: 1px solid var(--blue);
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform var(--t-fast), background var(--t-fast);
+}
+
+.qs-btn:hover {
+  transform: translateY(-1px);
+  background: var(--navy-light);
+}
+
+.qs-btn--outline {
+  background: transparent;
+  border-color: var(--border-hover);
+  color: var(--text-1);
+}
+
+.qs-btn--outline:hover {
+  background: var(--blue-dim);
+  border-color: var(--blue);
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .today-body {
+    grid-template-columns: 1fr;
+  }
+  .today-sidebar {
+    order: -1;
+  }
+}
