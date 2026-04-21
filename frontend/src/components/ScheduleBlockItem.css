@@ -50,9 +50,9 @@
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
-  padding: 1px 2px;
-  opacity: 0;
-  transition: opacity var(--t-fast), color var(--t-fast);
+  padding: 1px 4px;
+  opacity: 0.45;
+  transition: opacity var(--t-fast), color var(--t-fast), background var(--t-fast);
   border-radius: var(--r-xs);
 }
 
@@ -63,6 +63,7 @@
 .schedule-block-delete:hover {
   color: var(--danger);
   background: var(--danger-dim);
+  opacity: 1;
 }
 
 .resize-handle {

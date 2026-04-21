@@ -59,6 +59,54 @@
   gap: 4px;
 }
 
+.project-row-wrap {
+  position: relative;
+}
+
+.project-row-wrap:hover .project-row-actions,
+.project-row-wrap:focus-within .project-row-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.project-row-actions {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-fast);
+}
+
+.row-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+
+.row-action-btn:hover {
+  color: var(--blue);
+  border-color: var(--blue);
+  background: var(--blue-dim);
+}
+
+.row-action-btn--danger:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-dim);
+}
+
 .project-row {
   width: 100%;
   display: flex;

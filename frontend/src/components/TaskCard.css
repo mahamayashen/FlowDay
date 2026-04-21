@@ -68,6 +68,37 @@
   flex-shrink: 0;
 }
 
+.task-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  color: var(--text-3);
+  cursor: pointer;
+  opacity: 0.55;
+  transition: all var(--t-fast);
+}
+
+.task-card:hover .task-action-btn {
+  opacity: 1;
+}
+
+.task-action-btn:hover {
+  color: var(--blue);
+  border-color: var(--blue);
+  background: var(--blue-dim);
+}
+
+.task-action-btn--danger:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-dim);
+}
+
 /* Status badge */
 .task-status-badge {
   flex-shrink: 0;
