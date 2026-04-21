@@ -31,4 +31,5 @@ USER appuser
 
 EXPOSE 5060
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5060"]
+# $PORT is set by Railway at runtime; fall back to 5060 for local runs.
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-5060}"
