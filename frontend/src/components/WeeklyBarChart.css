@@ -1,0 +1,113 @@
+.weekly-bar-chart {
+  width: 100%;
+}
+
+.weekly-empty {
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+  padding: 40px 0;
+}
+
+.weekly-a11y-list {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.weekly-chart-canvas {
+  width: 100%;
+  height: 300px;
+}
+
+.weekly-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-bottom: 10px;
+  padding-right: 4px;
+}
+
+.weekly-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+}
+
+.weekly-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.weekly-legend-dot--planned {
+  background: #5478FF;
+  box-shadow: 0 0 8px rgba(84, 120, 255, 0.55);
+}
+
+.weekly-legend-dot--actual {
+  background: #FFDE42;
+  box-shadow: 0 0 8px rgba(255, 222, 66, 0.55);
+}
+
+/* Tooltip */
+.weekly-tooltip {
+  background: rgba(8, 12, 26, 0.96);
+  border: 1px solid rgba(84, 120, 255, 0.3);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  min-width: 140px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+}
+
+.weekly-tooltip-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--text-3);
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.weekly-tooltip-row {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-1);
+}
+
+.weekly-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.weekly-tooltip-key {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.weekly-tooltip-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-1);
+  text-align: right;
+}

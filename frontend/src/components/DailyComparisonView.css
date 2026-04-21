@@ -1,0 +1,221 @@
+.daily-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.daily-empty {
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+  padding: 28px 0;
+}
+
+/* ── Chart card ──────────────────────────────── */
+.daily-chart-card {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.daily-chart-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(84, 120, 255, 0.09), transparent 45%),
+    radial-gradient(circle at 88% 100%, rgba(255, 222, 66, 0.06), transparent 45%);
+  pointer-events: none;
+}
+
+.daily-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.daily-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+}
+
+.daily-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.daily-chart-canvas {
+  width: 100%;
+  height: 240px;
+  position: relative;
+}
+
+/* ── Tooltip ─────────────────────────────────── */
+.daily-tooltip {
+  background: rgba(8, 12, 26, 0.96);
+  border: 1px solid rgba(84, 120, 255, 0.3);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+}
+
+.daily-tooltip-label {
+  font-size: 11px;
+  color: var(--text-1);
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.daily-tooltip-row {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.daily-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.daily-tooltip-key {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.daily-tooltip-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-1);
+  text-align: right;
+}
+
+/* ── Task detail rows ────────────────────────── */
+.daily-task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.daily-task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+
+.daily-task-row:hover {
+  border-color: rgba(84, 120, 255, 0.35);
+  background: rgba(84, 120, 255, 0.04);
+}
+
+.daily-task-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.daily-task-metrics {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-mono);
+}
+
+.daily-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.daily-metric-label {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--r-xs);
+  font-size: 9px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a0e1a;
+}
+
+.daily-metric--planned .daily-metric-label {
+  background: #5478FF;
+}
+
+.daily-metric--actual .daily-metric-label {
+  background: #FFDE42;
+}
+
+.daily-metric-value {
+  color: var(--text-1);
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 44px;
+  text-align: right;
+}
+
+.daily-metric-delta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--r-xs);
+  letter-spacing: 0.04em;
+  min-width: 52px;
+  text-align: center;
+}
+
+/* ── Status badge ────────────────────────────── */
+.daily-status-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: #0a0e1a;
+  padding: 3px 8px;
+  border-radius: var(--r-full);
+  flex-shrink: 0;
+}
