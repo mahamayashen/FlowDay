@@ -1,4 +1,4 @@
-import { apiClient } from './client'
+import { apiClient, buildUrl } from './client'
 import type { TokenPair, User } from '../types/auth'
 
 export async function exchangeOAuthCode(
@@ -7,7 +7,7 @@ export async function exchangeOAuthCode(
   signal?: AbortSignal,
 ): Promise<TokenPair> {
   const url = `/auth/${provider}/callback`
-  const res = await fetch(url, {
+  const res = await fetch(buildUrl(url), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
