@@ -29,9 +29,11 @@ function OAuthCallbackPage(): React.JSX.Element {
 
     const urlState = searchParams.get('state')
     const storedState = sessionStorage.getItem('oauth_state')
-    if (urlState && storedState && urlState === storedState) {
-      sessionStorage.removeItem('oauth_state')
+    if (!urlState || !storedState || urlState !== storedState) {
+      setError('OAuth state validation failed. Please try signing in again.')
+      return
     }
+    sessionStorage.removeItem('oauth_state')
 
     exchangeOAuthCode(provider, code)
       .then((tokens) => {
