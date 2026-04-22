@@ -3,6 +3,12 @@
   max-width: 1400px;
   margin: 0 auto;
   color: var(--text-1);
+  /* Parent .app-main sets overflow: hidden, so every page has to manage
+     its own scroll container. Without this the 0-24h timeline gets clipped
+     below the viewport and the user can't reach late-afternoon blocks. */
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
