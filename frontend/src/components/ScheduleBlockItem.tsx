@@ -87,6 +87,12 @@ function ScheduleBlockItem({
           <button
             className="schedule-block-delete"
             data-testid="delete-block-btn"
+            onPointerDown={(e) => {
+              // Stop dnd-kit (listening on the parent) from claiming this
+              // pointerdown as a drag-start. Without this, any jitter between
+              // pointerdown and click starts a drag and the click is swallowed.
+              e.stopPropagation()
+            }}
             onClick={(e) => {
               e.stopPropagation()
               onDelete(block.id)
