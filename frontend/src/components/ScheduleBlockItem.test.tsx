@@ -80,6 +80,60 @@ describe('ScheduleBlockItem — manual block', () => {
     expect(onDelete).toHaveBeenCalledWith('block-1')
   })
 
+  // Regression: the delete button lives inside a dnd-kit draggable. Without
+  // stopping propagation on pointerdown, any slight jitter between pointerdown
+  // and click starts a drag and the click is swallowed, so users can't delete.
+  // We guard against both:
+  //   (a) React-level propagation (parent's React onPointerDown never fires)
+  //   (b) NATIVE capture-phase propagation (the actual layer dnd-kit listens
+  //       on in a real browser; verified on the deployed bundle)
+  it('does not propagate pointerdown to the React-level parent', () => {
+    const parentHandler = vi.fn()
+    render(
+      <DndContext>
+        <div onPointerDown={parentHandler}>
+          <ScheduleBlockItem
+            block={manualBlock}
+            task={mockTask}
+            projectColor="#f59e0b"
+            style={defaultStyle}
+            workHoursEnd={18}
+            onDelete={vi.fn()}
+            onResizeBlock={vi.fn()}
+          />
+        </div>
+      </DndContext>,
+    )
+
+    fireEvent.pointerDown(screen.getByTestId('delete-block-btn'))
+
+    expect(parentHandler).not.toHaveBeenCalled()
+  })
+
+  it('stops pointerdown at native capture phase before it reaches the block', () => {
+    renderBlock(manualBlock)
+    const button = screen.getByTestId('delete-block-btn')
+    const block = screen.getByTestId('schedule-block')
+    const nativeSpy = vi.fn()
+    block.addEventListener('pointerdown', nativeSpy)
+
+    fireEvent.pointerDown(button)
+
+    expect(nativeSpy).not.toHaveBeenCalled()
+  })
+
+  it('fires onDelete after a realistic pointerdown → pointerup → click sequence', () => {
+    const onDelete = vi.fn()
+    renderBlock(manualBlock, mockTask, { onDelete })
+    const button = screen.getByTestId('delete-block-btn')
+
+    fireEvent.pointerDown(button)
+    fireEvent.pointerUp(button)
+    fireEvent.click(button)
+
+    expect(onDelete).toHaveBeenCalledWith('block-1')
+  })
+
   it('renders a resize handle', () => {
     renderBlock(manualBlock)
     expect(screen.getByTestId('resize-handle')).toBeInTheDocument()

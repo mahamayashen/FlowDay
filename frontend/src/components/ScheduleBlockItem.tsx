@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { HOUR_HEIGHT } from '../utils/planner'
 import type { ScheduleBlock } from '../types/scheduleBlock'
@@ -28,6 +28,25 @@ function ScheduleBlockItem({
   const [resizeHeight, setResizeHeight] = useState<number | null>(null)
   const startYRef = useRef<number>(0)
   const startHeightRef = useRef<number>(0)
+  const deleteBtnRef = useRef<HTMLButtonElement | null>(null)
+
+  // Stop pointerdown on the delete button at the NATIVE capture phase so
+  // dnd-kit's activation never sees it. React-level stopPropagation on the
+  // React onPointerDown handler isn't enough: dnd-kit ships its own sensor
+  // pipeline and the React synthetic event isn't guaranteed to short-circuit
+  // it in every build. Ref-mounted capture listener is belt-and-suspenders.
+  useEffect(() => {
+    const btn = deleteBtnRef.current
+    if (!btn) return
+    const stop = (e: Event): void => {
+      e.stopPropagation()
+      e.stopImmediatePropagation()
+    }
+    btn.addEventListener('pointerdown', stop, true)
+    return () => {
+      btn.removeEventListener('pointerdown', stop, true)
+    }
+  }, [])
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: block.id,
@@ -85,8 +104,15 @@ function ScheduleBlockItem({
       {!isCalendar && (
         <>
           <button
+            ref={deleteBtnRef}
             className="schedule-block-delete"
             data-testid="delete-block-btn"
+            onPointerDown={(e) => {
+              // React-level stopPropagation (paired with the capture-phase
+              // listener in useEffect above) keeps dnd-kit from claiming this
+              // pointerdown as a drag-start.
+              e.stopPropagation()
+            }}
             onClick={(e) => {
               e.stopPropagation()
               onDelete(block.id)
