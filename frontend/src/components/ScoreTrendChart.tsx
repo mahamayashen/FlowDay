@@ -59,6 +59,9 @@ function ScoreTrendChart({ reviews }: ScoreTrendChartProps): React.JSX.Element {
       accuracy: r.scores_json.accuracy,
       coherence: r.scores_json.coherence,
     }))
+    // API returns reviews newest-first; a trend chart reads left→right
+    // as oldest→newest, so sort ascending by week_start.
+    .sort((a, b) => a.week.localeCompare(b.week))
 
   if (chartData.length === 0) {
     return (
