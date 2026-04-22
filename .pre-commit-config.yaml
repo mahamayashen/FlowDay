@@ -1,0 +1,62 @@
+# FlowDay pre-commit hooks
+# Install:  pip install pre-commit && pre-commit install
+# Run manually:  pre-commit run --all-files
+#
+# Gate coverage (local mirror of CI Stage 5):
+#   - Gate 1: Secrets Detection (Gitleaks)   — runs on every commit
+#   - Gate 3: SAST (Bandit)                  — runs on staged Python files
+# Full 8-gate pipeline runs in .github/workflows/ci.yml.
+
+repos:
+  # ──────────────────────────────────────────────
+  # Gate 1: Secrets Detection (Gitleaks)
+  # Blocks commits that contain API keys, tokens, private keys,
+  # OAuth client secrets, or anything matching gitleaks' ruleset.
+  # ──────────────────────────────────────────────
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: "Gate 1: Secrets Detection (Gitleaks)"
+
+  # ──────────────────────────────────────────────
+  # Gate 3: SAST — Bandit (Python static analysis)
+  # Catches common security anti-patterns in backend code
+  # before they reach CI. Config lives in backend/bandit.yml.
+  # ──────────────────────────────────────────────
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        name: "Gate 3: SAST (Bandit)"
+        args: ["-c", "backend/bandit.yml", "-r", "backend/app/"]
+        pass_filenames: false
+        files: ^backend/app/.*\.py$
+
+  # ──────────────────────────────────────────────
+  # Hygiene hooks — fail fast on trivially broken commits
+  # ──────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # ──────────────────────────────────────────────
+  # Commit message format — enforces [#N][RED|GREEN|REFACTOR]
+  # required by the TDD workflow (CLAUDE.md §Development Workflow).
+  # ──────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: commit-msg-format
+        name: "Commit message format [#N][RED|GREEN|REFACTOR]"
+        language: pygrep
+        stages: [commit-msg]
+        entry: '^\[#\d+\]\[(RED|GREEN|REFACTOR)\]\s.+'
+        args: ["--negate"]
