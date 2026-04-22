@@ -80,6 +80,34 @@ describe('ScheduleBlockItem — manual block', () => {
     expect(onDelete).toHaveBeenCalledWith('block-1')
   })
 
+  // Regression: the delete button lives inside a dnd-kit draggable. Without
+  // stopping propagation on pointerdown, any slight jitter between pointerdown
+  // and click starts a drag and the click is swallowed, so users can't delete.
+  // dnd-kit's listeners are React-level props, so we test React-level
+  // propagation via a wrapping onPointerDown handler.
+  it('does not propagate pointerdown to the React-level parent', () => {
+    const parentHandler = vi.fn()
+    render(
+      <DndContext>
+        <div onPointerDown={parentHandler}>
+          <ScheduleBlockItem
+            block={manualBlock}
+            task={mockTask}
+            projectColor="#f59e0b"
+            style={defaultStyle}
+            workHoursEnd={18}
+            onDelete={vi.fn()}
+            onResizeBlock={vi.fn()}
+          />
+        </div>
+      </DndContext>,
+    )
+
+    fireEvent.pointerDown(screen.getByTestId('delete-block-btn'))
+
+    expect(parentHandler).not.toHaveBeenCalled()
+  })
+
   it('renders a resize handle', () => {
     renderBlock(manualBlock)
     expect(screen.getByTestId('resize-handle')).toBeInTheDocument()
