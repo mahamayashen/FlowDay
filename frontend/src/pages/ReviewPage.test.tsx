@@ -65,24 +65,28 @@ describe('ReviewPage', () => {
     expect(screen.getByTestId('next-week')).toBeInTheDocument()
   })
 
-  it('shows loading state while data is loading', () => {
+  it('shows per-section loading states while data is loading', () => {
     vi.mocked(usePlannedVsActual).mockReturnValue({ data: undefined, isLoading: true } as ReturnType<typeof usePlannedVsActual>)
     vi.mocked(useWeeklyStats).mockReturnValue({ data: undefined, isLoading: true } as ReturnType<typeof useWeeklyStats>)
     render(<ReviewPage />, { wrapper })
-    expect(screen.getByTestId('review-loading')).toBeInTheDocument()
+    expect(screen.getByTestId('day-loading')).toBeInTheDocument()
+    expect(screen.getByTestId('week-loading')).toBeInTheDocument()
   })
 
-  it('shows empty state when both queries return empty lists', () => {
+  it('shows per-section empty states when queries return empty lists', () => {
     render(<ReviewPage />, { wrapper })
-    expect(screen.getByTestId('review-empty')).toBeInTheDocument()
+    expect(screen.getByTestId('day-empty')).toBeInTheDocument()
+    expect(screen.getByTestId('week-empty')).toBeInTheDocument()
   })
 
-  it('shows error state when a query fails', () => {
+  it('shows per-section error state when a query fails', () => {
     vi.mocked(usePlannedVsActual).mockReturnValue({ data: undefined, isLoading: false, isError: true } as ReturnType<typeof usePlannedVsActual>)
     vi.mocked(useWeeklyStats).mockReturnValue({ data: undefined, isLoading: false, isError: false } as ReturnType<typeof useWeeklyStats>)
     render(<ReviewPage />, { wrapper })
-    expect(screen.getByTestId('review-error')).toBeInTheDocument()
-    expect(screen.queryByTestId('review-empty')).not.toBeInTheDocument()
+    expect(screen.getByTestId('day-error')).toBeInTheDocument()
+    // week section should still render its own (empty) state independently
+    expect(screen.getByTestId('week-empty')).toBeInTheDocument()
+    expect(screen.queryByTestId('day-empty')).not.toBeInTheDocument()
   })
 
   it('navigates to the next day when next-day button is clicked', async () => {

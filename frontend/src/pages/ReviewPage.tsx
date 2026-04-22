@@ -17,6 +17,24 @@ function today(): string {
   return formatLocalDate(new Date())
 }
 
+function formatWeekRange(weekStartStr: string): string {
+  const start = new Date(weekStartStr + 'T00:00:00')
+  const end = new Date(start)
+  end.setDate(start.getDate() + 6)
+  const fmt = (d: Date) =>
+    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return `${fmt(start)} – ${fmt(end)}`
+}
+
+function formatDateLabel(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 function ReviewPage(): React.JSX.Element {
   const [selectedDate, setSelectedDate] = useState<string>(today)
   const [weekStart, setWeekStart] = useState<string>(() => getWeekStart(today()))
@@ -24,75 +42,11 @@ function ReviewPage(): React.JSX.Element {
   const dailyQuery = usePlannedVsActual(selectedDate)
   const weeklyQuery = useWeeklyStats(weekStart)
 
-  const isLoading = dailyQuery.isLoading || weeklyQuery.isLoading
-  const hasError = dailyQuery.isError || weeklyQuery.isError
-
   const tasks = dailyQuery.data?.tasks ?? []
   const projects = weeklyQuery.data?.projects ?? []
-  const isEmpty = !isLoading && !hasError && tasks.length === 0 && projects.length === 0
 
   return (
     <main data-testid="page-review" className="review-page">
-      {/* Header */}
-      <div className="review-header">
-        <div className="review-nav-row">
-          {/* Day navigator */}
-          <div className="review-nav-group">
-            <span className="review-nav-label">Day</span>
-            <div className="review-nav-controls">
-              <button
-                data-testid="prev-day"
-                className="date-nav-btn"
-                onClick={() => setSelectedDate((d) => addDays(d, -1))}
-                aria-label="Previous day"
-              >
-                <CaretLeft size={14} />
-              </button>
-              <span data-testid="selected-date" className="review-date-display">
-                {selectedDate}
-              </span>
-              <button
-                data-testid="next-day"
-                className="date-nav-btn"
-                onClick={() => setSelectedDate((d) => addDays(d, 1))}
-                aria-label="Next day"
-              >
-                <CaretRight size={14} />
-              </button>
-            </div>
-          </div>
-
-          <div className="review-nav-divider" />
-
-          {/* Week navigator */}
-          <div className="review-nav-group">
-            <span className="review-nav-label">Week</span>
-            <div className="review-nav-controls">
-              <button
-                data-testid="prev-week"
-                className="date-nav-btn"
-                onClick={() => setWeekStart((w) => addDays(w, -7))}
-                aria-label="Previous week"
-              >
-                <CaretLeft size={14} />
-              </button>
-              <span data-testid="selected-week" className="review-date-display">
-                {weekStart}
-              </span>
-              <button
-                data-testid="next-week"
-                className="date-nav-btn"
-                onClick={() => setWeekStart((w) => addDays(w, 7))}
-                aria-label="Next week"
-              >
-                <CaretRight size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
       <div className="review-body">
         {/* AI summary pointer — FlowDay's AI review is weekly, not daily */}
         <section className="review-ai-card" data-testid="review-ai-summary">
@@ -112,38 +66,105 @@ function ReviewPage(): React.JSX.Element {
           </Link>
         </section>
 
-        {isLoading && (
-          <p data-testid="review-loading" className="loading-text">Loading...</p>
-        )}
-
-        {hasError && (
-          <p data-testid="review-error" className="error-text">
-            Failed to load data. Please try again.
-          </p>
-        )}
-
-        {isEmpty && (
-          <div data-testid="review-empty" className="empty-state">
-            No tracked data for this period yet.<br />
-            <span>Start a timer from Today to see planned-vs-actual here.</span>
-          </div>
-        )}
-
-        {!isLoading && !hasError && !isEmpty && (
-          <div className="review-content">
-            <section className="review-section">
+        {/* ── Day-scoped section ───────────────────────────────── */}
+        <section className="review-section">
+          <header className="review-section-head">
+            <div className="review-section-title-block">
+              <span className="review-nav-label">Day</span>
               <h2 className="review-section-title">Planned vs actual</h2>
-              <DailyComparisonView tasks={tasks} />
-            </section>
+            </div>
+            <div className="review-nav-controls">
+              <button
+                data-testid="prev-day"
+                className="date-nav-btn"
+                onClick={() => setSelectedDate((d) => addDays(d, -1))}
+                aria-label="Previous day"
+              >
+                <CaretLeft size={14} />
+              </button>
+              <span data-testid="selected-date" className="review-date-display">
+                {formatDateLabel(selectedDate)}
+              </span>
+              <button
+                data-testid="next-day"
+                className="date-nav-btn"
+                onClick={() => setSelectedDate((d) => addDays(d, 1))}
+                aria-label="Next day"
+              >
+                <CaretRight size={14} />
+              </button>
+            </div>
+          </header>
 
-            <section className="review-section">
+          {dailyQuery.isLoading && (
+            <p data-testid="day-loading" className="loading-text">
+              Loading daily comparison…
+            </p>
+          )}
+          {dailyQuery.isError && (
+            <p data-testid="day-error" className="error-text">
+              Failed to load daily data.
+            </p>
+          )}
+          {!dailyQuery.isLoading && !dailyQuery.isError && tasks.length === 0 && (
+            <div data-testid="day-empty" className="empty-state">
+              No tasks tracked or scheduled on this day.
+            </div>
+          )}
+          {!dailyQuery.isLoading && !dailyQuery.isError && tasks.length > 0 && (
+            <DailyComparisonView tasks={tasks} />
+          )}
+        </section>
+
+        {/* ── Week-scoped section ──────────────────────────────── */}
+        <section className="review-section">
+          <header className="review-section-head">
+            <div className="review-section-title-block">
+              <span className="review-nav-label">Week</span>
               <h2 className="review-section-title">Weekly by project</h2>
-              <div className="review-chart-card">
-                <WeeklyBarChart data={toWeeklyChartData(projects)} />
-              </div>
-            </section>
-          </div>
-        )}
+            </div>
+            <div className="review-nav-controls">
+              <button
+                data-testid="prev-week"
+                className="date-nav-btn"
+                onClick={() => setWeekStart((w) => addDays(w, -7))}
+                aria-label="Previous week"
+              >
+                <CaretLeft size={14} />
+              </button>
+              <span data-testid="selected-week" className="review-date-display">
+                {formatWeekRange(weekStart)}
+              </span>
+              <button
+                data-testid="next-week"
+                className="date-nav-btn"
+                onClick={() => setWeekStart((w) => addDays(w, 7))}
+                aria-label="Next week"
+              >
+                <CaretRight size={14} />
+              </button>
+            </div>
+          </header>
+
+          {weeklyQuery.isLoading && (
+            <p data-testid="week-loading" className="loading-text">
+              Loading weekly stats…
+            </p>
+          )}
+          {weeklyQuery.isError && (
+            <p data-testid="week-error" className="error-text">
+              Failed to load weekly data.
+            </p>
+          )}
+          {!weeklyQuery.isLoading && !weeklyQuery.isError && projects.length === 0 && (
+            <div data-testid="week-empty" className="empty-state">
+              No projects with tracked or planned hours in this week.
+            </div>
+          )}
+          {!weeklyQuery.isLoading && !weeklyQuery.isError && projects.length > 0 && (
+            <WeeklyBarChart data={toWeeklyChartData(projects)} />
+          )}
+        </section>
       </div>
     </main>
   )
