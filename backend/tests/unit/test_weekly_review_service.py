@@ -48,6 +48,7 @@ async def test_get_or_create_review_creates_new() -> None:
     mock_result.scalar_one_or_none.return_value = None
     db.execute = AsyncMock(return_value=mock_result)
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
 
     week_start = date(2026, 4, 13)
     review = await get_or_create_review(db, USER_ID, week_start)
@@ -98,6 +99,7 @@ async def test_get_or_create_review_queries_by_user_id() -> None:
     db = MagicMock()
     db.execute = AsyncMock(side_effect=fake_execute)
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
 
     # Should create a new review for USER_ID, not find the other user's review
     review = await get_or_create_review(db, USER_ID, date(2026, 4, 13))
@@ -112,6 +114,7 @@ async def test_get_or_create_review_normalizes_week_start_to_monday() -> None:
     mock_result.scalar_one_or_none.return_value = None
     db.execute = AsyncMock(return_value=mock_result)
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
 
     # Wednesday → should store as Monday 2026-04-13
     review = await get_or_create_review(db, USER_ID, date(2026, 4, 15))
@@ -181,6 +184,7 @@ async def test_generate_review_sets_generating_before_pipeline() -> None:
     """Status must flip to 'generating' before any agent runs."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     status_at_call: list[str] = []
@@ -233,6 +237,7 @@ async def test_generate_review_sets_status_complete_on_success() -> None:
     """After a successful pipeline run, status must be 'complete'."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     with (
@@ -288,6 +293,7 @@ async def test_generate_review_sets_status_failed_on_exception() -> None:
     """If run_group_a raises, status must be set to 'failed'."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     with patch(
@@ -305,6 +311,7 @@ async def test_generate_review_stores_agent_metadata() -> None:
     """agent_metadata_json must be populated after a successful run."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     with (
@@ -352,6 +359,7 @@ async def test_generate_review_populates_insights_from_group_a() -> None:
     """insights_json must be populated from group_a_result, not None."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     with (
@@ -398,6 +406,7 @@ async def test_generate_review_narrative_contains_all_sections() -> None:
     """narrative must concatenate all four NarrativeWriterResult sections."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     with (
@@ -447,6 +456,7 @@ async def test_generate_review_metadata_has_required_keys() -> None:
     """agent_metadata_json must have patterns_detected, group_a_errors, judge_scored."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     with (
@@ -503,6 +513,7 @@ async def test_generate_review_calls_run_group_d() -> None:
     """run_group_d must be called — skipping it is not acceptable."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
     judge_called = []
 
@@ -567,6 +578,7 @@ async def test_generate_review_records_per_stage_latency() -> None:
     """agent_metadata_json.stages must include latency_ms for each pipeline stage."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     with (
@@ -627,6 +639,7 @@ async def test_generate_review_emits_sentry_breadcrumb_per_stage() -> None:
     """Each pipeline stage must emit a Sentry breadcrumb tagged with its name."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     with (
@@ -685,6 +698,7 @@ async def test_generate_review_emits_failed_breadcrumb_on_exception() -> None:
     """On pipeline failure a breadcrumb with level=error must be emitted."""
     db = MagicMock()
     db.flush = AsyncMock()
+    db.commit = AsyncMock()
     review = _make_review()
 
     with (
