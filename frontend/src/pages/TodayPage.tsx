@@ -21,8 +21,10 @@ const WORK_END = 24
 const HOUR_PX = 44 // timeline row height
 
 function formatHour(h: number): string {
-  const whole = Math.floor(h)
-  const mins = Math.round((h - whole) * 60)
+  // Normalise 24 -> 0 so "end of day" renders as midnight, not "12:00 PM".
+  const normalised = h >= 24 ? h - 24 : h
+  const whole = Math.floor(normalised)
+  const mins = Math.round((normalised - whole) * 60)
   const display = whole === 0 ? 12 : whole > 12 ? whole - 12 : whole
   const ampm = whole >= 12 ? 'PM' : 'AM'
   return mins === 0

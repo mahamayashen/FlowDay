@@ -31,8 +31,10 @@ interface PlannerState {
 
 export const usePlannerStore = create<PlannerState>((set, get) => ({
   selectedDate: todayString(),
-  workHoursStart: 8,
-  workHoursEnd: 18,
+  // Full-day timeline — users schedule and track outside 9-5 too, so the
+  // planner grid now spans the whole day. Matches Today page (0-24h).
+  workHoursStart: 0,
+  workHoursEnd: 24,
   setSelectedDate: (date) => set({ selectedDate: date }),
   goToNextDay: () => set({ selectedDate: shiftDate(get().selectedDate, 1) }),
   goToPrevDay: () => set({ selectedDate: shiftDate(get().selectedDate, -1) }),
