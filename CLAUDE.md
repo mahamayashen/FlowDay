@@ -82,7 +82,31 @@ This project enforces OWASP Top 10 (2021) mitigations across the stack:
 | A09 | Logging & Monitoring | Sentry error tracking with breadcrumbs; Grafana dashboards for API latency, agent metrics, judge scores; audit logging for auth events |
 | A10 | SSRF | External API calls (Google Calendar, GitHub) use allowlisted endpoints only; no user-supplied URLs passed to `httpx` without validation |
 
-CI enforcement: 4 security gates must pass before merge (pip-audit, npm audit, Gitleaks, Bandit SAST).
+### 8-Gate Security Pipeline — Coverage
+
+FlowDay implements **4 of 8** security gates today (all four are required for
+merge). The remaining four are on the roadmap. Full mapping and the Definition
+of Done checklist live in [`docs/DEFINITION_OF_DONE.md`](docs/DEFINITION_OF_DONE.md).
+
+| Gate | Name | Tool | Where it runs |
+|---|---|---|---|
+| 1 | Secrets Detection | Gitleaks | pre-commit (`.pre-commit-config.yaml`) + CI Stage 5 |
+| 2 | Dependency Scanning | pip-audit + npm audit | CI Stage 5 |
+| 3 | SAST (Static) | Bandit | pre-commit + CI Stage 5 |
+| 4 | DAST (Dynamic) | *planned — ZAP baseline on Vercel preview* | — |
+| 5 | Container Scanning | *planned — Trivy on backend image* | — |
+| 6 | License Compliance | *planned — pip-licenses + license-checker* | — |
+| 7 | Security Acceptance Criteria | DoD checklist (`docs/DEFINITION_OF_DONE.md` §4) | human review + CI presence check |
+| 8 | SBOM | *planned — CycloneDX* | — |
+
+**CI enforcement:** Gates **1, 2, 3, and 7** must pass before merge. Any gate
+failure blocks the PR regardless of functional correctness. Gitleaks also runs
+locally as a pre-commit hook so leaked secrets never enter the git history.
+
+**Pre-commit setup (one-time, per developer):**
+```
+pip install pre-commit && pre-commit install && pre-commit install --hook-type commit-msg
+```
 
 ## Development Workflow (required for every issue)
 
