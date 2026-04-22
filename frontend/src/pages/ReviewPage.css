@@ -145,7 +145,7 @@
 
 .review-ai-head {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: 10px;
   position: relative;
