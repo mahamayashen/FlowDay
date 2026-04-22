@@ -87,6 +87,7 @@ async def get_or_create_review(
     )
     db.add(review)
     await db.flush()
+    await db.commit()
     return review
 
 
@@ -207,6 +208,7 @@ async def generate_review(
             "stages": stages,
         }
         await db.flush()
+        await db.commit()
         raise
 
     review.insights_json = group_a_result.model_dump()
@@ -226,4 +228,5 @@ async def generate_review(
     }
     review.status = ReviewStatus.COMPLETE
     await db.flush()
+    await db.commit()
     return review
