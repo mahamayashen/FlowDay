@@ -242,6 +242,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_args: "--model claude-haiku-4-5-20251001 --max-turns 3 --compact"
+          show_full_output: true
           prompt: |
             Review this PR for FlowDay. Check:
             1. Security: OAuth token handling, PII exposure, prompt injection risks
