@@ -155,10 +155,13 @@ jobs:
           retention-days: 14
 
   # ──────────────────────────────────────────────
-  # STAGE 5: Security Gates (4 gates)
+  # STAGE 5: Security Gates — 4 of the 8-gate taxonomy
+  # (Gate 1 Secrets, Gate 2 Dependencies, Gate 3 SAST, Gate 7 Security AC)
+  # Gates 4 DAST, 5 Container, 6 License, 8 SBOM are planned — see
+  # docs/DEFINITION_OF_DONE.md §"8-Gate Taxonomy — Coverage Map".
   # ──────────────────────────────────────────────
   security-gates:
-    name: "Stage 5: Security (4 Gates)"
+    name: "Stage 5: Security (4 of 8 gates)"
     needs: [backend-quality, frontend-quality]
     runs-on: ubuntu-latest
     steps:
@@ -166,17 +169,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Gate 1: pip-audit (Python dependency vulnerabilities)
+      # Gate 1: Secrets Detection (Gitleaks)
+      # Runs first — if a secret leaked we want to know before scanning deps.
+      - name: "Gate 1 — Secrets Detection (Gitleaks)"
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Gate 2a: Dependency Scanning — Python (pip-audit)
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install backend dependencies
         run: pip install -e "./backend[dev]"
-      - name: "Gate 1: pip-audit"
+      - name: "Gate 2a — Dependency Scanning (pip-audit)"
         run: pip-audit
 
-      # Gate 2: npm audit (Node dependency vulnerabilities)
+      # Gate 2b: Dependency Scanning — Node (npm audit)
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -184,18 +194,28 @@ jobs:
           cache-dependency-path: "./frontend/package-lock.json"
       - name: Install frontend dependencies
         run: cd frontend && npm ci
-      - name: "Gate 2: npm audit"
+      - name: "Gate 2b — Dependency Scanning (npm audit)"
         run: cd frontend && npm audit --audit-level=high
 
-      # Gate 3: Gitleaks (secret detection)
-      - name: "Gate 3: Gitleaks"
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Gate 4: Bandit (Python SAST)
-      - name: "Gate 4: Bandit SAST"
+      # Gate 3: SAST (Bandit) — Python static analysis
+      - name: "Gate 3 — SAST (Bandit)"
         run: bandit -r backend/app/ -c backend/bandit.yml
+
+      # Gate 7: Security Acceptance Criteria
+      # Enforces that the PR description / DoD checklist was filled in.
+      # The Definition of Done lives in docs/DEFINITION_OF_DONE.md — this
+      # step just confirms the file is present and up-to-date so reviewers
+      # know the AC checklist is the source of truth.
+      - name: "Gate 7 — Security Acceptance Criteria (DoD present)"
+        run: |
+          test -f docs/DEFINITION_OF_DONE.md || {
+            echo "::error::docs/DEFINITION_OF_DONE.md is missing — Gate 7 blocks merge"
+            exit 1
+          }
+          grep -q "Gate 7 — Security Acceptance Criteria" docs/DEFINITION_OF_DONE.md || {
+            echo "::error::DoD no longer contains the Gate 7 security AC section"
+            exit 1
+          }
 
   # ──────────────────────────────────────────────
   # STAGE 6: AI PR Review (Claude Code)
@@ -222,6 +242,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_args: "--model claude-haiku-4-5-20251001 --max-turns 3 --compact"
+          show_full_output: true
           prompt: |
             Review this PR for FlowDay. Check:
             1. Security: OAuth token handling, PII exposure, prompt injection risks

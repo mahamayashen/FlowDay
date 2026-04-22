@@ -83,9 +83,9 @@ function WeeklyBarChart({ data }: WeeklyBarChartProps): React.JSX.Element {
           <BarChart
             layout="vertical"
             data={data}
-            margin={{ top: 6, right: 16, left: 0, bottom: 0 }}
-            barCategoryGap={14}
-            barGap={4}
+            margin={{ top: 10, right: 24, left: 8, bottom: 6 }}
+            barCategoryGap="28%"
+            barGap={3}
           >
             <CartesianGrid
               stroke={COLOR_GRID}
@@ -103,9 +103,9 @@ function WeeklyBarChart({ data }: WeeklyBarChartProps): React.JSX.Element {
             <YAxis
               type="category"
               dataKey="name"
-              width={110}
+              width={96}
               stroke={COLOR_AXIS}
-              tick={{ fill: 'rgba(255,255,255,0.72)', fontSize: 11 }}
+              tick={{ fill: 'rgba(255,255,255,0.78)', fontSize: 12 }}
               tickLine={false}
               axisLine={{ stroke: COLOR_GRID }}
             />
@@ -118,13 +118,15 @@ function WeeklyBarChart({ data }: WeeklyBarChartProps): React.JSX.Element {
               dataKey="planned"
               name="Planned"
               fill={COLOR_PLANNED}
-              radius={[0, 4, 4, 0]}
+              radius={[0, 6, 6, 0]}
+              barSize={14}
             />
             <Bar
               dataKey="actual"
               name="Actual"
               fill={COLOR_ACTUAL}
-              radius={[0, 4, 4, 0]}
+              radius={[0, 6, 6, 0]}
+              barSize={14}
             />
           </BarChart>
         </ResponsiveContainer>
