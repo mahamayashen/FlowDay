@@ -96,7 +96,11 @@ function ScoreTrendChart({ reviews }: ScoreTrendChartProps): React.JSX.Element {
               axisLine={{ stroke: COLOR_GRID }}
             />
             <YAxis
-              domain={[0, 100]}
+              // Judge scores are 1–10 per dimension (see JudgeResult schema),
+              // not 1–100. Using [0, 100] pinned every series near the
+              // bottom of the chart and hid all variance.
+              domain={[0, 10]}
+              ticks={[0, 2, 4, 6, 8, 10]}
               stroke={COLOR_AXIS}
               tick={{ fill: COLOR_AXIS, fontSize: 10, fontFamily: 'var(--font-mono)' }}
               tickLine={false}
