@@ -43,10 +43,11 @@ class Settings(BaseSettings):
 
     # AI / LLM (provider-agnostic pydantic-ai model strings)
     # Narrative Writer and Judge MUST use different providers (CLAUDE.md).
-    LLM_MODEL: str = "openai:gpt-4o-mini"
-    # `gemini-1.5-flash` was retired on the google-gla v1beta endpoint;
-    # 2.0-flash is the stable free-tier successor.
-    LLM_JUDGE_MODEL: str = "google-gla:gemini-2.0-flash"
+    # Google retired gemini-1.5-flash and started blocking new users on
+    # gemini-2.0-flash; use 2.5-pro for Judge. Narrative Writer is on the
+    # project's standardized OpenAI nano snapshot.
+    LLM_MODEL: str = "openai:gpt-5.4-nano-2026-03-17"
+    LLM_JUDGE_MODEL: str = "google-gla:gemini-2.5-pro"
 
     # Judge agent — minimum acceptable score per dimension (1–10); triggers retry below
     JUDGE_SCORE_THRESHOLD: int = 6
