@@ -42,8 +42,11 @@ class Settings(BaseSettings):
     GITHUB_SYNC_REDIRECT_URI: str = "http://localhost:5060/sync/github/callback"
 
     # AI / LLM (provider-agnostic pydantic-ai model strings)
+    # Narrative Writer and Judge MUST use different providers (CLAUDE.md).
     LLM_MODEL: str = "openai:gpt-4o-mini"
-    LLM_JUDGE_MODEL: str = "google-gla:gemini-1.5-flash"
+    # `gemini-1.5-flash` was retired on the google-gla v1beta endpoint;
+    # 2.0-flash is the stable free-tier successor.
+    LLM_JUDGE_MODEL: str = "google-gla:gemini-2.0-flash"
 
     # Judge agent — minimum acceptable score per dimension (1–10); triggers retry below
     JUDGE_SCORE_THRESHOLD: int = 6
