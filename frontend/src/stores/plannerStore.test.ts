@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { usePlannerStore } from './plannerStore'
+import { formatLocalDate } from '../utils/reviewUtils'
 
 function todayString(): string {
-  return new Date().toISOString().slice(0, 10)
+  // Must match plannerStore's internal calculation (local calendar date,
+  // not UTC). Using toISOString().slice(0,10) would return UTC and fail
+  // in negative-offset timezones after ~5pm local.
+  return formatLocalDate(new Date())
 }
 
 beforeEach(() => {

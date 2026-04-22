@@ -1,13 +1,22 @@
 import { create } from 'zustand'
+import { formatLocalDate } from '../utils/reviewUtils'
+
+// A ScheduleBlock's `date` is a user-facing calendar day, not a timestamp.
+// Always derive it from the user's *local* clock so "today" means the day
+// the user sees on the wall. Using `toISOString().slice(0, 10)` would
+// return UTC, which is ahead of local in negative-offset timezones after
+// ~5pm local — leading to blocks saved under the wrong date and Today
+// queries returning empty.
 
 function todayString(): string {
-  return new Date().toISOString().slice(0, 10)
+  return formatLocalDate(new Date())
 }
 
 function shiftDate(dateStr: string, days: number): string {
-  const d = new Date(dateStr + 'T12:00:00Z')
-  d.setUTCDate(d.getUTCDate() + days)
-  return d.toISOString().slice(0, 10)
+  // Parse the stored string as local midnight and shift in local time.
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setDate(d.getDate() + days)
+  return formatLocalDate(d)
 }
 
 interface PlannerState {
