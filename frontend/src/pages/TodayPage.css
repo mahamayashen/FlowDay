@@ -274,18 +274,6 @@
   background: var(--cyan);
 }
 
-.today-block-done {
-  margin-top: auto;
-  align-self: flex-start;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--success);
-  padding: 3px 8px;
-  background: var(--success-dim);
-  border-radius: var(--r-sm);
-}
-
 /* ── Sidebar ────────────────────────────────────────────────── */
 .today-sidebar {
   display: flex;

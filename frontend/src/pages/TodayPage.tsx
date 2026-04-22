@@ -13,9 +13,12 @@ import type { Project } from '../types/project'
 import type { Task } from '../types/task'
 import './TodayPage.css'
 
-const WORK_START = 8
-const WORK_END = 19
-const HOUR_PX = 68 // timeline row height
+// Full-day timeline — blocks and time tracking on Today should work at any
+// hour (including late-evening catch-up). The row height stays tight so the
+// whole 24h fits comfortably on a standard laptop screen.
+const WORK_START = 0
+const WORK_END = 24
+const HOUR_PX = 44 // timeline row height
 
 function formatHour(h: number): string {
   const whole = Math.floor(h)
@@ -216,7 +219,7 @@ function TodayPage(): React.JSX.Element {
                   <div className="today-block-title">
                     {isCalendar ? 'Calendar event' : task?.title ?? 'Untitled task'}
                   </div>
-                  {!isCalendar && !isPast && (
+                  {!isCalendar && (
                     <button
                       className={`today-block-start${
                         isActiveTimer ? ' today-block-start--running' : ''
@@ -232,10 +235,9 @@ function TodayPage(): React.JSX.Element {
                       ) : (
                         <Play size={14} weight="fill" />
                       )}
-                      {isActiveTimer ? 'Running' : 'Start'}
+                      {isActiveTimer ? 'Running' : isPast ? 'Start late' : 'Start'}
                     </button>
                   )}
-                  {isPast && <span className="today-block-done">Tracked</span>}
                 </div>
               )
             })}
