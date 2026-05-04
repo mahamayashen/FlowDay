@@ -1,3 +1,9 @@
+"""Health-check endpoints for liveness and readiness probes.
+
+Exposes ``/health`` (public) and ``/health/detailed`` (authenticated) routes
+that verify database and Redis connectivity and report latency metrics.
+"""
+
 from __future__ import annotations
 
 import logging
